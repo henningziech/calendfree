@@ -53,8 +53,8 @@ export function CompaniesPage() {
   return (
     <div>
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Companies</h1>
-        <button onClick={() => setShowCreate(true)} className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+        <h1 className="text-2xl font-bold text-[#1E293B]">Companies</h1>
+        <button onClick={() => setShowCreate(true)} className="rounded-xl bg-[#0B8ECA] px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-[#0874A6] hover:shadow-md">
           + Neue Company
         </button>
       </div>
@@ -62,25 +62,28 @@ export function CompaniesPage() {
       {error && <ErrorMessage message={error} />}
 
       {showCreate && (
-        <form onSubmit={handleCreate} className="mt-4 flex gap-3 rounded-lg border bg-white p-4">
-          <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Name" required className="flex-1 rounded-md border px-3 py-2 text-sm" />
-          <input value={newSlug} onChange={(e) => setNewSlug(e.target.value)} placeholder="slug" required className="flex-1 rounded-md border px-3 py-2 text-sm" />
-          <button type="submit" className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white">Erstellen</button>
-          <button type="button" onClick={() => setShowCreate(false)} className="rounded-md bg-gray-100 px-4 py-2 text-sm">Abbrechen</button>
+        <form onSubmit={handleCreate} className="mt-4 flex gap-3 rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-sm">
+          <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Name" required className="flex-1 rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:ring-2 focus:ring-[#0B8ECA]/20 focus:outline-none" />
+          <input value={newSlug} onChange={(e) => setNewSlug(e.target.value)} placeholder="slug" required className="flex-1 rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:ring-2 focus:ring-[#0B8ECA]/20 focus:outline-none" />
+          <button type="submit" className="rounded-xl bg-[#0B8ECA] px-4 py-2 text-sm font-medium text-white hover:bg-[#0874A6]">Erstellen</button>
+          <button type="button" onClick={() => setShowCreate(false)} className="rounded-xl bg-[#F8FAFC] px-4 py-2 text-sm text-[#64748B] ring-1 ring-[#E2E8F0] hover:bg-[#E2E8F0]">Abbrechen</button>
         </form>
       )}
 
       <div className="mt-4 space-y-2">
         {companies.map((c) => (
-          <div key={c.id} className="flex items-center justify-between rounded-lg border bg-white p-4">
-            <div>
-              <h3 className="font-medium text-gray-900">{c.name}</h3>
-              <p className="text-sm text-gray-500">/{c.slug}</p>
+          <div key={c.id} className="flex items-center justify-between rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-sm transition-all hover:shadow-md">
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-1 rounded-full bg-[#0B8ECA]" />
+              <div>
+                <h3 className="font-medium text-[#1E293B]">{c.name}</h3>
+                <p className="text-sm text-[#64748B]">/{c.slug}</p>
+              </div>
             </div>
-            <button onClick={() => handleDelete(c.id, c.name)} className="text-sm text-red-600 hover:text-red-800">Löschen</button>
+            <button onClick={() => handleDelete(c.id, c.name)} className="text-sm font-medium text-[#EF4444] transition-colors hover:text-red-600">Löschen</button>
           </div>
         ))}
-        {companies.length === 0 && <p className="text-gray-500 text-sm">Keine Companies vorhanden.</p>}
+        {companies.length === 0 && <p className="text-[#64748B] text-sm">Keine Companies vorhanden.</p>}
       </div>
     </div>
   );

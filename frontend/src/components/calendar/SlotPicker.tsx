@@ -42,8 +42,13 @@ export function SlotPicker({ slots, selectedSlot, onSelectSlot, timezone: _timez
 
   if (slots.length === 0) {
     return (
-      <div className="rounded-lg border border-gray-200 p-8 text-center text-gray-500">
-        Keine verfügbaren Termine in den nächsten Tagen.
+      <div className="rounded-2xl border border-[#E2E8F0] bg-white p-10 text-center">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#F8FAFC]">
+          <svg className="h-7 w-7 text-[#64748B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <p className="text-[#64748B]">Keine verfügbaren Termine in den nächsten Tagen.</p>
       </div>
     );
   }
@@ -52,20 +57,20 @@ export function SlotPicker({ slots, selectedSlot, onSelectSlot, timezone: _timez
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
       {/* Date selector */}
       <div>
-        <h3 className="mb-3 text-sm font-medium text-gray-700">Datum wählen</h3>
-        <div className="space-y-1">
+        <h3 className="mb-3 text-sm font-semibold text-[#1E293B]">Datum wählen</h3>
+        <div className="space-y-1.5">
           {availableDates.map((date) => (
             <button
               key={date.toISOString()}
               onClick={() => setSelectedDate(date)}
-              className={`w-full rounded-md px-3 py-2 text-left text-sm transition ${
+              className={`w-full rounded-xl px-4 py-3 text-left text-sm transition-all duration-200 ${
                 isSameDay(date, selectedDate)
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-100'
+                  ? 'bg-[#0B8ECA] text-white shadow-md shadow-[#0B8ECA]/25'
+                  : 'bg-white text-[#1E293B] shadow-sm ring-1 ring-[#E2E8F0] hover:shadow-md hover:ring-[#0B8ECA]/30'
               }`}
             >
-              {format(date, 'EEEE, d. MMMM', { locale: de })}
-              <span className="ml-2 text-xs opacity-70">
+              <span className="font-medium">{format(date, 'EEEE, d. MMMM', { locale: de })}</span>
+              <span className={`ml-2 text-xs ${isSameDay(date, selectedDate) ? 'text-white/70' : 'text-[#64748B]'}`}>
                 ({slotsByDate.get(format(date, 'yyyy-MM-dd'))?.length} Slots)
               </span>
             </button>
@@ -75,7 +80,7 @@ export function SlotPicker({ slots, selectedSlot, onSelectSlot, timezone: _timez
 
       {/* Time slot selector */}
       <div>
-        <h3 className="mb-3 text-sm font-medium text-gray-700">
+        <h3 className="mb-3 text-sm font-semibold text-[#1E293B]">
           Uhrzeit wählen — {format(selectedDate, 'd. MMMM', { locale: de })}
         </h3>
         <div className="grid grid-cols-2 gap-2">
@@ -83,10 +88,10 @@ export function SlotPicker({ slots, selectedSlot, onSelectSlot, timezone: _timez
             <button
               key={slot.start}
               onClick={() => onSelectSlot(slot)}
-              className={`rounded-md px-3 py-2 text-sm font-medium transition ${
+              className={`rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200 ${
                 selectedSlot?.start === slot.start
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white text-gray-700 ring-1 ring-gray-200 hover:ring-blue-400'
+                  ? 'bg-[#0B8ECA] text-white shadow-md shadow-[#0B8ECA]/25'
+                  : 'bg-white text-[#1E293B] ring-1 ring-[#E2E8F0] hover:ring-[#0B8ECA] hover:shadow-sm'
               }`}
             >
               {format(parseISO(slot.start), 'HH:mm')}

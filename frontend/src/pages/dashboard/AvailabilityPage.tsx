@@ -57,8 +57,8 @@ export function AvailabilityPage() {
   return (
     <div>
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Verfügbarkeit</h1>
-        <button onClick={handleSave} disabled={isSaving} className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+        <h1 className="text-2xl font-bold text-[#1E293B]">Verfügbarkeit</h1>
+        <button onClick={handleSave} disabled={isSaving} className="rounded-xl bg-gradient-to-r from-[#0B8ECA] to-[#14B8A6] px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:shadow-md disabled:opacity-50">
           {isSaving ? 'Speichern...' : 'Speichern'}
         </button>
       </div>
@@ -66,12 +66,12 @@ export function AvailabilityPage() {
       {error && <ErrorMessage message={error} />}
 
       <div className="mt-6 space-y-4">
-        <div className="rounded-lg border bg-white p-4">
-          <label className="block text-sm font-medium text-gray-700">Timezone</label>
+        <div className="rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-sm">
+          <label className="block text-sm font-medium text-[#1E293B]">Timezone</label>
           <select
             value={profile.timezone}
             onChange={(e) => setProfile({ ...profile, timezone: e.target.value })}
-            className="mt-1 rounded-md border px-3 py-2 text-sm"
+            className="mt-1 rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none"
           >
             {['Europe/Berlin', 'Europe/London', 'America/New_York', 'America/Los_Angeles', 'Asia/Tokyo'].map((tz) => (
               <option key={tz} value={tz}>{tz}</option>
@@ -79,8 +79,8 @@ export function AvailabilityPage() {
           </select>
         </div>
 
-        <div className="rounded-lg border bg-white p-4">
-          <h3 className="font-medium text-gray-900">Arbeitszeiten</h3>
+        <div className="rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-sm">
+          <h3 className="font-semibold text-[#1E293B]">Arbeitszeiten</h3>
           <div className="mt-3 space-y-2">
             {DAYS.map((day) => {
               const slots = schedule[day.key] ?? [];
@@ -90,7 +90,7 @@ export function AvailabilityPage() {
 
               return (
                 <div key={day.key} className="flex items-center gap-3">
-                  <label className="w-28 text-sm text-gray-700">{day.label}</label>
+                  <label className="w-28 text-sm text-[#1E293B]">{day.label}</label>
                   <input
                     type="checkbox"
                     checked={hasSlot}
@@ -113,9 +113,9 @@ export function AvailabilityPage() {
                           newSchedule[day.key] = [{ start: e.target.value, end }];
                           setProfile({ ...profile, availability: { ...profile.availability, weeklySchedule: newSchedule } });
                         }}
-                        className="rounded-md border px-2 py-1 text-sm"
+                        className="rounded-xl border border-[#E2E8F0] px-2 py-1 text-sm focus:border-[#0B8ECA] focus:outline-none"
                       />
-                      <span className="text-gray-400">–</span>
+                      <span className="text-[#64748B]">–</span>
                       <input
                         type="time"
                         value={end}
@@ -124,7 +124,7 @@ export function AvailabilityPage() {
                           newSchedule[day.key] = [{ start, end: e.target.value }];
                           setProfile({ ...profile, availability: { ...profile.availability, weeklySchedule: newSchedule } });
                         }}
-                        className="rounded-md border px-2 py-1 text-sm"
+                        className="rounded-xl border border-[#E2E8F0] px-2 py-1 text-sm focus:border-[#0B8ECA] focus:outline-none"
                       />
                     </>
                   )}
@@ -134,27 +134,27 @@ export function AvailabilityPage() {
           </div>
         </div>
 
-        <div className="rounded-lg border bg-white p-4">
-          <h3 className="font-medium text-gray-900">Limits</h3>
+        <div className="rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-sm">
+          <h3 className="font-semibold text-[#1E293B]">Limits</h3>
           <div className="mt-3 flex gap-6">
             <div>
-              <label className="block text-sm text-gray-600">Max. pro Tag</label>
+              <label className="block text-sm text-[#64748B]">Max. pro Tag</label>
               <input
                 type="number"
                 value={profile.availability?.maxPerDay ?? 8}
                 onChange={(e) => setProfile({ ...profile, availability: { ...profile.availability, maxPerDay: +e.target.value || null } })}
                 min={1} max={50}
-                className="mt-1 w-20 rounded-md border px-3 py-2 text-sm"
+                className="mt-1 w-20 rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none"
               />
             </div>
             <div>
-              <label className="block text-sm text-gray-600">Max. pro Woche</label>
+              <label className="block text-sm text-[#64748B]">Max. pro Woche</label>
               <input
                 type="number"
                 value={profile.availability?.maxPerWeek ?? 30}
                 onChange={(e) => setProfile({ ...profile, availability: { ...profile.availability, maxPerWeek: +e.target.value || null } })}
                 min={1} max={200}
-                className="mt-1 w-20 rounded-md border px-3 py-2 text-sm"
+                className="mt-1 w-20 rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none"
               />
             </div>
           </div>

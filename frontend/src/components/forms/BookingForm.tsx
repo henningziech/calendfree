@@ -17,14 +17,14 @@ export function BookingForm({ onSubmit, isSubmitting, eventTypeTitle, selectedTi
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="rounded-lg bg-blue-50 p-4">
-        <p className="text-sm font-medium text-blue-800">{eventTypeTitle}</p>
-        <p className="text-sm text-blue-600">{selectedTime}</p>
+    <form onSubmit={handleSubmit} className="space-y-5">
+      <div className="rounded-xl bg-[#0B8ECA]/5 border border-[#0B8ECA]/10 p-4">
+        <p className="text-sm font-semibold text-[#0B8ECA]">{eventTypeTitle}</p>
+        <p className="mt-0.5 text-sm text-[#0874A6]">{selectedTime}</p>
       </div>
 
       <div>
-        <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="name" className="block text-sm font-medium text-[#1E293B]">
           Name *
         </label>
         <input
@@ -33,13 +33,13 @@ export function BookingForm({ onSubmit, isSubmitting, eventTypeTitle, selectedTi
           required
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          className="mt-1.5 block w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm shadow-sm transition-all focus:border-[#0B8ECA] focus:ring-2 focus:ring-[#0B8ECA]/20 focus:outline-none"
           placeholder="Max Mustermann"
         />
       </div>
 
       <div>
-        <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="email" className="block text-sm font-medium text-[#1E293B]">
           E-Mail *
         </label>
         <input
@@ -48,7 +48,7 @@ export function BookingForm({ onSubmit, isSubmitting, eventTypeTitle, selectedTi
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          className="mt-1.5 block w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm shadow-sm transition-all focus:border-[#0B8ECA] focus:ring-2 focus:ring-[#0B8ECA]/20 focus:outline-none"
           placeholder="max@example.com"
         />
       </div>
@@ -56,7 +56,7 @@ export function BookingForm({ onSubmit, isSubmitting, eventTypeTitle, selectedTi
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full rounded-md bg-blue-600 px-4 py-3 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
+        className="w-full rounded-xl bg-gradient-to-r from-[#0B8ECA] to-[#14B8A6] px-4 py-3 text-sm font-semibold text-white shadow-md shadow-[#0B8ECA]/20 transition-all hover:shadow-lg hover:shadow-[#0B8ECA]/30 disabled:opacity-50"
       >
         {isSubmitting ? 'Wird gebucht...' : 'Termin buchen'}
       </button>

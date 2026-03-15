@@ -49,40 +49,43 @@ export function ApiKeysPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900">API Keys</h1>
-      <p className="mt-2 text-sm text-gray-600">Erstellen Sie API Keys für programmatischen Zugriff auf Ihre Termine.</p>
+      <h1 className="text-2xl font-bold text-[#1E293B]">API Keys</h1>
+      <p className="mt-2 text-sm text-[#64748B]">Erstellen Sie API Keys für programmatischen Zugriff auf Ihre Termine.</p>
 
       {error && <ErrorMessage message={error} />}
 
       {createdKey && (
-        <div className="mt-4 rounded-lg border border-green-300 bg-green-50 p-4">
-          <p className="text-sm font-medium text-green-800">Neuer API Key erstellt! Kopieren Sie ihn jetzt — er wird nicht erneut angezeigt.</p>
-          <code className="mt-2 block break-all rounded bg-white p-3 text-sm font-mono">{createdKey}</code>
-          <button onClick={() => { navigator.clipboard.writeText(createdKey); }} className="mt-2 text-sm text-green-700 hover:underline">
+        <div className="mt-4 rounded-xl border border-emerald-300 bg-emerald-50 p-4">
+          <p className="text-sm font-medium text-emerald-800">Neuer API Key erstellt! Kopieren Sie ihn jetzt — er wird nicht erneut angezeigt.</p>
+          <code className="mt-2 block break-all rounded-xl bg-white p-3 text-sm font-mono ring-1 ring-emerald-200">{createdKey}</code>
+          <button onClick={() => { navigator.clipboard.writeText(createdKey); }} className="mt-2 text-sm font-medium text-emerald-700 transition-colors hover:text-emerald-800 hover:underline">
             Kopieren
           </button>
         </div>
       )}
 
       <form onSubmit={handleCreate} className="mt-4 flex gap-3">
-        <input value={newKeyName} onChange={(e) => setNewKeyName(e.target.value)} placeholder="Key-Name (z.B. 'n8n Integration')" required className="flex-1 rounded-md border px-3 py-2 text-sm" />
-        <button type="submit" className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700">Erstellen</button>
+        <input value={newKeyName} onChange={(e) => setNewKeyName(e.target.value)} placeholder="Key-Name (z.B. 'n8n Integration')" required className="flex-1 rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:ring-2 focus:ring-[#0B8ECA]/20 focus:outline-none" />
+        <button type="submit" className="rounded-xl bg-[#0B8ECA] px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-[#0874A6] hover:shadow-md">Erstellen</button>
       </form>
 
       <div className="mt-6 space-y-2">
         {keys.map((k) => (
-          <div key={k.id} className="flex items-center justify-between rounded-lg border bg-white p-4">
-            <div>
-              <h3 className="font-medium text-gray-900">{k.name}</h3>
-              <p className="text-sm text-gray-500">
-                {k.keyPrefix}... · Erstellt: {new Date(k.createdAt).toLocaleDateString('de-DE')}
-                {k.lastUsedAt && ` · Zuletzt: ${new Date(k.lastUsedAt).toLocaleDateString('de-DE')}`}
-              </p>
+          <div key={k.id} className="flex items-center justify-between rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-sm transition-all hover:shadow-md">
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-1 rounded-full bg-[#F59E0B]" />
+              <div>
+                <h3 className="font-medium text-[#1E293B]">{k.name}</h3>
+                <p className="text-sm text-[#64748B]">
+                  {k.keyPrefix}... · Erstellt: {new Date(k.createdAt).toLocaleDateString('de-DE')}
+                  {k.lastUsedAt && ` · Zuletzt: ${new Date(k.lastUsedAt).toLocaleDateString('de-DE')}`}
+                </p>
+              </div>
             </div>
-            <button onClick={() => handleDelete(k.id)} className="text-sm text-red-600 hover:text-red-800">Löschen</button>
+            <button onClick={() => handleDelete(k.id)} className="text-sm font-medium text-[#EF4444] transition-colors hover:text-red-600">Löschen</button>
           </div>
         ))}
-        {keys.length === 0 && <p className="text-gray-500 text-sm">Keine API Keys vorhanden.</p>}
+        {keys.length === 0 && <p className="text-[#64748B] text-sm">Keine API Keys vorhanden.</p>}
       </div>
     </div>
   );

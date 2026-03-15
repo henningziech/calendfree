@@ -8,7 +8,7 @@ export function AdminLayout() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC]">
         <LoadingSpinner text="Anmeldung wird geprüft..." />
       </div>
     );
@@ -21,7 +21,7 @@ export function AdminLayout() {
   return (
     <div className="flex min-h-screen">
       <Sidebar />
-      <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
+      <main className="flex-1 overflow-y-auto bg-[#F8FAFC] p-6">
         <Outlet />
       </main>
     </div>

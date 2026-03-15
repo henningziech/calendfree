@@ -57,16 +57,24 @@ export function Sidebar() {
   const sections = getNavSections(role);
 
   return (
-    <aside className="flex h-screen w-64 flex-col border-r border-gray-200 bg-white">
-      <div className="border-b border-gray-200 p-4">
-        <h1 className="text-xl font-bold text-gray-900">Calendfree</h1>
-        <p className="mt-1 text-xs text-gray-500">{role.replace(/_/g, ' ')}</p>
+    <aside className="flex h-screen w-64 flex-col border-r border-[#E2E8F0] bg-white">
+      {/* Gradient accent line */}
+      <div className="h-1 bg-gradient-to-r from-[#0B8ECA] via-[#14B8A6] to-[#F59E0B]" />
+
+      <div className="border-b border-[#E2E8F0] p-4">
+        <div className="flex items-center gap-2.5">
+          <img src="/logo.jpg" alt="Calendfree" className="h-8 w-8 rounded-lg" />
+          <div>
+            <h1 className="text-lg font-bold text-[#1E293B]">Calendfree</h1>
+            <p className="text-xs text-[#64748B]">{role.replace(/_/g, ' ')}</p>
+          </div>
+        </div>
       </div>
 
       <nav className="flex-1 overflow-y-auto p-3">
         {sections.map((section) => (
-          <div key={section.title} className="mb-4">
-            <h3 className="mb-1 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+          <div key={section.title} className="mb-5">
+            <h3 className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-[#64748B]">
               {section.title}
             </h3>
             <ul className="space-y-1">
@@ -76,8 +84,10 @@ export function Sidebar() {
                     to={item.to}
                     end={item.to === '/admin' || item.to === '/dashboard'}
                     className={({ isActive }) =>
-                      `flex items-center gap-3 rounded-md px-3 py-2 text-sm transition ${
-                        isActive ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-50'
+                      `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-200 ${
+                        isActive
+                          ? 'bg-[#0B8ECA]/10 text-[#0B8ECA] font-medium'
+                          : 'text-[#1E293B] hover:bg-[#F8FAFC]'
                       }`
                     }
                   >
@@ -91,19 +101,19 @@ export function Sidebar() {
         ))}
       </nav>
 
-      <div className="border-t border-gray-200 p-4">
+      <div className="border-t border-[#E2E8F0] p-4">
         <div className="flex items-center gap-3">
           {user.avatarUrl && (
-            <img src={user.avatarUrl} alt="" className="h-8 w-8 rounded-full" />
+            <img src={user.avatarUrl} alt="" className="h-8 w-8 rounded-full ring-2 ring-[#E2E8F0]" />
           )}
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-gray-900">{user.name}</p>
-            <p className="truncate text-xs text-gray-500">{user.email}</p>
+            <p className="truncate text-sm font-medium text-[#1E293B]">{user.name}</p>
+            <p className="truncate text-xs text-[#64748B]">{user.email}</p>
           </div>
         </div>
         <button
           onClick={logout}
-          className="mt-3 w-full rounded-md bg-gray-100 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-200"
+          className="mt-3 w-full rounded-xl bg-[#F8FAFC] px-3 py-2 text-sm font-medium text-[#64748B] transition-colors hover:bg-[#E2E8F0] hover:text-[#1E293B]"
         >
           Abmelden
         </button>

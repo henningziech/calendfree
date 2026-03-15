@@ -34,61 +34,64 @@ export function AnalyticsPage() {
   if (error) return <ErrorMessage message={error} onRetry={load} />;
   if (!data) return null;
 
+  const summaryCards = [
+    { label: 'Buchungen (30 Tage)', value: data.summary.total30d, accent: '#0B8ECA' },
+    { label: 'Buchungen (7 Tage)', value: data.summary.totalWeek, accent: '#14B8A6' },
+    { label: 'Stornierungen', value: data.summary.cancelled30d, accent: '#EF4444' },
+    { label: 'Storno-Rate', value: `${data.summary.cancelRate}%`, accent: '#F59E0B' },
+  ];
+
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
+      <h1 className="text-2xl font-bold text-[#1E293B]">Analytics</h1>
 
       {/* Summary cards */}
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-4">
-        {[
-          { label: 'Buchungen (30 Tage)', value: data.summary.total30d },
-          { label: 'Buchungen (7 Tage)', value: data.summary.totalWeek },
-          { label: 'Stornierungen', value: data.summary.cancelled30d },
-          { label: 'Storno-Rate', value: `${data.summary.cancelRate}%` },
-        ].map((card) => (
-          <div key={card.label} className="rounded-lg border bg-white p-4">
-            <p className="text-sm text-gray-500">{card.label}</p>
-            <p className="mt-1 text-2xl font-bold text-gray-900">{card.value}</p>
+        {summaryCards.map((card) => (
+          <div key={card.label} className="rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-sm">
+            <div className="mb-2 h-1 w-8 rounded-full" style={{ backgroundColor: card.accent }} />
+            <p className="text-sm text-[#64748B]">{card.label}</p>
+            <p className="mt-1 text-2xl font-bold text-[#1E293B]">{card.value}</p>
           </div>
         ))}
       </div>
 
       {/* Daily chart */}
-      <div className="mt-6 rounded-lg border bg-white p-4">
-        <h3 className="mb-4 font-medium text-gray-900">Buchungen pro Tag (30 Tage)</h3>
+      <div className="mt-6 rounded-xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
+        <h3 className="mb-4 font-semibold text-[#1E293B]">Buchungen pro Tag (30 Tage)</h3>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={data.daily}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-            <YAxis allowDecimals={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+            <XAxis dataKey="date" tick={{ fontSize: 12, fill: '#64748B' }} />
+            <YAxis allowDecimals={false} tick={{ fill: '#64748B' }} />
             <Tooltip />
-            <Bar dataKey="count" fill="#2563EB" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="count" fill="#0B8ECA" radius={[6, 6, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
 
       {/* Top users */}
-      <div className="mt-6 rounded-lg border bg-white p-4">
-        <h3 className="mb-4 font-medium text-gray-900">Top Consultants (30 Tage)</h3>
-        <div className="space-y-2">
+      <div className="mt-6 rounded-xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
+        <h3 className="mb-4 font-semibold text-[#1E293B]">Top Consultants (30 Tage)</h3>
+        <div className="space-y-3">
           {data.byUser.map((u, i) => (
             <div key={u.name} className="flex items-center gap-3">
-              <span className="w-6 text-sm text-gray-400">#{i + 1}</span>
+              <span className="w-6 text-sm font-medium text-[#64748B]">#{i + 1}</span>
               <div className="flex-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{u.name}</span>
-                  <span className="text-sm text-gray-500">{u.count} Buchungen</span>
+                  <span className="text-sm font-medium text-[#1E293B]">{u.name}</span>
+                  <span className="text-sm text-[#64748B]">{u.count} Buchungen</span>
                 </div>
-                <div className="mt-1 h-2 rounded-full bg-gray-100">
+                <div className="mt-1.5 h-2 rounded-full bg-[#F8FAFC]">
                   <div
-                    className="h-2 rounded-full bg-blue-600"
+                    className="h-2 rounded-full bg-gradient-to-r from-[#0B8ECA] to-[#14B8A6]"
                     style={{ width: `${(u.count / (data.byUser[0]?.count || 1)) * 100}%` }}
                   />
                 </div>
               </div>
             </div>
           ))}
-          {data.byUser.length === 0 && <p className="text-sm text-gray-500">Noch keine Buchungsdaten.</p>}
+          {data.byUser.length === 0 && <p className="text-sm text-[#64748B]">Noch keine Buchungsdaten.</p>}
         </div>
       </div>
     </div>

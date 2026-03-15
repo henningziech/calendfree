@@ -70,8 +70,8 @@ export function BookingPage() {
     <BrandedLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{eventTypeSlug?.replace(/-/g, ' ')}</h1>
-          <p className="mt-1 text-sm text-gray-500">Wählen Sie einen passenden Termin</p>
+          <h1 className="text-2xl font-bold text-[#1E293B] capitalize">{eventTypeSlug?.replace(/-/g, ' ')}</h1>
+          <p className="mt-1 text-sm text-[#64748B]">Wählen Sie einen passenden Termin</p>
         </div>
 
         {error && <ErrorMessage message={error} onRetry={error.includes('geladen') ? loadSlots : undefined} />}
@@ -89,7 +89,7 @@ export function BookingPage() {
           <div className="space-y-4">
             <button
               onClick={() => setSelectedSlot(null)}
-              className="text-sm text-blue-600 hover:text-blue-800"
+              className="text-sm font-medium text-[#0B8ECA] transition-colors hover:text-[#0874A6]"
             >
               ← Anderen Termin wählen
             </button>

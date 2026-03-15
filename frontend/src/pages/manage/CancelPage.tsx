@@ -26,18 +26,23 @@ export function CancelPage() {
       <div className="space-y-6 text-center">
         {status === 'confirm' && (
           <>
-            <h1 className="text-2xl font-bold text-gray-900">Termin absagen?</h1>
-            <p className="text-gray-600">Möchten Sie diesen Termin wirklich absagen?</p>
-            <div className="flex justify-center gap-4">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#F59E0B]/10">
+              <svg className="h-8 w-8 text-[#F59E0B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-bold text-[#1E293B]">Termin absagen?</h1>
+            <p className="text-[#64748B]">Möchten Sie diesen Termin wirklich absagen?</p>
+            <div className="flex justify-center gap-3">
               <button
                 onClick={handleCancel}
-                className="rounded-md bg-red-600 px-6 py-2 text-sm font-medium text-white hover:bg-red-700"
+                className="rounded-xl bg-[#EF4444] px-6 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-red-600 hover:shadow-md"
               >
                 Ja, absagen
               </button>
               <button
                 onClick={() => window.history.back()}
-                className="rounded-md bg-gray-100 px-6 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+                className="rounded-xl bg-[#F8FAFC] px-6 py-2.5 text-sm font-medium text-[#64748B] ring-1 ring-[#E2E8F0] transition-all hover:bg-[#E2E8F0] hover:text-[#1E293B]"
               >
                 Abbrechen
               </button>
@@ -45,17 +50,17 @@ export function CancelPage() {
           </>
         )}
 
-        {status === 'loading' && <p className="text-gray-500">Wird storniert...</p>}
+        {status === 'loading' && <p className="text-[#64748B]">Wird storniert...</p>}
 
         {status === 'done' && (
           <>
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-              <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#14B8A6]/10">
+              <svg className="h-8 w-8 text-[#14B8A6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">Termin abgesagt</h1>
-            <p className="text-gray-600">Ihr Termin wurde erfolgreich storniert.</p>
+            <h1 className="text-2xl font-bold text-[#1E293B]">Termin abgesagt</h1>
+            <p className="text-[#64748B]">Ihr Termin wurde erfolgreich storniert.</p>
           </>
         )}
 

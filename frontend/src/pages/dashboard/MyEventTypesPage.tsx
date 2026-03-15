@@ -27,7 +27,7 @@ export function MyEventTypesPage() {
     autoMeetLink: true,
     teamId: '' as string | null,
     roundRobinMode: 'SEQUENTIAL' as string,
-    color: '#2563EB',
+    color: '#0B8ECA',
     bookableHours: null as Record<string, Array<{start: string; end: string}>> | null,
   });
 
@@ -56,7 +56,7 @@ export function MyEventTypesPage() {
   useEffect(() => { load(); }, [companyId]);
 
   const resetForm = () => {
-    setForm({ title: '', slug: '', description: '', duration: 30, bufferBefore: 0, bufferAfter: 15, minNotice: 4, maxAdvance: 60, autoMeetLink: true, teamId: null, roundRobinMode: 'SEQUENTIAL', color: '#2563EB', bookableHours: null });
+    setForm({ title: '', slug: '', description: '', duration: 30, bufferBefore: 0, bufferAfter: 15, minNotice: 4, maxAdvance: 60, autoMeetLink: true, teamId: null, roundRobinMode: 'SEQUENTIAL', color: '#0B8ECA', bookableHours: null });
     setEditingId(null);
     setShowCreate(false);
   };
@@ -93,7 +93,7 @@ export function MyEventTypesPage() {
       autoMeetLink: et.autoMeetLink,
       teamId: et.teamId,
       roundRobinMode: et.roundRobinMode ?? 'SEQUENTIAL',
-      color: et.color ?? '#2563EB',
+      color: et.color ?? '#0B8ECA',
       bookableHours: et.bookableHours ?? null,
     });
     setEditingId(et.id);
@@ -121,10 +121,10 @@ export function MyEventTypesPage() {
     <div>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Meine Buchungsseiten</h1>
-          <p className="mt-1 text-sm text-gray-500">Erstellen Sie Event Types und teilen Sie den Buchungslink mit Kunden.</p>
+          <h1 className="text-2xl font-bold text-[#1E293B]">Meine Buchungsseiten</h1>
+          <p className="mt-1 text-sm text-[#64748B]">Erstellen Sie Event Types und teilen Sie den Buchungslink mit Kunden.</p>
         </div>
-        <button onClick={() => setShowCreate(true)} className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+        <button onClick={() => setShowCreate(true)} className="rounded-xl bg-[#0B8ECA] px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-[#0874A6] hover:shadow-md">
           + Neuer Event Type
         </button>
       </div>
@@ -132,99 +132,99 @@ export function MyEventTypesPage() {
       {error && <ErrorMessage message={error} />}
 
       {showCreate && (
-        <form onSubmit={handleSubmit} className="mt-4 space-y-5 rounded-lg border bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900">{editingId ? 'Event Type bearbeiten' : 'Neuen Event Type erstellen'}</h3>
+        <form onSubmit={handleSubmit} className="mt-4 space-y-5 rounded-xl border border-[#E2E8F0] bg-white p-6 shadow-sm">
+          <h3 className="text-lg font-semibold text-[#1E293B]">{editingId ? 'Event Type bearbeiten' : 'Neuen Event Type erstellen'}</h3>
 
           {/* Basic info */}
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Titel *</label>
+                <label className="block text-sm font-medium text-[#1E293B]">Titel *</label>
                 <input
                   value={form.title}
                   onChange={(e) => { setForm({ ...form, title: e.target.value, slug: generateSlug(e.target.value) }); }}
                   placeholder="z.B. 30min Erstgespräch"
                   required
-                  className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:ring-2 focus:ring-[#0B8ECA]/20 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">URL-Slug *</label>
+                <label className="block text-sm font-medium text-[#1E293B]">URL-Slug *</label>
                 <div className="mt-1 flex items-center gap-1">
-                  <span className="text-xs text-gray-400">/{companySlug}/</span>
+                  <span className="text-xs text-[#64748B]">/{companySlug}/</span>
                   <input
                     value={form.slug}
                     onChange={(e) => setForm({ ...form, slug: e.target.value })}
                     placeholder="erstgespraech"
                     required
-                    className="flex-1 rounded-md border px-3 py-2 text-sm"
+                    className="flex-1 rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:ring-2 focus:ring-[#0B8ECA]/20 focus:outline-none"
                   />
                 </div>
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Beschreibung</label>
+              <label className="block text-sm font-medium text-[#1E293B]">Beschreibung</label>
               <textarea
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
                 placeholder="Kurze Beschreibung für die Buchungsseite..."
                 rows={2}
-                className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:ring-2 focus:ring-[#0B8ECA]/20 focus:outline-none"
               />
             </div>
           </div>
 
           {/* Scheduling settings */}
           <div>
-            <h4 className="text-sm font-semibold text-gray-700 mb-3">Termineinstellungen</h4>
+            <h4 className="text-sm font-semibold text-[#1E293B] mb-3">Termineinstellungen</h4>
             <div className="grid grid-cols-4 gap-4">
               <div>
-                <label className="block text-xs font-medium text-gray-600">Dauer</label>
+                <label className="block text-xs font-medium text-[#64748B]">Dauer</label>
                 <div className="mt-1 flex items-center gap-1">
-                  <input type="number" value={form.duration} onChange={(e) => setForm({ ...form, duration: +e.target.value })} min={5} max={480} className="w-full rounded-md border px-3 py-2 text-sm" />
-                  <span className="text-xs text-gray-400">Min</span>
+                  <input type="number" value={form.duration} onChange={(e) => setForm({ ...form, duration: +e.target.value })} min={5} max={480} className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none" />
+                  <span className="text-xs text-[#64748B]">Min</span>
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600">Puffer davor</label>
+                <label className="block text-xs font-medium text-[#64748B]">Puffer davor</label>
                 <div className="mt-1 flex items-center gap-1">
-                  <input type="number" value={form.bufferBefore} onChange={(e) => setForm({ ...form, bufferBefore: +e.target.value })} min={0} max={120} className="w-full rounded-md border px-3 py-2 text-sm" />
-                  <span className="text-xs text-gray-400">Min</span>
+                  <input type="number" value={form.bufferBefore} onChange={(e) => setForm({ ...form, bufferBefore: +e.target.value })} min={0} max={120} className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none" />
+                  <span className="text-xs text-[#64748B]">Min</span>
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600">Puffer danach</label>
+                <label className="block text-xs font-medium text-[#64748B]">Puffer danach</label>
                 <div className="mt-1 flex items-center gap-1">
-                  <input type="number" value={form.bufferAfter} onChange={(e) => setForm({ ...form, bufferAfter: +e.target.value })} min={0} max={120} className="w-full rounded-md border px-3 py-2 text-sm" />
-                  <span className="text-xs text-gray-400">Min</span>
+                  <input type="number" value={form.bufferAfter} onChange={(e) => setForm({ ...form, bufferAfter: +e.target.value })} min={0} max={120} className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none" />
+                  <span className="text-xs text-[#64748B]">Min</span>
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600">Farbe</label>
-                <input type="color" value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })} className="mt-1 h-[38px] w-full rounded-md border cursor-pointer" />
+                <label className="block text-xs font-medium text-[#64748B]">Farbe</label>
+                <input type="color" value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })} className="mt-1 h-[38px] w-full rounded-xl border border-[#E2E8F0] cursor-pointer" />
               </div>
             </div>
           </div>
 
           {/* Booking window */}
           <div>
-            <h4 className="text-sm font-semibold text-gray-700 mb-3">Buchungsfenster</h4>
+            <h4 className="text-sm font-semibold text-[#1E293B] mb-3">Buchungsfenster</h4>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-gray-600">Mindestvorlaufzeit</label>
+                <label className="block text-xs font-medium text-[#64748B]">Mindestvorlaufzeit</label>
                 <div className="mt-1 flex items-center gap-1">
-                  <input type="number" value={form.minNotice} onChange={(e) => setForm({ ...form, minNotice: +e.target.value })} min={0} max={720} className="w-full rounded-md border px-3 py-2 text-sm" />
-                  <span className="text-xs text-gray-400 whitespace-nowrap">Stunden</span>
+                  <input type="number" value={form.minNotice} onChange={(e) => setForm({ ...form, minNotice: +e.target.value })} min={0} max={720} className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none" />
+                  <span className="text-xs text-[#64748B] whitespace-nowrap">Stunden</span>
                 </div>
-                <p className="mt-1 text-xs text-gray-400">Kunden können frühestens X Stunden im Voraus buchen</p>
+                <p className="mt-1 text-xs text-[#64748B]/70">Kunden können frühestens X Stunden im Voraus buchen</p>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600">Buchbar bis</label>
+                <label className="block text-xs font-medium text-[#64748B]">Buchbar bis</label>
                 <div className="mt-1 flex items-center gap-1">
-                  <input type="number" value={form.maxAdvance} onChange={(e) => setForm({ ...form, maxAdvance: +e.target.value })} min={1} max={365} className="w-full rounded-md border px-3 py-2 text-sm" />
-                  <span className="text-xs text-gray-400 whitespace-nowrap">Tage voraus</span>
+                  <input type="number" value={form.maxAdvance} onChange={(e) => setForm({ ...form, maxAdvance: +e.target.value })} min={1} max={365} className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none" />
+                  <span className="text-xs text-[#64748B] whitespace-nowrap">Tage voraus</span>
                 </div>
-                <p className="mt-1 text-xs text-gray-400">Wie weit in die Zukunft können Kunden buchen</p>
+                <p className="mt-1 text-xs text-[#64748B]/70">Wie weit in die Zukunft können Kunden buchen</p>
               </div>
             </div>
           </div>
@@ -232,8 +232,8 @@ export function MyEventTypesPage() {
           {/* Bookable hours */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h4 className="text-sm font-semibold text-gray-700">Buchbare Zeiten</h4>
-              <label className="flex items-center gap-2 text-xs text-gray-500">
+              <h4 className="text-sm font-semibold text-[#1E293B]">Buchbare Zeiten</h4>
+              <label className="flex items-center gap-2 text-xs text-[#64748B]">
                 <input
                   type="checkbox"
                   checked={form.bookableHours !== null}
@@ -255,7 +255,7 @@ export function MyEventTypesPage() {
               </label>
             </div>
             {form.bookableHours === null ? (
-              <p className="text-xs text-gray-400 bg-gray-50 rounded-md p-3">
+              <p className="text-xs text-[#64748B] bg-[#F8FAFC] rounded-xl p-3">
                 Standard: Mo–Fr 9:00–17:00 Uhr. Nur freie Slots laut Google Kalender werden angezeigt.
               </p>
             ) : (
@@ -269,7 +269,7 @@ export function MyEventTypesPage() {
 
                   return (
                     <div key={day} className="flex items-center gap-3">
-                      <label className="w-24 text-sm text-gray-700">{labels[day]}</label>
+                      <label className="w-24 text-sm text-[#1E293B]">{labels[day]}</label>
                       <input
                         type="checkbox"
                         checked={hasSlot}
@@ -289,9 +289,9 @@ export function MyEventTypesPage() {
                               newHours[day] = [{ start: e.target.value, end }];
                               setForm({ ...form, bookableHours: newHours });
                             }}
-                            className="rounded-md border px-2 py-1 text-sm"
+                            className="rounded-xl border border-[#E2E8F0] px-2 py-1 text-sm focus:border-[#0B8ECA] focus:outline-none"
                           />
-                          <span className="text-gray-400">–</span>
+                          <span className="text-[#64748B]">–</span>
                           <input
                             type="time"
                             value={end}
@@ -300,14 +300,14 @@ export function MyEventTypesPage() {
                               newHours[day] = [{ start, end: e.target.value }];
                               setForm({ ...form, bookableHours: newHours });
                             }}
-                            className="rounded-md border px-2 py-1 text-sm"
+                            className="rounded-xl border border-[#E2E8F0] px-2 py-1 text-sm focus:border-[#0B8ECA] focus:outline-none"
                           />
                         </>
                       )}
                     </div>
                   );
                 })}
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs text-[#64748B] mt-1">
                   Nur innerhalb dieser Zeiten werden Slots angeboten. Google Kalender filtert zusätzlich belegte Zeiten.
                 </p>
               </div>
@@ -316,29 +316,29 @@ export function MyEventTypesPage() {
 
           {/* Team & features */}
           <div>
-            <h4 className="text-sm font-semibold text-gray-700 mb-3">Zuweisung & Features</h4>
+            <h4 className="text-sm font-semibold text-[#1E293B] mb-3">Zuweisung & Features</h4>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-gray-600">Team</label>
-                <select value={form.teamId ?? ''} onChange={(e) => setForm({ ...form, teamId: e.target.value || null })} className="mt-1 w-full rounded-md border px-3 py-2 text-sm">
+                <label className="block text-xs font-medium text-[#64748B]">Team</label>
+                <select value={form.teamId ?? ''} onChange={(e) => setForm({ ...form, teamId: e.target.value || null })} className="mt-1 w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none">
                   <option value="">Kein Team — persönliche Buchungsseite</option>
                   {teams.map((t: any) => (
                     <option key={t.id} value={t.id}>{t.name} ({t.memberships?.length ?? 0} Mitglieder)</option>
                   ))}
                 </select>
-                <p className="mt-1 text-xs text-gray-400">
+                <p className="mt-1 text-xs text-[#64748B]/70">
                   {form.teamId ? 'Termine werden per Round-Robin im Team verteilt' : 'Alle Termine werden direkt bei Ihnen gebucht'}
                 </p>
               </div>
               {form.teamId && (
                 <div>
-                  <label className="block text-xs font-medium text-gray-600">Round-Robin Verfahren</label>
-                  <select value={form.roundRobinMode} onChange={(e) => setForm({ ...form, roundRobinMode: e.target.value })} className="mt-1 w-full rounded-md border px-3 py-2 text-sm">
+                  <label className="block text-xs font-medium text-[#64748B]">Round-Robin Verfahren</label>
+                  <select value={form.roundRobinMode} onChange={(e) => setForm({ ...form, roundRobinMode: e.target.value })} className="mt-1 w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none">
                     <option value="SEQUENTIAL">Sequential — der Reihe nach</option>
                     <option value="LEAST_BUSY">Least Busy — wenigste Termine</option>
                     <option value="WEIGHTED">Weighted — nach Gewichtung</option>
                   </select>
-                  <p className="mt-1 text-xs text-gray-400">
+                  <p className="mt-1 text-xs text-[#64748B]/70">
                     {form.roundRobinMode === 'SEQUENTIAL' && 'Jedes Teammitglied kommt abwechselnd dran'}
                     {form.roundRobinMode === 'LEAST_BUSY' && 'Wer die wenigsten Termine hat, bekommt den nächsten'}
                     {form.roundRobinMode === 'WEIGHTED' && 'Verteilung nach Gewichtung (Team-Einstellung)'}
@@ -348,16 +348,16 @@ export function MyEventTypesPage() {
               <div className="flex items-start gap-3 pt-5">
                 <input type="checkbox" id="autoMeet" checked={form.autoMeetLink} onChange={(e) => setForm({ ...form, autoMeetLink: e.target.checked })} className="mt-0.5" />
                 <div>
-                  <label htmlFor="autoMeet" className="text-sm font-medium text-gray-700">Google Meet Link</label>
-                  <p className="text-xs text-gray-400">Automatisch Meet-Link zum Kalender-Event hinzufügen</p>
+                  <label htmlFor="autoMeet" className="text-sm font-medium text-[#1E293B]">Google Meet Link</label>
+                  <p className="text-xs text-[#64748B]">Automatisch Meet-Link zum Kalender-Event hinzufügen</p>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="flex gap-3 border-t pt-4">
-            <button type="submit" className="rounded-md bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700">{editingId ? 'Speichern' : 'Event Type erstellen'}</button>
-            <button type="button" onClick={resetForm} className="rounded-md bg-gray-100 px-4 py-2 text-sm text-gray-700">Abbrechen</button>
+          <div className="flex gap-3 border-t border-[#E2E8F0] pt-4">
+            <button type="submit" className="rounded-xl bg-gradient-to-r from-[#0B8ECA] to-[#14B8A6] px-6 py-2 text-sm font-medium text-white shadow-sm transition-all hover:shadow-md">{editingId ? 'Speichern' : 'Event Type erstellen'}</button>
+            <button type="button" onClick={resetForm} className="rounded-xl bg-[#F8FAFC] px-4 py-2 text-sm text-[#64748B] ring-1 ring-[#E2E8F0] hover:bg-[#E2E8F0]">Abbrechen</button>
           </div>
         </form>
       )}
@@ -365,47 +365,47 @@ export function MyEventTypesPage() {
       {/* Event type cards */}
       <div className="mt-6 space-y-4">
         {eventTypes.map((et: any) => (
-          <div key={et.id} className="rounded-lg border bg-white shadow-sm overflow-hidden">
-            {/* Color bar */}
-            <div className="h-1" style={{ backgroundColor: et.color || '#2563EB' }} />
+          <div key={et.id} className="rounded-xl border border-[#E2E8F0] bg-white shadow-sm overflow-hidden transition-all hover:shadow-md">
+            {/* Gradient top bar */}
+            <div className="h-1.5 bg-gradient-to-r" style={{ backgroundImage: `linear-gradient(to right, ${et.color || '#0B8ECA'}, ${et.color || '#0B8ECA'}80)` }} />
 
             <div className="p-5">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-semibold text-gray-900">{et.title}</h3>
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${et.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                    <h3 className="text-lg font-semibold text-[#1E293B]">{et.title}</h3>
+                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${et.active ? 'bg-emerald-100 text-emerald-700' : 'bg-[#F8FAFC] text-[#64748B]'}`}>
                       {et.active ? 'Aktiv' : 'Inaktiv'}
                     </span>
                   </div>
-                  {et.description && <p className="mt-1 text-sm text-gray-500">{et.description}</p>}
+                  {et.description && <p className="mt-1 text-sm text-[#64748B]">{et.description}</p>}
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => startEdit(et)}
-                    className="rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200"
+                    className="rounded-xl bg-[#F8FAFC] px-3 py-1.5 text-xs font-medium text-[#1E293B] ring-1 ring-[#E2E8F0] transition-colors hover:bg-[#E2E8F0]"
                   >
                     Bearbeiten
                   </button>
                   <button
                     onClick={() => toggleEventType(et.id).then(load)}
-                    className="rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200"
+                    className="rounded-xl bg-[#F8FAFC] px-3 py-1.5 text-xs font-medium text-[#1E293B] ring-1 ring-[#E2E8F0] transition-colors hover:bg-[#E2E8F0]"
                   >
                     {et.active ? 'Deaktivieren' : 'Aktivieren'}
                   </button>
-                  <button onClick={() => { if (confirm(`"${et.title}" löschen?`)) deleteEventType(et.id).then(load); }} className="rounded-md bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-100">
+                  <button onClick={() => { if (confirm(`"${et.title}" löschen?`)) deleteEventType(et.id).then(load); }} className="rounded-xl bg-red-50 px-3 py-1.5 text-xs font-medium text-[#EF4444] ring-1 ring-red-200 transition-colors hover:bg-red-100">
                     Löschen
                   </button>
                 </div>
               </div>
 
               {/* Booking link */}
-              <div className="mt-4 flex items-center gap-2 rounded-md bg-gray-50 px-3 py-2">
-                <span className="text-xs text-gray-400">Buchungslink:</span>
-                <code className="flex-1 text-sm text-blue-600 truncate">{getBookingUrl(et.slug)}</code>
+              <div className="mt-4 flex items-center gap-2 rounded-xl bg-[#F8FAFC] px-3 py-2 ring-1 ring-[#E2E8F0]">
+                <span className="text-xs text-[#64748B]">Buchungslink:</span>
+                <code className="flex-1 text-sm text-[#0B8ECA] truncate">{getBookingUrl(et.slug)}</code>
                 <button
                   onClick={() => copyLink(et.id, et.slug)}
-                  className="rounded bg-white px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-gray-200 hover:bg-gray-100"
+                  className="rounded-lg bg-white px-2.5 py-1 text-xs font-medium text-[#1E293B] ring-1 ring-[#E2E8F0] transition-colors hover:bg-[#E2E8F0]"
                 >
                   {copiedId === et.id ? 'Kopiert!' : 'Kopieren'}
                 </button>
@@ -413,7 +413,7 @@ export function MyEventTypesPage() {
                   href={getBookingUrl(et.slug)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded bg-blue-600 px-2 py-1 text-xs font-medium text-white hover:bg-blue-700"
+                  className="rounded-lg bg-[#0B8ECA] px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-[#0874A6]"
                 >
                   Öffnen
                 </a>
@@ -422,51 +422,51 @@ export function MyEventTypesPage() {
               {/* Settings grid */}
               <div className="mt-4 grid grid-cols-2 gap-x-8 gap-y-2 text-sm sm:grid-cols-4">
                 <div>
-                  <span className="text-gray-400">Dauer</span>
-                  <p className="font-medium">{et.duration} Min</p>
+                  <span className="text-[#64748B]">Dauer</span>
+                  <p className="font-medium text-[#1E293B]">{et.duration} Min</p>
                 </div>
                 <div>
-                  <span className="text-gray-400">Puffer</span>
-                  <p className="font-medium">
+                  <span className="text-[#64748B]">Puffer</span>
+                  <p className="font-medium text-[#1E293B]">
                     {et.bufferBefore > 0 || et.bufferAfter > 0
                       ? `${et.bufferBefore}/${et.bufferAfter} Min`
                       : 'Kein Puffer'}
                   </p>
                 </div>
                 <div>
-                  <span className="text-gray-400">Vorlaufzeit</span>
-                  <p className="font-medium">Min. {et.minNotice}h</p>
+                  <span className="text-[#64748B]">Vorlaufzeit</span>
+                  <p className="font-medium text-[#1E293B]">Min. {et.minNotice}h</p>
                 </div>
                 <div>
-                  <span className="text-gray-400">Buchbar bis</span>
-                  <p className="font-medium">{et.maxAdvance} Tage</p>
+                  <span className="text-[#64748B]">Buchbar bis</span>
+                  <p className="font-medium text-[#1E293B]">{et.maxAdvance} Tage</p>
                 </div>
                 <div>
-                  <span className="text-gray-400">Zuweisung</span>
-                  <p className="font-medium">{et.team ? `Team: ${et.team.name} (${et.roundRobinMode?.replace('_', ' ')})` : 'Persönlich'}</p>
+                  <span className="text-[#64748B]">Zuweisung</span>
+                  <p className="font-medium text-[#1E293B]">{et.team ? `Team: ${et.team.name} (${et.roundRobinMode?.replace('_', ' ')})` : 'Persönlich'}</p>
                 </div>
                 <div>
-                  <span className="text-gray-400">Meet Link</span>
-                  <p className="font-medium">{et.autoMeetLink ? 'Automatisch' : 'Aus'}</p>
+                  <span className="text-[#64748B]">Meet Link</span>
+                  <p className="font-medium text-[#1E293B]">{et.autoMeetLink ? 'Automatisch' : 'Aus'}</p>
                 </div>
                 <div>
-                  <span className="text-gray-400">Buchbare Zeiten</span>
-                  <p className="font-medium">{et.bookableHours ? 'Eigene Zeiten' : 'Standard (Mo–Fr 9–17)'}</p>
+                  <span className="text-[#64748B]">Buchbare Zeiten</span>
+                  <p className="font-medium text-[#1E293B]">{et.bookableHours ? 'Eigene Zeiten' : 'Standard (Mo–Fr 9–17)'}</p>
                 </div>
                 <div>
-                  <span className="text-gray-400">Buchungen</span>
-                  <p className="font-medium">{et._count?.bookings ?? 0}</p>
+                  <span className="text-[#64748B]">Buchungen</span>
+                  <p className="font-medium text-[#1E293B]">{et._count?.bookings ?? 0}</p>
                 </div>
               </div>
             </div>
           </div>
         ))}
         {eventTypes.length === 0 && (
-          <div className="rounded-lg border-2 border-dashed bg-gray-50 p-12 text-center">
+          <div className="rounded-xl border-2 border-dashed border-[#E2E8F0] bg-[#F8FAFC] p-12 text-center">
             <div className="text-4xl mb-3">📅</div>
-            <h3 className="text-lg font-medium text-gray-900">Noch keine Buchungsseiten</h3>
-            <p className="mt-1 text-sm text-gray-500">Erstellen Sie Ihren ersten Event Type und teilen Sie den Link mit Kunden.</p>
-            <button onClick={() => setShowCreate(true)} className="mt-4 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+            <h3 className="text-lg font-medium text-[#1E293B]">Noch keine Buchungsseiten</h3>
+            <p className="mt-1 text-sm text-[#64748B]">Erstellen Sie Ihren ersten Event Type und teilen Sie den Link mit Kunden.</p>
+            <button onClick={() => setShowCreate(true)} className="mt-4 rounded-xl bg-[#0B8ECA] px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-[#0874A6] hover:shadow-md">
               Ersten Event Type erstellen
             </button>
           </div>

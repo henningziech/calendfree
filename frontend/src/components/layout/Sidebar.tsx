@@ -63,7 +63,7 @@ export function Sidebar() {
 
       <div className="border-b border-[#E2E8F0] p-4">
         <div className="flex items-center gap-2.5">
-          <img src="/logo.jpg" alt="Calendfree" className="h-8 w-8 rounded-lg" />
+          <img src="/logo-mini.png" alt="Calendfree" className="h-8 w-8 rounded-lg" />
           <div>
             <h1 className="text-lg font-bold text-[#1E293B]">Calendfree</h1>
             <p className="text-xs text-[#64748B]">{role.replace(/_/g, ' ')}</p>

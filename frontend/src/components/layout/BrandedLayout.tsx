@@ -27,7 +27,7 @@ export function BrandedLayout({
           </div>
         ) : (
           <div className="mb-6 flex items-center justify-center gap-2.5">
-            <img src="/logo.jpg" alt="Calendfree" className="h-8 w-8 rounded-lg" />
+            <img src="/logo-mini.png" alt="Calendfree" className="h-8 w-8 rounded-lg" />
             <span className="text-lg font-bold text-[#1E293B]">Calendfree</span>
           </div>
         )}

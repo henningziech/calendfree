@@ -3,7 +3,7 @@ export function HomePage() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#F8FAFC] via-white to-[#F8FAFC]">
       <div className="text-center">
         <div className="mb-6 flex justify-center">
-          <img src="/logo.jpg" alt="Calendfree" className="h-20 w-20 rounded-2xl shadow-lg" />
+          <img src="/logo-mini.png" alt="Calendfree" className="h-20 w-20 rounded-2xl shadow-lg" />
         </div>
         <h1 className="bg-gradient-to-r from-[#0B8ECA] to-[#14B8A6] bg-clip-text text-5xl font-extrabold text-transparent">
           Calendfree

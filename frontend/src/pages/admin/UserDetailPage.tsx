@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext';
-import { getUserDetail, updateUserStatus, getUserBookings, deleteUser } from '../../api/admin';
+import { getUserDetail, updateUserStatus, getUserBookings, deleteUser, getCompanies, getTeams } from '../../api/admin';
+import { apiRequest } from '../../api/client';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { ErrorMessage } from '../../components/ui/ErrorMessage';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
@@ -20,17 +21,28 @@ export function UserDetailPage() {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [isSavingStatus, setIsSavingStatus] = useState(false);
   const [absentUntilInput, setAbsentUntilInput] = useState('');
+  const [allCompanies, setAllCompanies] = useState<any[]>([]);
+  const [allTeams, setAllTeams] = useState<any[]>([]);
+  const [addCompanyId, setAddCompanyId] = useState('');
+  const [addCompanyRole, setAddCompanyRole] = useState('USER');
+  const [addTeamId, setAddTeamId] = useState('');
 
   const load = useCallback(async () => {
     if (!userId) return;
     setIsLoading(true);
     try {
-      const [detail, bk] = await Promise.all([
+      const [detail, bk, companies] = await Promise.all([
         getUserDetail(userId),
         getUserBookings(userId),
+        getCompanies().catch(() => []),
       ]);
       setUserDetail(detail);
       setBookings(bk);
+      setAllCompanies(companies);
+      // Load all teams from all companies the user is in
+      const companyIds = detail.companyMemberships?.map((cm: any) => cm.company.id) ?? [];
+      const teamsArrays = await Promise.all(companyIds.map((cid: string) => getTeams(cid).catch(() => [])));
+      setAllTeams(teamsArrays.flat());
       setAbsentUntilInput(detail.absentUntil ? detail.absentUntil.split('T')[0] : '');
     } catch (err: any) {
       setError(err.status === 404 ? 'User nicht gefunden.' : 'Fehler beim Laden.');
@@ -80,6 +92,69 @@ export function UserDetailPage() {
       navigate('/admin/users');
     } catch (err: any) {
       setError(err.message ?? 'Fehler beim Löschen.');
+    }
+  };
+
+  const handleRoleChange = async (companyId: string, newRole: string) => {
+    if (!userId) return;
+    try {
+      await apiRequest(`/admin/companies/${companyId}/users/${userId}/role`, {
+        method: 'PATCH',
+        body: JSON.stringify({ role: newRole }),
+      });
+      load();
+    } catch {
+      setError('Rolle konnte nicht geändert werden.');
+    }
+  };
+
+  const handleAddToCompany = async () => {
+    if (!userId || !addCompanyId) return;
+    try {
+      await apiRequest(`/admin/companies/${addCompanyId}/users`, {
+        method: 'POST',
+        body: JSON.stringify({ email: userDetail.email, name: userDetail.name, role: addCompanyRole }),
+      });
+      setAddCompanyId('');
+      setAddCompanyRole('USER');
+      load();
+    } catch (err: any) {
+      setError(err.message ?? 'Fehler beim Hinzufügen.');
+    }
+  };
+
+  const handleRemoveFromCompany = async (companyId: string) => {
+    if (!userId) return;
+    if (!confirm('User wirklich aus dieser Company entfernen?')) return;
+    try {
+      await apiRequest(`/admin/companies/${companyId}/users/${userId}`, { method: 'DELETE' });
+      load();
+    } catch {
+      setError('Fehler beim Entfernen.');
+    }
+  };
+
+  const handleRemoveFromTeam = async (teamId: string) => {
+    if (!userId) return;
+    if (!confirm('User wirklich aus diesem Team entfernen?')) return;
+    try {
+      await apiRequest(`/admin/teams/${teamId}/members/${userId}`, { method: 'DELETE' });
+      load();
+    } catch {
+      setError('Fehler beim Entfernen aus Team.');
+    }
+  };
+
+  const handleAddToTeam = async (teamId: string) => {
+    if (!userId) return;
+    try {
+      await apiRequest(`/admin/teams/${teamId}/members`, {
+        method: 'POST',
+        body: JSON.stringify({ userId, weight: 100 }),
+      });
+      load();
+    } catch (err: any) {
+      setError(err.message ?? 'Fehler beim Hinzufügen zum Team.');
     }
   };
 
@@ -166,36 +241,127 @@ export function UserDetailPage() {
         </div>
       </div>
 
-      {/* Memberships */}
+      {/* Company Memberships + Role */}
       <div className="mt-6 rounded-xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
-        <h2 className="text-sm font-semibold text-[#1E293B] mb-3">Mitgliedschaften</h2>
+        <div className="flex items-center gap-2 mb-3">
+          <h2 className="text-sm font-semibold text-[#1E293B]">Company-Mitgliedschaften</h2>
+          <HelpTooltip text="ORG_ADMIN: Kann alle Firmen verwalten. COMPANY_ADMIN: Kann eine bestimmte Firma verwalten. USER: Standardrolle." />
+        </div>
 
         {userDetail.companyMemberships?.length > 0 && (
-          <div className="mb-3">
-            <p className="text-xs font-medium text-[#64748B] mb-1.5">Companies</p>
-            <div className="flex flex-wrap gap-2">
-              {userDetail.companyMemberships.map((cm: any) => (
-                <span key={cm.company.id} className="inline-flex items-center gap-1.5 rounded-full bg-[#F8FAFC] px-3 py-1 text-xs text-[#1E293B] ring-1 ring-[#E2E8F0]">
-                  {cm.company.name}
-                  <span className="text-[#0B8ECA]">{cm.role}</span>
-                </span>
-              ))}
-            </div>
+          <div className="space-y-2 mb-4">
+            {userDetail.companyMemberships.map((cm: any) => (
+              <div key={cm.company.id} className="flex items-center justify-between rounded-xl bg-[#F8FAFC] px-4 py-2.5 ring-1 ring-[#E2E8F0]">
+                <span className="text-sm text-[#1E293B]">{cm.company.name}</span>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={cm.role}
+                    onChange={(e) => handleRoleChange(cm.company.id, e.target.value)}
+                    className="rounded-lg border border-[#E2E8F0] px-2 py-1 text-xs focus:border-[#0B8ECA] focus:outline-none"
+                  >
+                    <option value="USER">USER</option>
+                    <option value="COMPANY_ADMIN">COMPANY_ADMIN</option>
+                    <option value="ORG_ADMIN">ORG_ADMIN</option>
+                  </select>
+                  <button
+                    onClick={() => handleRemoveFromCompany(cm.company.id)}
+                    className="text-xs text-[#EF4444] hover:text-red-600 transition-colors"
+                  >
+                    Entfernen
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
-        {userDetail.teamMemberships?.length > 0 && (
-          <div>
-            <p className="text-xs font-medium text-[#64748B] mb-1.5">Teams</p>
-            <div className="flex flex-wrap gap-2">
-              {userDetail.teamMemberships.map((tm: any) => (
-                <span key={tm.team.id} className="rounded-full bg-[#F8FAFC] px-3 py-1 text-xs text-[#1E293B] ring-1 ring-[#E2E8F0]">
-                  {tm.team.name}
-                </span>
-              ))}
+        {/* Add to company */}
+        {(() => {
+          const memberCompanyIds = new Set(userDetail.companyMemberships?.map((cm: any) => cm.company.id) ?? []);
+          const availableCompanies = allCompanies.filter((c: any) => !memberCompanyIds.has(c.id));
+          if (availableCompanies.length === 0) return null;
+          return (
+            <div className="flex items-center gap-2">
+              <select
+                value={addCompanyId}
+                onChange={(e) => setAddCompanyId(e.target.value)}
+                className="flex-1 rounded-xl border border-[#E2E8F0] px-3 py-1.5 text-sm focus:border-[#0B8ECA] focus:outline-none"
+              >
+                <option value="">Company auswählen...</option>
+                {availableCompanies.map((c: any) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+              <select
+                value={addCompanyRole}
+                onChange={(e) => setAddCompanyRole(e.target.value)}
+                className="rounded-xl border border-[#E2E8F0] px-2 py-1.5 text-sm focus:border-[#0B8ECA] focus:outline-none"
+              >
+                <option value="USER">USER</option>
+                <option value="COMPANY_ADMIN">COMPANY_ADMIN</option>
+                <option value="ORG_ADMIN">ORG_ADMIN</option>
+              </select>
+              <button
+                onClick={handleAddToCompany}
+                disabled={!addCompanyId}
+                className="rounded-xl bg-[#0B8ECA] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#0874A6] disabled:opacity-50 transition-colors"
+              >
+                Hinzufügen
+              </button>
             </div>
+          );
+        })()}
+      </div>
+
+      {/* Team Memberships */}
+      <div className="mt-4 rounded-xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
+        <h2 className="text-sm font-semibold text-[#1E293B] mb-3">Teams</h2>
+
+        {userDetail.teamMemberships?.length > 0 ? (
+          <div className="space-y-2 mb-4">
+            {userDetail.teamMemberships.map((tm: any) => (
+              <div key={tm.team.id} className="flex items-center justify-between rounded-xl bg-[#F8FAFC] px-4 py-2.5 ring-1 ring-[#E2E8F0]">
+                <span className="text-sm text-[#1E293B]">{tm.team.name}</span>
+                <button
+                  onClick={() => handleRemoveFromTeam(tm.team.id)}
+                  className="text-xs text-[#EF4444] hover:text-red-600 transition-colors"
+                >
+                  Entfernen
+                </button>
+              </div>
+            ))}
           </div>
+        ) : (
+          <p className="text-sm text-[#64748B] mb-4">In keinem Team.</p>
         )}
+
+        {/* Add to team */}
+        {(() => {
+          const memberTeamIds = new Set(userDetail.teamMemberships?.map((tm: any) => tm.team.id) ?? []);
+          const availableTeams = allTeams.filter((t: any) => !memberTeamIds.has(t.id));
+          if (availableTeams.length === 0) return null;
+          return (
+            <div className="flex items-center gap-2">
+              <select
+                value={addTeamId}
+                onChange={(e) => setAddTeamId(e.target.value)}
+                className="flex-1 rounded-xl border border-[#E2E8F0] px-3 py-1.5 text-sm focus:border-[#0B8ECA] focus:outline-none"
+              >
+                <option value="">Team auswählen...</option>
+                {availableTeams.map((t: any) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+              <button
+                onClick={() => { if (addTeamId) { handleAddToTeam(addTeamId); setAddTeamId(''); } }}
+                disabled={!addTeamId}
+                className="rounded-xl bg-[#0B8ECA] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#0874A6] disabled:opacity-50 transition-colors"
+              >
+                Hinzufügen
+              </button>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Upcoming Bookings */}

@@ -9,6 +9,7 @@ import sessionPlugin from './plugins/session.js';
 import { redis } from './redis.js';
 import { prisma } from './db.js';
 import { authRoutes } from './routes/auth.js';
+import tenantPlugin from './middleware/tenant.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -58,6 +59,9 @@ export async function buildApp(): Promise<FastifyInstance> {
     },
   });
   await app.register(swaggerUi, { routePrefix: '/api/docs' });
+
+  // Tenant context (decorates request with organizationId/companyId)
+  await app.register(tenantPlugin);
 
   // Auth routes
   await app.register(authRoutes);

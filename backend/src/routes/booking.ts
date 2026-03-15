@@ -9,6 +9,7 @@ import { assignUser } from '../services/round-robin.js';
 import { createCalendarEvent } from '../services/calendar.js';
 import { logAudit } from '../services/audit-log.js';
 import { scheduleBookingNotifications, cancelBookingNotifications } from '../jobs/notification-jobs.js';
+import { queueHubSpotSync } from '../jobs/hubspot-jobs.js';
 
 export async function bookingRoutes(app: FastifyInstance) {
   /**
@@ -236,6 +237,8 @@ export async function bookingRoutes(app: FastifyInstance) {
       } catch (err) {
         app.log.error(err, 'Failed to schedule notifications');
       }
+
+      try { await queueHubSpotSync(booking.id); } catch (err) { app.log.error(err, 'Failed to queue HubSpot sync'); }
     }
 
     const baseUrl = app.listeningOrigin || 'http://localhost:3001';

@@ -19,6 +19,8 @@ import { apiKeyAuth } from './middleware/api-key.js';
 import { apiKeyRoutes } from './routes/admin/api-keys.js';
 import { routingFormAdminRoutes } from './routes/admin/routing-forms.js';
 import { routingRoutes } from './routes/routing.js';
+import { hubspotRoutes } from './routes/admin/hubspot.js';
+import { registerHubSpotHandlers } from './jobs/hubspot-jobs.js';
 import tenantPlugin from './middleware/tenant.js';
 import { startJobQueue, stopJobQueue } from './jobs/queue.js';
 import { registerNotificationHandlers } from './jobs/notification-jobs.js';
@@ -92,6 +94,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(eventTypeRoutes);
   await app.register(apiKeyRoutes);
   await app.register(routingFormAdminRoutes);
+  await app.register(hubspotRoutes);
 
   // Public routing routes
   await app.register(routingRoutes);
@@ -112,8 +115,10 @@ export async function buildApp(): Promise<FastifyInstance> {
     app.addHook('onReady', async () => {
       await startJobQueue();
       await registerNotificationHandlers();
+      await registerHubSpotHandlers();
       app.log.info('pg-boss job queue started');
       app.log.info('Notification job handlers registered');
+      app.log.info('HubSpot job handlers registered');
     });
 
     app.addHook('onClose', async () => {

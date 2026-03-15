@@ -12,6 +12,7 @@ import { authRoutes } from './routes/auth.js';
 import { bookingRoutes } from './routes/booking.js';
 import { organizationRoutes } from './routes/admin/organization.js';
 import { companyRoutes } from './routes/admin/company.js';
+import { teamRoutes } from './routes/admin/teams.js';
 import tenantPlugin from './middleware/tenant.js';
 import { startJobQueue, stopJobQueue } from './jobs/queue.js';
 import { registerNotificationHandlers } from './jobs/notification-jobs.js';
@@ -77,6 +78,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   // Admin routes
   await app.register(organizationRoutes);
   await app.register(companyRoutes);
+  await app.register(teamRoutes);
 
   // Health check
   app.get('/api/health', async () => {

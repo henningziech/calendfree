@@ -23,6 +23,11 @@ export const BookingRequestSchema = z.object({
 });
 export type BookingRequest = z.infer<typeof BookingRequestSchema>;
 
+export const UpdateBookingNotesSchema = z.object({
+  notes: z.string().max(5000),
+});
+export type UpdateBookingNotes = z.infer<typeof UpdateBookingNotesSchema>;
+
 export const BookingResponseSchema = z.object({
   id: z.string().uuid(),
   startTime: z.string().datetime(),

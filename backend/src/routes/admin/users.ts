@@ -2,7 +2,10 @@
 import type { FastifyInstance } from 'fastify';
 import { prisma } from '../../db.js';
 import { requireAuth, requireRole } from '../../middleware/auth.js';
-import { InviteUserSchema, UpdateMembershipRoleSchema, UpdateAvailabilitySchema } from '@calendfree/shared';
+import { InviteUserSchema, UpdateMembershipRoleSchema, UpdateAvailabilitySchema, UpdateBookingNotesSchema } from '@calendfree/shared';
+import { logAudit } from '../../services/audit-log.js';
+import { cancelBookingNotifications } from '../../jobs/notification-jobs.js';
+import { config } from '../../config.js';
 
 export async function userRoutes(app: FastifyInstance) {
   /** GET /api/admin/companies/:companyId/users — List company members */
@@ -108,6 +111,127 @@ export async function userRoutes(app: FastifyInstance) {
       take: 50,
     });
     return bookings;
+  });
+
+  /** GET /api/me/bookings/team — Get bookings for all teams the user is in */
+  app.get('/api/me/bookings/team', { preHandler: [requireAuth] }, async (request) => {
+    const user = request.session.user!;
+
+    const teamMemberships = await prisma.teamMembership.findMany({
+      where: { userId: user.id },
+      select: { teamId: true },
+    });
+    const teamIds = teamMemberships.map((m) => m.teamId);
+
+    if (teamIds.length === 0) return [];
+
+    const bookings = await prisma.booking.findMany({
+      where: {
+        eventType: { teamId: { in: teamIds } },
+        assignedUserId: { not: user.id },
+      },
+      include: {
+        eventType: { select: { title: true, slug: true, duration: true, teamId: true, team: { select: { name: true } }, company: { select: { slug: true } } } },
+        formData: { select: { name: true, email: true, data: true } },
+        assignedUser: { select: { name: true, email: true } },
+      },
+      orderBy: { startTime: 'desc' },
+      take: 100,
+    });
+
+    return bookings;
+  });
+
+  /** PATCH /api/me/bookings/:id/notes — Update internal notes (own or team booking) */
+  app.patch('/api/me/bookings/:id/notes', { preHandler: [requireAuth] }, async (request, reply) => {
+    const user = request.session.user!;
+    const { id } = request.params as { id: string };
+    const { notes } = UpdateBookingNotesSchema.parse(request.body);
+
+    const booking = await prisma.booking.findUnique({
+      where: { id },
+      include: { eventType: { select: { teamId: true } } },
+    });
+
+    if (!booking) {
+      return reply.status(404).send({ error: 'Booking not found' });
+    }
+
+    let hasAccess = booking.assignedUserId === user.id;
+    if (!hasAccess && booking.eventType.teamId) {
+      const membership = await prisma.teamMembership.findUnique({
+        where: { userId_teamId: { userId: user.id, teamId: booking.eventType.teamId } },
+      });
+      hasAccess = !!membership;
+    }
+
+    if (!hasAccess) {
+      return reply.status(403).send({ error: 'Access denied' });
+    }
+
+    const updated = await prisma.booking.update({
+      where: { id },
+      data: { internalNotes: notes || null },
+    });
+
+    return { success: true, internalNotes: updated.internalNotes };
+  });
+
+  /** POST /api/me/bookings/:id/cancel — Cancel booking (own or team) */
+  app.post('/api/me/bookings/:id/cancel', { preHandler: [requireAuth] }, async (request, reply) => {
+    const user = request.session.user!;
+    const { id } = request.params as { id: string };
+
+    const booking = await prisma.booking.findUnique({
+      where: { id },
+      include: { eventType: { select: { teamId: true } } },
+    });
+
+    if (!booking) {
+      return reply.status(404).send({ error: 'Booking not found' });
+    }
+
+    if (booking.status === 'CANCELLED') {
+      return reply.status(400).send({ error: 'Booking already cancelled' });
+    }
+
+    let hasAccess = booking.assignedUserId === user.id;
+    if (!hasAccess && booking.eventType.teamId) {
+      const membership = await prisma.teamMembership.findUnique({
+        where: { userId_teamId: { userId: user.id, teamId: booking.eventType.teamId } },
+      });
+      hasAccess = !!membership;
+    }
+
+    if (!hasAccess) {
+      return reply.status(403).send({ error: 'Access denied' });
+    }
+
+    if (booking.calendarEventId) {
+      try {
+        const { deleteCalendarEvent } = await import('../../services/calendar.js');
+        await deleteCalendarEvent(booking.assignedUserId, booking.calendarEventId!);
+      } catch (err) {
+        app.log.error(err, 'Failed to delete calendar event');
+      }
+    }
+
+    await prisma.booking.update({
+      where: { id },
+      data: { status: 'CANCELLED' },
+    });
+
+    logAudit({
+      userId: user.id,
+      action: 'BOOKING_CANCELLED',
+      details: { bookingId: id, cancelledBy: user.email },
+    });
+
+    if (config.NODE_ENV !== 'test') {
+      try { await cancelBookingNotifications(id); } catch (err) { app.log.error(err, 'Failed to send cancellation notification'); }
+    }
+
+    return { success: true };
   });
 
   /** PATCH /api/me/timezone — Update own timezone */

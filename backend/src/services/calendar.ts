@@ -18,6 +18,7 @@ export async function getAuthenticatedClient(userId: string): Promise<OAuth2Clie
   const client = new OAuth2Client({
     clientId: config.GOOGLE_CLIENT_ID,
     clientSecret: config.GOOGLE_CLIENT_SECRET,
+    redirectUri: config.GOOGLE_REDIRECT_URI,
   });
 
   client.setCredentials({

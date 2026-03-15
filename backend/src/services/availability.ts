@@ -79,12 +79,20 @@ export async function getAvailableSlots(params: AvailabilityParams): Promise<Slo
       return { uid, busy };
     }),
   );
+  const failedFreeBusyUserIds: string[] = [];
   for (const result of freeBusyResults) {
     if (result.status === 'fulfilled') {
       freeBusyByUser.set(result.value.uid, result.value.busy);
+    } else {
+      // FreeBusy failed — log and exclude this user from available slots
+      console.error('FreeBusy failed for user, excluding from slots:', result.reason?.message ?? result.reason);
+      // We track failed users to exclude them below
+      const idx = freeBusyResults.indexOf(result);
+      if (idx >= 0 && userIds[idx]) failedFreeBusyUserIds.push(userIds[idx]);
     }
-    // If FreeBusy fails for a user, treat them as fully busy (safe default)
   }
+  // Remove users whose FreeBusy failed from the candidate list
+  const eligibleUserIds = userIds.filter((uid) => !failedFreeBusyUserIds.includes(uid));
 
   // For each day in range, for each user, compute available slots
   const days = eachDayOfInterval({ start: effectiveStart, end: effectiveEnd });
@@ -93,7 +101,7 @@ export async function getAvailableSlots(params: AvailabilityParams): Promise<Slo
   for (const day of days) {
     const dayOfWeek = DAY_NAMES[getDay(day)];
 
-    for (const userId of userIds) {
+    for (const userId of eligibleUserIds) {
       const availConfig = availConfigs.find((c) => c.userId === userId);
       if (!availConfig) continue;
 

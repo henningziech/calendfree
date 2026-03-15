@@ -241,7 +241,7 @@ export async function bookingRoutes(app: FastifyInstance) {
       try { await queueHubSpotSync(booking.id); } catch (err) { app.log.error(err, 'Failed to queue HubSpot sync'); }
     }
 
-    const baseUrl = app.listeningOrigin || 'http://localhost:3001';
+    const baseUrl = config.FRONTEND_URL;
 
     return reply.status(201).send({
       id: booking.id,

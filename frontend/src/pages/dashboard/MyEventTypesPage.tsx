@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { getEventTypes, createEventType, toggleEventType, deleteEventType, getTeams } from '../../api/admin';
+import { getEventTypes, createEventType, updateEventType, toggleEventType, deleteEventType, getTeams } from '../../api/admin';
 import { getCompanies } from '../../api/admin';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { ErrorMessage } from '../../components/ui/ErrorMessage';
@@ -13,6 +13,7 @@ export function MyEventTypesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [form, setForm] = useState({
     title: '',
@@ -52,20 +53,47 @@ export function MyEventTypesPage() {
 
   useEffect(() => { load(); }, [companyId]);
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const resetForm = () => {
+    setForm({ title: '', slug: '', description: '', duration: 30, bufferBefore: 0, bufferAfter: 15, minNotice: 4, maxAdvance: 60, autoMeetLink: true, teamId: null, color: '#2563EB' });
+    setEditingId(null);
+    setShowCreate(false);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!companyId) return;
     try {
-      await createEventType(companyId, {
-        ...form,
-        teamId: form.teamId || null,
-      });
-      setShowCreate(false);
-      setForm({ title: '', slug: '', description: '', duration: 30, bufferBefore: 0, bufferAfter: 15, minNotice: 4, maxAdvance: 60, autoMeetLink: true, teamId: null, color: '#2563EB' });
+      if (editingId) {
+        // Update existing
+        const { slug, ...updateData } = form;
+        await updateEventType(editingId, { ...updateData, teamId: updateData.teamId || null });
+      } else {
+        // Create new
+        await createEventType(companyId, { ...form, teamId: form.teamId || null });
+      }
+      resetForm();
       load();
     } catch (err: any) {
       setError(err.message);
     }
+  };
+
+  const startEdit = (et: any) => {
+    setForm({
+      title: et.title,
+      slug: et.slug,
+      description: et.description ?? '',
+      duration: et.duration,
+      bufferBefore: et.bufferBefore,
+      bufferAfter: et.bufferAfter,
+      minNotice: et.minNotice,
+      maxAdvance: et.maxAdvance,
+      autoMeetLink: et.autoMeetLink,
+      teamId: et.teamId,
+      color: et.color ?? '#2563EB',
+    });
+    setEditingId(et.id);
+    setShowCreate(true);
   };
 
   const generateSlug = (title: string) => {
@@ -100,8 +128,8 @@ export function MyEventTypesPage() {
       {error && <ErrorMessage message={error} />}
 
       {showCreate && (
-        <form onSubmit={handleCreate} className="mt-4 space-y-5 rounded-lg border bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900">Neuen Event Type erstellen</h3>
+        <form onSubmit={handleSubmit} className="mt-4 space-y-5 rounded-lg border bg-white p-6 shadow-sm">
+          <h3 className="text-lg font-semibold text-gray-900">{editingId ? 'Event Type bearbeiten' : 'Neuen Event Type erstellen'}</h3>
 
           {/* Basic info */}
           <div className="space-y-4">
@@ -224,8 +252,8 @@ export function MyEventTypesPage() {
           </div>
 
           <div className="flex gap-3 border-t pt-4">
-            <button type="submit" className="rounded-md bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700">Event Type erstellen</button>
-            <button type="button" onClick={() => setShowCreate(false)} className="rounded-md bg-gray-100 px-4 py-2 text-sm text-gray-700">Abbrechen</button>
+            <button type="submit" className="rounded-md bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700">{editingId ? 'Speichern' : 'Event Type erstellen'}</button>
+            <button type="button" onClick={resetForm} className="rounded-md bg-gray-100 px-4 py-2 text-sm text-gray-700">Abbrechen</button>
           </div>
         </form>
       )}
@@ -249,6 +277,12 @@ export function MyEventTypesPage() {
                   {et.description && <p className="mt-1 text-sm text-gray-500">{et.description}</p>}
                 </div>
                 <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => startEdit(et)}
+                    className="rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200"
+                  >
+                    Bearbeiten
+                  </button>
                   <button
                     onClick={() => toggleEventType(et.id).then(load)}
                     className="rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200"

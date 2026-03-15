@@ -108,4 +108,50 @@ export async function teamRoutes(app: FastifyInstance) {
     });
     return { success: true };
   });
+
+  /** POST /api/admin/teams/:id/join — Join team (self) */
+  app.post('/api/admin/teams/:id/join', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const user = request.session.user!;
+    try {
+      const membership = await prisma.teamMembership.create({
+        data: { teamId: id, userId: user.id, weight: 100 },
+        include: { user: { select: { id: true, name: true, email: true } } },
+      });
+      return reply.status(201).send(membership);
+    } catch {
+      return reply.status(409).send({ error: 'Bereits Mitglied in diesem Team' });
+    }
+  });
+
+  /** POST /api/admin/teams/:id/leave — Leave team (self) */
+  app.post('/api/admin/teams/:id/leave', async (request) => {
+    const { id } = request.params as { id: string };
+    const user = request.session.user!;
+    await prisma.teamMembership.delete({
+      where: { userId_teamId: { userId: user.id, teamId: id } },
+    });
+    return { success: true };
+  });
+
+  /** POST /api/admin/teams/:id/invite — Invite user to team by email */
+  app.post('/api/admin/teams/:id/invite', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const { email, weight } = request.body as { email: string; weight?: number };
+
+    const targetUser = await prisma.user.findUnique({ where: { email } });
+    if (!targetUser) {
+      return reply.status(404).send({ error: `Kein User mit E-Mail ${email} gefunden` });
+    }
+
+    try {
+      const membership = await prisma.teamMembership.create({
+        data: { teamId: id, userId: targetUser.id, weight: weight ?? 100 },
+        include: { user: { select: { id: true, name: true, email: true } } },
+      });
+      return reply.status(201).send(membership);
+    } catch {
+      return reply.status(409).send({ error: 'User ist bereits Mitglied in diesem Team' });
+    }
+  });
 }

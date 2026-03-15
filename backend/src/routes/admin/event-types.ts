@@ -5,7 +5,8 @@ import { requireRole } from '../../middleware/auth.js';
 import { CreateEventTypeSchema, UpdateEventTypeSchema } from '@calendfree/shared';
 
 export async function eventTypeRoutes(app: FastifyInstance) {
-  app.addHook('preHandler', requireRole('COMPANY_ADMIN', 'ORG_ADMIN'));
+  // All authenticated users can manage event types
+  app.addHook('preHandler', requireRole('USER', 'COMPANY_ADMIN', 'ORG_ADMIN'));
 
   /** POST /api/admin/companies/:companyId/event-types — Create event type */
   app.post('/api/admin/companies/:companyId/event-types', async (request, reply) => {
@@ -14,10 +15,14 @@ export async function eventTypeRoutes(app: FastifyInstance) {
 
     const { formFields, ...eventTypeData } = body;
 
+    // If no team assigned, this is a personal event type — assign to creating user
+    const userId = eventTypeData.teamId ? null : request.session.user!.id;
+
     const eventType = await prisma.eventType.create({
       data: {
         ...eventTypeData,
         companyId,
+        userId,
         formFields: {
           create: formFields.map((f, i) => ({ ...f, order: i })),
         },

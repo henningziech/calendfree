@@ -26,8 +26,6 @@ function getNavSections(role: string): NavSection[] {
     }
 
     adminItems.push(
-      { to: '/admin/teams', label: 'Teams', icon: '👥' },
-      { to: '/admin/event-types', label: 'Event Types', icon: '📅' },
       { to: '/admin/users', label: 'Users', icon: '👤' },
       { to: '/admin/routing-forms', label: 'Routing Forms', icon: '🔀' },
       { to: '/admin/analytics', label: 'Analytics', icon: '📊' },
@@ -42,8 +40,9 @@ function getNavSections(role: string): NavSection[] {
     title: 'Mein Bereich',
     items: [
       { to: '/dashboard', label: 'Meine Termine', icon: '📋' },
+      { to: '/dashboard/my-event-types', label: 'Buchungsseiten', icon: '🔗' },
+      { to: '/dashboard/teams', label: 'Meine Teams', icon: '👥' },
       { to: '/dashboard/availability', label: 'Verfügbarkeit', icon: '🕐' },
-      { to: '/dashboard/my-event-types', label: 'Meine Buchungsseiten', icon: '🔗' },
       { to: '/dashboard/api-keys', label: 'API Keys', icon: '🔑' },
     ],
   });

@@ -6,18 +6,26 @@ import { InviteUserSchema, UpdateMembershipRoleSchema, UpdateAvailabilitySchema 
 
 export async function userRoutes(app: FastifyInstance) {
   /** GET /api/admin/companies/:companyId/users — List company members */
-  app.get('/api/admin/companies/:companyId/users', { preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')] }, async (request) => {
+  app.get('/api/admin/companies/:companyId/users', { preHandler: [requireRole('USER', 'COMPANY_ADMIN', 'ORG_ADMIN')] }, async (request) => {
     const { companyId } = request.params as { companyId: string };
     const memberships = await prisma.companyMembership.findMany({
       where: { companyId },
       include: {
         user: {
-          select: { id: true, name: true, email: true, avatarUrl: true, slug: true, timezone: true },
           include: { googleTokens: { select: { connected: true } } },
         },
       },
     });
-    return memberships.map((m) => ({ ...m.user, role: m.role, googleConnected: m.user.googleTokens?.connected ?? false }));
+    return memberships.map((m) => ({
+      id: m.user.id,
+      name: m.user.name,
+      email: m.user.email,
+      avatarUrl: m.user.avatarUrl,
+      slug: m.user.slug,
+      timezone: m.user.timezone,
+      role: m.role,
+      googleConnected: m.user.googleTokens?.connected ?? false,
+    }));
   });
 
   /** POST /api/admin/companies/:companyId/users — Invite user to company */
@@ -69,6 +77,7 @@ export async function userRoutes(app: FastifyInstance) {
         availability: true,
         googleTokens: { select: { connected: true, scopes: true } },
         companyMemberships: { include: { company: { select: { id: true, name: true, slug: true } } } },
+        teamMemberships: { include: { team: { select: { id: true, name: true } } } },
       },
     });
     return fullUser;

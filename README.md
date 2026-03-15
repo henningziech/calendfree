@@ -156,4 +156,4 @@ Full CRUD for organizations, companies, teams, users, event types, routing forms
 
 ## License
 
-Private — Seibert Group internal use.
+[MIT](LICENSE) — free to use, modify, and distribute.

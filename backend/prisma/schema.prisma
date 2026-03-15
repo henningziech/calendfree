@@ -224,6 +224,8 @@ model EventType {
   /// Booking time window: restrict which hours are bookable (JSON, e.g. {"monday":[{"start":"13:00","end":"16:00"}]})
   /// If null, all hours are bookable (only Google Calendar busy times apply)
   bookableHours  Json?
+  /// Allow customer to leave a comment when booking
+  allowComment   Boolean @default(false)
 
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)

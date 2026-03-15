@@ -29,6 +29,7 @@ export function MyEventTypesPage() {
     roundRobinMode: 'SEQUENTIAL' as string,
     color: '#0B8ECA',
     bookableHours: null as Record<string, Array<{start: string; end: string}>> | null,
+    allowComment: false,
   });
 
   const companyId = user?.activeCompanyId;
@@ -56,7 +57,7 @@ export function MyEventTypesPage() {
   useEffect(() => { load(); }, [companyId]);
 
   const resetForm = () => {
-    setForm({ title: '', slug: '', description: '', duration: 30, bufferBefore: 0, bufferAfter: 15, minNotice: 4, maxAdvance: 60, autoMeetLink: true, teamId: null, roundRobinMode: 'SEQUENTIAL', color: '#0B8ECA', bookableHours: null });
+    setForm({ title: '', slug: '', description: '', duration: 30, bufferBefore: 0, bufferAfter: 15, minNotice: 4, maxAdvance: 60, autoMeetLink: true, teamId: null, roundRobinMode: 'SEQUENTIAL', color: '#0B8ECA', bookableHours: null, allowComment: false });
     setEditingId(null);
     setShowCreate(false);
   };
@@ -95,6 +96,7 @@ export function MyEventTypesPage() {
       roundRobinMode: et.roundRobinMode ?? 'SEQUENTIAL',
       color: et.color ?? '#0B8ECA',
       bookableHours: et.bookableHours ?? null,
+      allowComment: et.allowComment ?? false,
     });
     setEditingId(et.id);
     setShowCreate(true);
@@ -345,11 +347,20 @@ export function MyEventTypesPage() {
                   </p>
                 </div>
               )}
-              <div className="flex items-start gap-3 pt-5">
-                <input type="checkbox" id="autoMeet" checked={form.autoMeetLink} onChange={(e) => setForm({ ...form, autoMeetLink: e.target.checked })} className="mt-0.5" />
-                <div>
-                  <label htmlFor="autoMeet" className="text-sm font-medium text-[#1E293B]">Google Meet Link</label>
-                  <p className="text-xs text-[#64748B]">Automatisch Meet-Link zum Kalender-Event hinzufügen</p>
+              <div className="space-y-3 pt-5">
+                <div className="flex items-start gap-3">
+                  <input type="checkbox" id="autoMeet" checked={form.autoMeetLink} onChange={(e) => setForm({ ...form, autoMeetLink: e.target.checked })} className="mt-0.5" />
+                  <div>
+                    <label htmlFor="autoMeet" className="text-sm font-medium text-[#1E293B]">Google Meet Link</label>
+                    <p className="text-xs text-[#64748B]">Automatisch Meet-Link zum Kalender-Event hinzufügen</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <input type="checkbox" id="allowComment" checked={form.allowComment} onChange={(e) => setForm({ ...form, allowComment: e.target.checked })} className="mt-0.5" />
+                  <div>
+                    <label htmlFor="allowComment" className="text-sm font-medium text-[#1E293B]">Kommentar vom Kunden erlauben</label>
+                    <p className="text-xs text-[#64748B]">Kunden können bei der Buchung eine Nachricht hinterlassen</p>
+                  </div>
                 </div>
               </div>
             </div>

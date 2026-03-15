@@ -107,6 +107,7 @@ export async function bookingRoutes(app: FastifyInstance) {
       timezone?: string;
       name: string;
       email: string;
+      comment?: string;
       formData?: Record<string, string>;
     };
 
@@ -184,7 +185,7 @@ export async function bookingRoutes(app: FastifyInstance) {
           create: {
             name: body.name,
             email: body.email,
-            data: body.formData ?? {},
+            data: { ...body.formData, ...(body.comment ? { _comment: body.comment } : {}) },
           },
         },
       },
@@ -199,7 +200,7 @@ export async function bookingRoutes(app: FastifyInstance) {
       const calEvent = await createCalendarEvent({
         userId: assignedUserId,
         summary: `${eventType.title} — ${body.name}`,
-        description: `Booked via Calendfree\n\nCustomer: ${body.name} (${body.email})`,
+        description: `Booked via Calendfree\n\nCustomer: ${body.name} (${body.email})${body.comment ? `\n\nKommentar: ${body.comment}` : ''}`,
         startTime,
         endTime,
         attendeeEmail: body.email,
@@ -364,6 +365,7 @@ export async function bookingRoutes(app: FastifyInstance) {
       color: eventType.color,
       teamName: eventType.team?.name ?? null,
       formFields: eventType.formFields,
+      allowComment: eventType.allowComment,
     };
   });
 }

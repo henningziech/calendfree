@@ -38,6 +38,7 @@ export async function createBooking(
     timezone: string;
     name: string;
     email: string;
+    comment?: string;
     formData?: Record<string, string>;
   },
 ): Promise<BookingResponse> {

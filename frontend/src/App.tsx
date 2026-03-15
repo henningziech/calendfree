@@ -1,12 +1,22 @@
-function App() {
+import { BrowserRouter, Routes, Route } from 'react-router';
+import { BookingPage } from './pages/booking/BookingPage';
+import { ConfirmationPage } from './pages/booking/ConfirmationPage';
+import { CancelPage } from './pages/manage/CancelPage';
+import { ReschedulePage } from './pages/manage/ReschedulePage';
+import { NotFoundPage } from './pages/NotFoundPage';
+import { HomePage } from './pages/HomePage';
+
+export default function App() {
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold text-gray-900">Calendfree</h1>
-        <p className="mt-2 text-gray-600">Round-Robin Scheduling Platform</p>
-      </div>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/:companySlug/:eventTypeSlug" element={<BookingPage />} />
+        <Route path="/:companySlug/:eventTypeSlug/confirmed" element={<ConfirmationPage />} />
+        <Route path="/manage/:token/cancel" element={<CancelPage />} />
+        <Route path="/manage/:token/reschedule" element={<ReschedulePage />} />
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
-
-export default App;

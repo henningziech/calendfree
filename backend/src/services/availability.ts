@@ -3,16 +3,25 @@ import { prisma } from '../db.js';
 import { getFreeBusy } from './calendar.js';
 import { toZonedTime, fromZonedTime } from 'date-fns-tz';
 import {
-  startOfDay, endOfDay, addMinutes, addDays, isAfter, isBefore,
+  addMinutes, addDays, isAfter, isBefore,
   areIntervalsOverlapping, eachDayOfInterval, getDay,
 } from 'date-fns';
 
 const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
 
-interface WorkingHourSlot {
+interface TimeWindow {
   start: string; // "09:00"
   end: string;   // "17:00"
 }
+
+/** Default bookable hours if none configured on the event type: Mo-Fr 9-17 */
+const DEFAULT_BOOKABLE_HOURS: Record<string, TimeWindow[]> = {
+  monday: [{ start: '09:00', end: '17:00' }],
+  tuesday: [{ start: '09:00', end: '17:00' }],
+  wednesday: [{ start: '09:00', end: '17:00' }],
+  thursday: [{ start: '09:00', end: '17:00' }],
+  friday: [{ start: '09:00', end: '17:00' }],
+};
 
 interface AvailabilityParams {
   eventTypeId: string;
@@ -30,8 +39,13 @@ interface Slot {
 
 /**
  * Compute available booking slots for a set of users within a date range.
- * Considers: working hours, Google Calendar busy times, existing bookings,
- * buffer times, booking limits, min notice, and max advance.
+ *
+ * Logic:
+ * 1. Start with the bookable hours defined on the EventType (or default Mo-Fr 9-17)
+ * 2. For each user, subtract Google Calendar busy times (the REAL availability)
+ * 3. Subtract existing Calendfree bookings + buffers
+ * 4. Apply booking limits (max per day)
+ * 5. Apply min notice + max advance window
  */
 export async function getAvailableSlots(params: AvailabilityParams): Promise<Slot[]> {
   const { eventTypeId, dateRangeStart, dateRangeEnd, userIds, customerTimezone } = params;
@@ -46,32 +60,29 @@ export async function getAvailableSlots(params: AvailabilityParams): Promise<Slo
   const minNoticeHours = eventType.minNotice;
   const maxAdvanceDays = eventType.maxAdvance;
 
+  // Bookable hours come from the EventType, not from the User
+  const bookableHours = (eventType.bookableHours as Record<string, TimeWindow[]> | null) ?? DEFAULT_BOOKABLE_HOURS;
+
   const now = new Date();
   const earliestBooking = addMinutes(now, minNoticeHours * 60);
   const latestBooking = addDays(now, maxAdvanceDays);
 
-  // Clamp date range to min notice and max advance
   const effectiveStart = isAfter(dateRangeStart, earliestBooking) ? dateRangeStart : earliestBooking;
   const effectiveEnd = isBefore(dateRangeEnd, latestBooking) ? dateRangeEnd : latestBooking;
 
   if (isAfter(effectiveStart, effectiveEnd)) return [];
 
-  // Fetch all user availability configs + existing bookings in parallel
-  const [availConfigs, existingBookings] = await Promise.all([
-    prisma.availabilityConfig.findMany({
-      where: { userId: { in: userIds } },
-    }),
-    prisma.booking.findMany({
-      where: {
-        assignedUserId: { in: userIds },
-        status: { in: ['CONFIRMED', 'PENDING_CALENDAR_SYNC'] },
-        startTime: { gte: effectiveStart },
-        endTime: { lte: effectiveEnd },
-      },
-    }),
-  ]);
+  // Fetch existing Calendfree bookings in parallel with Google Calendar
+  const existingBookings = await prisma.booking.findMany({
+    where: {
+      assignedUserId: { in: userIds },
+      status: { in: ['CONFIRMED', 'PENDING_CALENDAR_SYNC'] },
+      startTime: { gte: effectiveStart },
+      endTime: { lte: effectiveEnd },
+    },
+  });
 
-  // Fetch FreeBusy from Google Calendar for each user (in parallel, with error handling)
+  // Fetch Google Calendar events for each user (the REAL source of truth)
   const freeBusyByUser = new Map<string, Array<{ start: Date; end: Date }>>();
   const freeBusyResults = await Promise.allSettled(
     userIds.map(async (uid) => {
@@ -79,111 +90,96 @@ export async function getAvailableSlots(params: AvailabilityParams): Promise<Slo
       return { uid, busy };
     }),
   );
-  const failedFreeBusyUserIds: string[] = [];
-  for (const result of freeBusyResults) {
+
+  const failedUserIds: string[] = [];
+  for (let i = 0; i < freeBusyResults.length; i++) {
+    const result = freeBusyResults[i];
     if (result.status === 'fulfilled') {
       freeBusyByUser.set(result.value.uid, result.value.busy);
     } else {
-      // FreeBusy failed — log and exclude this user from available slots
-      console.error('FreeBusy failed for user, excluding from slots:', result.reason?.message ?? result.reason);
-      // We track failed users to exclude them below
-      const idx = freeBusyResults.indexOf(result);
-      if (idx >= 0 && userIds[idx]) failedFreeBusyUserIds.push(userIds[idx]);
+      console.error('Calendar fetch failed for user, excluding:', result.reason?.message ?? result.reason);
+      failedUserIds.push(userIds[i]);
     }
   }
-  // Remove users whose FreeBusy failed from the candidate list
-  const eligibleUserIds = userIds.filter((uid) => !failedFreeBusyUserIds.includes(uid));
 
-  // For each day in range, for each user, compute available slots
+  // Only include users whose calendar we could read
+  const eligibleUserIds = userIds.filter((uid) => !failedUserIds.includes(uid));
+
+  // For each day, generate slots within the bookable hours, then filter by calendar
   const days = eachDayOfInterval({ start: effectiveStart, end: effectiveEnd });
   const allSlots: Slot[] = [];
 
+  // We use Europe/Berlin as the reference timezone for bookable hours
+  // (since the event type creator sets these in their own timezone)
+  const bookableHoursTz = 'Europe/Berlin';
+
   for (const day of days) {
     const dayOfWeek = DAY_NAMES[getDay(day)];
+    const dayWindows = bookableHours[dayOfWeek];
+    if (!dayWindows || dayWindows.length === 0) continue;
 
     for (const userId of eligibleUserIds) {
-      const availConfig = availConfigs.find((c) => c.userId === userId);
-      if (!availConfig) continue;
+      // Check booking limits per day
+      const dayBookings = existingBookings.filter((b) => {
+        const bDay = toZonedTime(b.startTime, bookableHoursTz);
+        const thisDay = toZonedTime(day, bookableHoursTz);
+        return b.assignedUserId === userId && bDay.toDateString() === thisDay.toDateString();
+      });
 
-      const weeklySchedule = availConfig.weeklySchedule as Record<string, WorkingHourSlot[]>;
-      const daySchedule = weeklySchedule[dayOfWeek];
-      if (!daySchedule || daySchedule.length === 0) continue;
+      // Simple limit: max 8 bookings per day (can be made configurable later)
+      if (dayBookings.length >= 8) continue;
 
-      // Get user's timezone
-      const user = await prisma.user.findUnique({ where: { id: userId }, select: { timezone: true } });
-      const userTz = user?.timezone ?? 'Europe/Berlin';
+      for (const window of dayWindows) {
+        const [startH, startM] = window.start.split(':').map(Number);
+        const [endH, endM] = window.end.split(':').map(Number);
 
-      // Check booking limits
-      if (availConfig.maxPerDay) {
-        const dayBookings = existingBookings.filter((b) => {
-          const bookingDayInUserTz = toZonedTime(b.startTime, userTz);
-          const thisDayInUserTz = toZonedTime(day, userTz);
-          return b.assignedUserId === userId &&
-            bookingDayInUserTz.toDateString() === thisDayInUserTz.toDateString();
-        });
-        if (dayBookings.length >= availConfig.maxPerDay) continue;
-      }
-
-      // Generate time slots from working hours
-      for (const workSlot of daySchedule) {
-        const [startH, startM] = workSlot.start.split(':').map(Number);
-        const [endH, endM] = workSlot.end.split(':').map(Number);
-
-        // Working hours are in user's timezone, convert to UTC
-        const dayInUserTz = toZonedTime(day, userTz);
-        const workStart = fromZonedTime(
-          new Date(dayInUserTz.getFullYear(), dayInUserTz.getMonth(), dayInUserTz.getDate(), startH, startM),
-          userTz,
+        const dayInTz = toZonedTime(day, bookableHoursTz);
+        const windowStart = fromZonedTime(
+          new Date(dayInTz.getFullYear(), dayInTz.getMonth(), dayInTz.getDate(), startH, startM),
+          bookableHoursTz,
         );
-        const workEnd = fromZonedTime(
-          new Date(dayInUserTz.getFullYear(), dayInUserTz.getMonth(), dayInUserTz.getDate(), endH, endM),
-          userTz,
+        const windowEnd = fromZonedTime(
+          new Date(dayInTz.getFullYear(), dayInTz.getMonth(), dayInTz.getDate(), endH, endM),
+          bookableHoursTz,
         );
 
-        // Generate slots within working hours
-        let slotStart = workStart;
-        while (addMinutes(slotStart, duration) <= workEnd) {
+        let slotStart = windowStart;
+        while (addMinutes(slotStart, duration) <= windowEnd) {
           const slotEnd = addMinutes(slotStart, duration);
-          const slotWithBufferStart = addMinutes(slotStart, -bufferBefore);
-          const slotWithBufferEnd = addMinutes(slotEnd, bufferAfter);
+          const withBufferStart = addMinutes(slotStart, -bufferBefore);
+          const withBufferEnd = addMinutes(slotEnd, bufferAfter);
 
-          // Skip if before earliest booking time
           if (isBefore(slotStart, effectiveStart)) {
             slotStart = addMinutes(slotStart, duration);
             continue;
           }
 
-          // Check Google Calendar busy
+          // Check Google Calendar busy times
           const gcalBusy = freeBusyByUser.get(userId) ?? [];
           const isGcalBusy = gcalBusy.some((busy) =>
             areIntervalsOverlapping(
-              { start: slotWithBufferStart, end: slotWithBufferEnd },
+              { start: withBufferStart, end: withBufferEnd },
               { start: busy.start, end: busy.end },
             ),
           );
 
-          // Check existing bookings (including buffer)
+          // Check existing Calendfree bookings
           const isBooked = existingBookings.some((b) =>
             b.assignedUserId === userId &&
             areIntervalsOverlapping(
-              { start: slotWithBufferStart, end: slotWithBufferEnd },
+              { start: withBufferStart, end: withBufferEnd },
               { start: b.startTime, end: b.endTime },
             ),
           );
 
           if (!isGcalBusy && !isBooked) {
-            // Check if slot already exists (from another user)
             const existingSlot = allSlots.find(
               (s) => s.start.getTime() === slotStart.getTime() && s.end.getTime() === slotEnd.getTime(),
             );
             if (existingSlot) {
               existingSlot.availableUserIds.push(userId);
             } else {
-              allSlots.push({
-                start: slotStart,
-                end: slotEnd,
-                availableUserIds: [userId],
-              });
+              allSlots.push({ start: slotStart, end: slotEnd, availableUserIds: [userId] });
             }
           }
 
@@ -193,7 +189,6 @@ export async function getAvailableSlots(params: AvailabilityParams): Promise<Slo
     }
   }
 
-  // Sort by start time
   allSlots.sort((a, b) => a.start.getTime() - b.start.getTime());
   return allSlots;
 }

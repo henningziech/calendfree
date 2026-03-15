@@ -66,6 +66,11 @@ export const CreateEventTypeSchema = z.object({
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
   teamId: z.string().uuid().nullable().optional(),
   roundRobinMode: z.enum(['SEQUENTIAL', 'LEAST_BUSY', 'WEIGHTED']).default('SEQUENTIAL'),
+  /** Bookable hours per weekday. If null, defaults to Mo-Fr 9-17. */
+  bookableHours: z.record(z.array(z.object({
+    start: z.string().regex(/^\d{2}:\d{2}$/),
+    end: z.string().regex(/^\d{2}:\d{2}$/),
+  }))).nullable().optional(),
   formFields: z.array(z.object({
     label: z.string().min(1).max(255),
     type: z.enum(['text', 'email', 'phone', 'select', 'textarea']).default('text'),

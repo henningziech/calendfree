@@ -42,7 +42,6 @@ function getNavSections(role: string): NavSection[] {
       { to: '/dashboard', label: 'Meine Termine', icon: '📋' },
       { to: '/dashboard/my-event-types', label: 'Buchungsseiten', icon: '🔗' },
       { to: '/dashboard/teams', label: 'Meine Teams', icon: '👥' },
-      { to: '/dashboard/availability', label: 'Arbeitszeiten', icon: '🕐' },
       { to: '/dashboard/api-keys', label: 'API Keys', icon: '🔑' },
     ],
   });

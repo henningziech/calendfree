@@ -221,6 +221,9 @@ model EventType {
   color        String? @default("#2563EB")
   /// Round-robin mode (only used when teamId is set)
   roundRobinMode RoundRobinMode @default(SEQUENTIAL)
+  /// Booking time window: restrict which hours are bookable (JSON, e.g. {"monday":[{"start":"13:00","end":"16:00"}]})
+  /// If null, all hours are bookable (only Google Calendar busy times apply)
+  bookableHours  Json?
 
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)

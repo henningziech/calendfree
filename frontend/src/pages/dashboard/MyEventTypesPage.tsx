@@ -28,6 +28,7 @@ export function MyEventTypesPage() {
     teamId: '' as string | null,
     roundRobinMode: 'SEQUENTIAL' as string,
     color: '#2563EB',
+    bookableHours: null as Record<string, Array<{start: string; end: string}>> | null,
   });
 
   const companyId = user?.activeCompanyId;
@@ -55,7 +56,7 @@ export function MyEventTypesPage() {
   useEffect(() => { load(); }, [companyId]);
 
   const resetForm = () => {
-    setForm({ title: '', slug: '', description: '', duration: 30, bufferBefore: 0, bufferAfter: 15, minNotice: 4, maxAdvance: 60, autoMeetLink: true, teamId: null, roundRobinMode: 'SEQUENTIAL', color: '#2563EB' });
+    setForm({ title: '', slug: '', description: '', duration: 30, bufferBefore: 0, bufferAfter: 15, minNotice: 4, maxAdvance: 60, autoMeetLink: true, teamId: null, roundRobinMode: 'SEQUENTIAL', color: '#2563EB', bookableHours: null });
     setEditingId(null);
     setShowCreate(false);
   };
@@ -93,6 +94,7 @@ export function MyEventTypesPage() {
       teamId: et.teamId,
       roundRobinMode: et.roundRobinMode ?? 'SEQUENTIAL',
       color: et.color ?? '#2563EB',
+      bookableHours: et.bookableHours ?? null,
     });
     setEditingId(et.id);
     setShowCreate(true);
@@ -225,6 +227,91 @@ export function MyEventTypesPage() {
                 <p className="mt-1 text-xs text-gray-400">Wie weit in die Zukunft können Kunden buchen</p>
               </div>
             </div>
+          </div>
+
+          {/* Bookable hours */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-sm font-semibold text-gray-700">Buchbare Zeiten</h4>
+              <label className="flex items-center gap-2 text-xs text-gray-500">
+                <input
+                  type="checkbox"
+                  checked={form.bookableHours !== null}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setForm({ ...form, bookableHours: {
+                        monday: [{ start: '09:00', end: '17:00' }],
+                        tuesday: [{ start: '09:00', end: '17:00' }],
+                        wednesday: [{ start: '09:00', end: '17:00' }],
+                        thursday: [{ start: '09:00', end: '17:00' }],
+                        friday: [{ start: '09:00', end: '17:00' }],
+                      }});
+                    } else {
+                      setForm({ ...form, bookableHours: null });
+                    }
+                  }}
+                />
+                Eigene Zeiten festlegen
+              </label>
+            </div>
+            {form.bookableHours === null ? (
+              <p className="text-xs text-gray-400 bg-gray-50 rounded-md p-3">
+                Standard: Mo–Fr 9:00–17:00 Uhr. Nur freie Slots laut Google Kalender werden angezeigt.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const).map((day) => {
+                  const labels: Record<string, string> = { monday: 'Montag', tuesday: 'Dienstag', wednesday: 'Mittwoch', thursday: 'Donnerstag', friday: 'Freitag', saturday: 'Samstag', sunday: 'Sonntag' };
+                  const slots = form.bookableHours?.[day] ?? [];
+                  const hasSlot = slots.length > 0;
+                  const start = hasSlot ? slots[0].start : '09:00';
+                  const end = hasSlot ? slots[0].end : '17:00';
+
+                  return (
+                    <div key={day} className="flex items-center gap-3">
+                      <label className="w-24 text-sm text-gray-700">{labels[day]}</label>
+                      <input
+                        type="checkbox"
+                        checked={hasSlot}
+                        onChange={(e) => {
+                          const newHours = { ...form.bookableHours! };
+                          newHours[day] = e.target.checked ? [{ start: '09:00', end: '17:00' }] : [];
+                          setForm({ ...form, bookableHours: newHours });
+                        }}
+                      />
+                      {hasSlot && (
+                        <>
+                          <input
+                            type="time"
+                            value={start}
+                            onChange={(e) => {
+                              const newHours = { ...form.bookableHours! };
+                              newHours[day] = [{ start: e.target.value, end }];
+                              setForm({ ...form, bookableHours: newHours });
+                            }}
+                            className="rounded-md border px-2 py-1 text-sm"
+                          />
+                          <span className="text-gray-400">–</span>
+                          <input
+                            type="time"
+                            value={end}
+                            onChange={(e) => {
+                              const newHours = { ...form.bookableHours! };
+                              newHours[day] = [{ start, end: e.target.value }];
+                              setForm({ ...form, bookableHours: newHours });
+                            }}
+                            className="rounded-md border px-2 py-1 text-sm"
+                          />
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+                <p className="text-xs text-gray-400 mt-1">
+                  Nur innerhalb dieser Zeiten werden Slots angeboten. Google Kalender filtert zusätzlich belegte Zeiten.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Team & features */}
@@ -361,6 +448,10 @@ export function MyEventTypesPage() {
                 <div>
                   <span className="text-gray-400">Meet Link</span>
                   <p className="font-medium">{et.autoMeetLink ? 'Automatisch' : 'Aus'}</p>
+                </div>
+                <div>
+                  <span className="text-gray-400">Buchbare Zeiten</span>
+                  <p className="font-medium">{et.bookableHours ? 'Eigene Zeiten' : 'Standard (Mo–Fr 9–17)'}</p>
                 </div>
                 <div>
                   <span className="text-gray-400">Buchungen</span>

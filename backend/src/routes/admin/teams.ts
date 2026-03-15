@@ -48,11 +48,71 @@ export async function teamRoutes(app: FastifyInstance) {
       include: {
         rrConfig: true,
         memberships: { include: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } } },
-        eventTypes: { select: { id: true, title: true, slug: true, active: true } },
+        eventTypes: { select: { id: true, title: true, slug: true, active: true, duration: true } },
+      company: { select: { slug: true } },
       },
     });
     if (!team) return reply.status(404).send({ error: 'Team not found' });
     return team;
+  });
+
+  /** GET /api/admin/teams/:id/bookings — Paginated team bookings with filters */
+  app.get('/api/admin/teams/:id/bookings', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const user = request.session.user!;
+    const { page = '1', limit = '15', status = 'upcoming', userId } = request.query as {
+      page?: string;
+      limit?: string;
+      status?: string;
+      userId?: string;
+    };
+
+    // Access check: must be a team member
+    const membership = await prisma.teamMembership.findUnique({
+      where: { userId_teamId: { userId: user.id, teamId: id } },
+    });
+    if (!membership) {
+      return reply.status(403).send({ error: 'Not a member of this team' });
+    }
+
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.min(50, Math.max(1, parseInt(limit, 10) || 15));
+    const skip = (pageNum - 1) * limitNum;
+
+    const where: any = {
+      eventType: { teamId: id },
+    };
+
+    if (status === 'upcoming') {
+      where.startTime = { gte: new Date() };
+      where.status = 'CONFIRMED';
+    }
+
+    if (userId) {
+      where.assignedUserId = userId;
+    }
+
+    const [bookings, total] = await Promise.all([
+      prisma.booking.findMany({
+        where,
+        include: {
+          eventType: { select: { title: true, slug: true, duration: true, teamId: true, team: { select: { name: true } }, company: { select: { slug: true } } } },
+          formData: { select: { name: true, email: true, data: true } },
+          assignedUser: { select: { name: true, email: true } },
+        },
+        orderBy: { startTime: status === 'upcoming' ? 'asc' : 'desc' },
+        skip,
+        take: limitNum,
+      }),
+      prisma.booking.count({ where }),
+    ]);
+
+    return {
+      bookings,
+      total,
+      page: pageNum,
+      totalPages: Math.ceil(total / limitNum),
+    };
   });
 
   /** PATCH /api/admin/teams/:id — Update team */

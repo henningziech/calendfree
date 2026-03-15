@@ -280,6 +280,8 @@ model Booking {
   tokenExpiresAt DateTime?
   /// Optimistic concurrency control
   version        Int           @default(0)
+  /// Internal notes by consultant (not visible to customer)
+  internalNotes  String?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 

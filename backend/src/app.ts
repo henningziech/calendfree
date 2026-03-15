@@ -10,6 +10,8 @@ import { redis } from './redis.js';
 import { prisma } from './db.js';
 import { authRoutes } from './routes/auth.js';
 import { bookingRoutes } from './routes/booking.js';
+import { organizationRoutes } from './routes/admin/organization.js';
+import { companyRoutes } from './routes/admin/company.js';
 import tenantPlugin from './middleware/tenant.js';
 import { startJobQueue, stopJobQueue } from './jobs/queue.js';
 import { registerNotificationHandlers } from './jobs/notification-jobs.js';
@@ -71,6 +73,10 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // Booking routes (public)
   await app.register(bookingRoutes);
+
+  // Admin routes
+  await app.register(organizationRoutes);
+  await app.register(companyRoutes);
 
   // Health check
   app.get('/api/health', async () => {

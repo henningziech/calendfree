@@ -50,6 +50,29 @@ interface Slot {
 export async function getAvailableSlots(params: AvailabilityParams): Promise<Slot[]> {
   const { eventTypeId, dateRangeStart, dateRangeEnd, userIds, customerTimezone } = params;
 
+  // Filter out absent users (auto-reset expired absences)
+  const now = new Date();
+  const activeUserIds: string[] = [];
+  const usersWithStatus = await prisma.user.findMany({
+    where: { id: { in: userIds } },
+    select: { id: true, status: true, absentUntil: true },
+  });
+
+  for (const u of usersWithStatus) {
+    if (u.status === 'ABSENT') {
+      if (u.absentUntil && u.absentUntil <= now) {
+        // Auto-reset expired absence
+        await prisma.user.update({ where: { id: u.id }, data: { status: 'AVAILABLE', absentUntil: null } });
+        activeUserIds.push(u.id);
+      }
+      // else: still absent, skip
+    } else {
+      activeUserIds.push(u.id);
+    }
+  }
+
+  if (activeUserIds.length === 0) return [];
+
   const eventType = await prisma.eventType.findUniqueOrThrow({
     where: { id: eventTypeId },
   });
@@ -63,7 +86,6 @@ export async function getAvailableSlots(params: AvailabilityParams): Promise<Slo
   // Bookable hours come from the EventType, not from the User
   const bookableHours = (eventType.bookableHours as Record<string, TimeWindow[]> | null) ?? DEFAULT_BOOKABLE_HOURS;
 
-  const now = new Date();
   const earliestBooking = addMinutes(now, minNoticeHours * 60);
   const latestBooking = addDays(now, maxAdvanceDays);
 
@@ -75,7 +97,7 @@ export async function getAvailableSlots(params: AvailabilityParams): Promise<Slo
   // Fetch existing Calendfree bookings in parallel with Google Calendar
   const existingBookings = await prisma.booking.findMany({
     where: {
-      assignedUserId: { in: userIds },
+      assignedUserId: { in: activeUserIds },
       status: { in: ['CONFIRMED', 'PENDING_CALENDAR_SYNC'] },
       startTime: { gte: effectiveStart },
       endTime: { lte: effectiveEnd },
@@ -85,7 +107,7 @@ export async function getAvailableSlots(params: AvailabilityParams): Promise<Slo
   // Fetch Google Calendar events for each user (the REAL source of truth)
   const freeBusyByUser = new Map<string, Array<{ start: Date; end: Date }>>();
   const freeBusyResults = await Promise.allSettled(
-    userIds.map(async (uid) => {
+    activeUserIds.map(async (uid) => {
       const busy = await getFreeBusy(uid, effectiveStart, effectiveEnd);
       return { uid, busy };
     }),
@@ -98,12 +120,12 @@ export async function getAvailableSlots(params: AvailabilityParams): Promise<Slo
       freeBusyByUser.set(result.value.uid, result.value.busy);
     } else {
       console.error('Calendar fetch failed for user, excluding:', result.reason?.message ?? result.reason);
-      failedUserIds.push(userIds[i]);
+      failedUserIds.push(activeUserIds[i]);
     }
   }
 
   // Only include users whose calendar we could read
-  const eligibleUserIds = userIds.filter((uid) => !failedUserIds.includes(uid));
+  const eligibleUserIds = activeUserIds.filter((uid) => !failedUserIds.includes(uid));
 
   // For each day, generate slots within the bookable hours, then filter by calendar
   const days = eachDayOfInterval({ start: effectiveStart, end: effectiveEnd });

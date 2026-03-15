@@ -27,6 +27,8 @@ export async function userRoutes(app: FastifyInstance) {
       slug: m.user.slug,
       timezone: m.user.timezone,
       role: m.role,
+      status: m.user.status,
+      absentUntil: m.user.absentUntil,
       googleConnected: m.user.googleTokens?.connected ?? false,
     }));
   });
@@ -68,6 +70,82 @@ export async function userRoutes(app: FastifyInstance) {
     await prisma.companyMembership.delete({
       where: { userId_companyId: { userId, companyId } },
     });
+    return { success: true };
+  });
+
+  /** GET /api/admin/users/:id — Full user detail */
+  app.get('/api/admin/users/:id', { preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')] }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const user = await prisma.user.findUnique({
+      where: { id },
+      include: {
+        googleTokens: { select: { connected: true } },
+        companyMemberships: { include: { company: { select: { id: true, name: true, slug: true } } } },
+        teamMemberships: { include: { team: { select: { id: true, name: true } } } },
+      },
+    });
+    if (!user) return reply.status(404).send({ error: 'User not found' });
+    return user;
+  });
+
+  /** PATCH /api/admin/users/:id/status — Update user absence status */
+  app.patch('/api/admin/users/:id/status', { preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')] }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const { status, absentUntil } = request.body as { status: 'AVAILABLE' | 'ABSENT'; absentUntil?: string };
+
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (!user) return reply.status(404).send({ error: 'User not found' });
+
+    const updated = await prisma.user.update({
+      where: { id },
+      data: {
+        status,
+        absentUntil: status === 'ABSENT' && absentUntil ? new Date(absentUntil) : null,
+      },
+    });
+
+    return { success: true, status: updated.status, absentUntil: updated.absentUntil };
+  });
+
+  /** GET /api/admin/users/:id/bookings — Upcoming bookings for a user */
+  app.get('/api/admin/users/:id/bookings', { preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')] }, async (request) => {
+    const { id } = request.params as { id: string };
+    const bookings = await prisma.booking.findMany({
+      where: {
+        assignedUserId: id,
+        status: 'CONFIRMED',
+        startTime: { gte: new Date() },
+      },
+      include: {
+        eventType: { select: { title: true, slug: true, duration: true, teamId: true, team: { select: { name: true } }, company: { select: { slug: true } } } },
+        formData: { select: { name: true, email: true, data: true } },
+      },
+      orderBy: { startTime: 'asc' },
+      take: 50,
+    });
+    return bookings;
+  });
+
+  /** DELETE /api/admin/users/:id — Delete user (ORG_ADMIN only) */
+  app.delete('/api/admin/users/:id', { preHandler: [requireRole('ORG_ADMIN')] }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const requestingUser = request.session.user!;
+
+    if (id === requestingUser.id) {
+      return reply.status(400).send({ error: 'Cannot delete yourself' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (!user) return reply.status(404).send({ error: 'User not found' });
+
+    await prisma.user.delete({ where: { id } });
+
+    logAudit({
+      userId: requestingUser.id,
+      action: 'SETTINGS_CHANGED',
+      details: { action: 'USER_DELETED', deletedUserId: id, deletedUserEmail: user.email },
+    });
+
     return { success: true };
   });
 

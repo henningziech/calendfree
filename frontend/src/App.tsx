@@ -21,6 +21,7 @@ import { AvailabilityPage } from './pages/dashboard/AvailabilityPage';
 import { ApiKeysPage } from './pages/dashboard/ApiKeysPage';
 import { MyEventTypesPage } from './pages/dashboard/MyEventTypesPage';
 import { MyTeamsPage } from './pages/dashboard/MyTeamsPage';
+import { TeamDetailPage } from './pages/dashboard/TeamDetailPage';
 
 export default function App() {
   return (
@@ -51,6 +52,7 @@ export default function App() {
             <Route path="availability" element={<AvailabilityPage />} />
             <Route path="my-event-types" element={<MyEventTypesPage />} />
             <Route path="teams" element={<MyTeamsPage />} />
+            <Route path="teams/:teamId" element={<TeamDetailPage />} />
             <Route path="api-keys" element={<ApiKeysPage />} />
           </Route>
 

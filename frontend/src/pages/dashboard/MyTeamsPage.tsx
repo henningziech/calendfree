@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router';
 import { useAuth } from '../../context/AuthContext';
 import { getTeams, createTeam } from '../../api/admin';
 import { apiRequest } from '../../api/client';
@@ -128,7 +129,9 @@ export function MyTeamsPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-semibold text-[#1E293B]">{t.name}</h3>
+                      <Link to={`/dashboard/teams/${t.id}`} className="text-lg font-semibold text-[#1E293B] hover:text-[#0B8ECA] transition-colors">
+                        {t.name}
+                      </Link>
                       <span className="rounded-full bg-[#0B8ECA]/10 px-2.5 py-0.5 text-xs font-medium text-[#0B8ECA]">
                         {t.rrConfig?.mode?.replace('_', ' ') ?? 'SEQUENTIAL'}
                       </span>

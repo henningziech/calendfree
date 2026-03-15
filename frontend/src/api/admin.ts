@@ -110,3 +110,32 @@ export async function createApiKey(name: string) {
 export async function deleteApiKey(id: string) {
   return apiRequest(`/me/api-keys/${id}`, { method: 'DELETE' });
 }
+
+// Team Detail
+export async function getTeamDetail(teamId: string) {
+  return apiRequest<any>(`/admin/teams/${teamId}`);
+}
+
+export interface TeamBookingsParams {
+  page?: number;
+  limit?: number;
+  status?: 'upcoming' | 'all';
+  userId?: string;
+}
+
+export interface TeamBookingsResponse {
+  bookings: any[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export async function getTeamBookings(teamId: string, params: TeamBookingsParams = {}) {
+  const qs = new URLSearchParams();
+  if (params.page) qs.set('page', String(params.page));
+  if (params.limit) qs.set('limit', String(params.limit));
+  if (params.status) qs.set('status', params.status);
+  if (params.userId) qs.set('userId', params.userId);
+  const query = qs.toString();
+  return apiRequest<TeamBookingsResponse>(`/admin/teams/${teamId}/bookings${query ? `?${query}` : ''}`);
+}

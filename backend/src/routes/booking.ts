@@ -3,10 +3,12 @@ import type { FastifyInstance } from 'fastify';
 import { randomBytes } from 'node:crypto';
 import { addMinutes } from 'date-fns';
 import { prisma } from '../db.js';
+import { config } from '../config.js';
 import { getAvailableSlots } from '../services/availability.js';
 import { assignUser } from '../services/round-robin.js';
 import { createCalendarEvent } from '../services/calendar.js';
 import { logAudit } from '../services/audit-log.js';
+import { scheduleBookingNotifications, cancelBookingNotifications } from '../jobs/notification-jobs.js';
 
 export async function bookingRoutes(app: FastifyInstance) {
   /**
@@ -223,6 +225,19 @@ export async function bookingRoutes(app: FastifyInstance) {
       details: { bookingId: booking.id, customerEmail: body.email },
     });
 
+    // Schedule notification emails (non-blocking on failure)
+    if (config.NODE_ENV !== 'test') {
+      try {
+        await scheduleBookingNotifications({
+          bookingId: booking.id,
+          startTime,
+          endTime,
+        });
+      } catch (err) {
+        app.log.error(err, 'Failed to schedule notifications');
+      }
+    }
+
     const baseUrl = app.listeningOrigin || 'http://localhost:3001';
 
     return reply.status(201).send({
@@ -282,6 +297,15 @@ export async function bookingRoutes(app: FastifyInstance) {
       action: 'BOOKING_CANCELLED',
       details: { bookingId: booking.id },
     });
+
+    // Send cancellation notification (non-blocking on failure)
+    if (config.NODE_ENV !== 'test') {
+      try {
+        await cancelBookingNotifications(booking.id);
+      } catch (err) {
+        app.log.error(err, 'Failed to send cancellation notification');
+      }
+    }
 
     return { success: true, message: 'Booking cancelled' };
   });

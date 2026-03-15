@@ -11,6 +11,8 @@ import { prisma } from './db.js';
 import { authRoutes } from './routes/auth.js';
 import { bookingRoutes } from './routes/booking.js';
 import tenantPlugin from './middleware/tenant.js';
+import { startJobQueue, stopJobQueue } from './jobs/queue.js';
+import { registerNotificationHandlers } from './jobs/notification-jobs.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -80,6 +82,20 @@ export async function buildApp(): Promise<FastifyInstance> {
       services: { database: dbOk, redis: redisOk },
     };
   });
+
+  // Start job queue (only in non-test environments)
+  if (config.NODE_ENV !== 'test') {
+    app.addHook('onReady', async () => {
+      await startJobQueue();
+      await registerNotificationHandlers();
+      app.log.info('pg-boss job queue started');
+      app.log.info('Notification job handlers registered');
+    });
+
+    app.addHook('onClose', async () => {
+      await stopJobQueue();
+    });
+  }
 
   return app;
 }

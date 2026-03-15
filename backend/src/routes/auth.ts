@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { getAuthUrl, handleCallback } from '../services/google-auth.js';
 import { config } from '../config.js';
+import { logAudit } from '../services/audit-log.js';
 
 export async function authRoutes(app: FastifyInstance) {
   /** Redirect to Google OAuth consent screen */
@@ -22,6 +23,12 @@ export async function authRoutes(app: FastifyInstance) {
       const sessionUser = await handleCallback(code);
       request.session.user = sessionUser;
 
+      logAudit({
+        userId: sessionUser.id,
+        action: 'USER_LOGIN',
+        ipAddress: request.ip,
+      });
+
       return reply.redirect(`${config.FRONTEND_URL}/dashboard`);
     } catch (err) {
       app.log.error(err, 'OAuth callback failed');
@@ -39,6 +46,12 @@ export async function authRoutes(app: FastifyInstance) {
 
   /** Logout — destroy session */
   app.post('/api/auth/logout', async (request, reply) => {
+    logAudit({
+      userId: request.session.user?.id,
+      action: 'USER_LOGOUT',
+      ipAddress: request.ip,
+    });
+
     await request.session.destroy();
     return { success: true };
   });

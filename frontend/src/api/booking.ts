@@ -52,3 +52,28 @@ export async function createBooking(
 export async function cancelBooking(token: string): Promise<{ success: boolean; message: string }> {
   return apiRequest(`/booking/${token}/cancel`, { method: 'POST' });
 }
+
+// ── Authenticated booking management (user dashboard) ──
+
+/** Fetch current user's bookings. */
+export async function getMyBookings() {
+  return apiRequest<any[]>('/me/bookings');
+}
+
+/** Fetch bookings for all teams the user belongs to. */
+export async function getTeamBookings() {
+  return apiRequest<any[]>('/me/bookings/team');
+}
+
+/** Update internal notes on a booking. */
+export async function updateBookingNotes(bookingId: string, notes: string) {
+  return apiRequest(`/me/bookings/${bookingId}/notes`, {
+    method: 'PATCH',
+    body: JSON.stringify({ notes }),
+  });
+}
+
+/** Cancel a booking as an authenticated user. */
+export async function cancelBookingAsUser(bookingId: string) {
+  return apiRequest(`/me/bookings/${bookingId}/cancel`, { method: 'POST' });
+}

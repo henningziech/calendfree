@@ -5,6 +5,9 @@ import rateLimit from '@fastify/rate-limit';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import { config } from './config.js';
+import sessionPlugin from './plugins/session.js';
+import { redis } from './redis.js';
+import { prisma } from './db.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -34,6 +37,9 @@ export async function buildApp(): Promise<FastifyInstance> {
     timeWindow: '1 minute',
   });
 
+  // Session management (Redis-backed)
+  await app.register(sessionPlugin);
+
   // Swagger / OpenAPI
   await app.register(swagger, {
     openapi: {
@@ -53,7 +59,15 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(swaggerUi, { routePrefix: '/api/docs' });
 
   // Health check
-  app.get('/api/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));
+  app.get('/api/health', async () => {
+    const dbOk = await prisma.$queryRaw`SELECT 1`.then(() => true).catch(() => false);
+    const redisOk = await redis.ping().then(() => true).catch(() => false);
+    return {
+      status: dbOk && redisOk ? 'ok' : 'degraded',
+      timestamp: new Date().toISOString(),
+      services: { database: dbOk, redis: redisOk },
+    };
+  });
 
   return app;
 }

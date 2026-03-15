@@ -5,7 +5,9 @@ import { requireRole } from '../../middleware/auth.js';
 import { CreateTeamSchema, UpdateTeamSchema, AddTeamMemberSchema, UpdateTeamMemberSchema, UpdateRoundRobinSchema } from '@calendfree/shared';
 
 export async function teamRoutes(app: FastifyInstance) {
-  app.addHook('preHandler', requireRole('COMPANY_ADMIN', 'ORG_ADMIN'));
+  // All authenticated users can view and create teams
+  // (RBAC for delete/modify is checked per-endpoint where needed)
+  app.addHook('preHandler', requireRole('USER', 'COMPANY_ADMIN', 'ORG_ADMIN'));
 
   /** POST /api/admin/companies/:companyId/teams — Create team */
   app.post('/api/admin/companies/:companyId/teams', async (request, reply) => {

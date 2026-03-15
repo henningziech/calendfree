@@ -49,12 +49,14 @@ export async function handleCallback(code: string) {
   let user = await prisma.user.findUnique({ where: { email } });
 
   if (!user) {
-    // New user — must be invited to an org first (or be the first user = org admin)
-    // For now, auto-create in first org (setup flow will be more sophisticated)
     const org = await prisma.organization.findFirst();
     if (!org) {
       throw new Error('No organization exists. Please run the seed script first.');
     }
+
+    // Check if this is the first user in the org → make them ORG_ADMIN
+    const existingUserCount = await prisma.user.count({ where: { organizationId: org.id } });
+    const isFirstUser = existingUserCount === 0;
 
     user = await prisma.user.create({
       data: {
@@ -63,6 +65,36 @@ export async function handleCallback(code: string) {
         avatarUrl: picture,
         organizationId: org.id,
       },
+    });
+
+    // Auto-create company memberships for all companies in the org
+    const companies = await prisma.company.findMany({ where: { organizationId: org.id } });
+    for (const company of companies) {
+      await prisma.companyMembership.create({
+        data: {
+          userId: user.id,
+          companyId: company.id,
+          role: isFirstUser ? 'ORG_ADMIN' : 'USER',
+        },
+      });
+    }
+
+    // Auto-create availability config with sensible defaults
+    await prisma.availabilityConfig.create({
+      data: { userId: user.id },
+    });
+  } else {
+    // Existing user — update profile info from Google
+    user = await prisma.user.update({
+      where: { id: user.id },
+      data: { name, avatarUrl: picture },
+    });
+
+    // Ensure availability config exists
+    await prisma.availabilityConfig.upsert({
+      where: { userId: user.id },
+      update: {},
+      create: { userId: user.id },
     });
   }
 

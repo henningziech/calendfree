@@ -1,64 +1,96 @@
 import { NavLink } from 'react-router';
 import { useAuth } from '../../context/AuthContext';
 
-const navItems = {
-  ORG_ADMIN: [
-    { to: '/admin', label: 'Dashboard', icon: '🏠' },
-    { to: '/admin/companies', label: 'Companies', icon: '🏢' },
-    { to: '/admin/teams', label: 'Teams', icon: '👥' },
-    { to: '/admin/event-types', label: 'Event Types', icon: '📅' },
-    { to: '/admin/users', label: 'Users', icon: '👤' },
-    { to: '/admin/analytics', label: 'Analytics', icon: '📊' },
-    { to: '/admin/settings', label: 'Einstellungen', icon: '⚙️' },
-  ],
-  COMPANY_ADMIN: [
-    { to: '/admin', label: 'Dashboard', icon: '🏠' },
-    { to: '/admin/teams', label: 'Teams', icon: '👥' },
-    { to: '/admin/event-types', label: 'Event Types', icon: '📅' },
-    { to: '/admin/users', label: 'Users', icon: '👤' },
-    { to: '/admin/analytics', label: 'Analytics', icon: '📊' },
-    { to: '/admin/settings', label: 'Einstellungen', icon: '⚙️' },
-  ],
-  USER: [
-    { to: '/dashboard', label: 'Meine Termine', icon: '📅' },
-    { to: '/dashboard/availability', label: 'Verfügbarkeit', icon: '🕐' },
-    { to: '/dashboard/api-keys', label: 'API Keys', icon: '🔑' },
-  ],
-};
+interface NavItem {
+  to: string;
+  label: string;
+  icon: string;
+}
+
+interface NavSection {
+  title: string;
+  items: NavItem[];
+}
+
+function getNavSections(role: string): NavSection[] {
+  const sections: NavSection[] = [];
+
+  // Admin section (ORG_ADMIN and COMPANY_ADMIN)
+  if (role === 'ORG_ADMIN' || role === 'COMPANY_ADMIN') {
+    const adminItems: NavItem[] = [
+      { to: '/admin', label: 'Dashboard', icon: '🏠' },
+    ];
+
+    if (role === 'ORG_ADMIN') {
+      adminItems.push({ to: '/admin/companies', label: 'Companies', icon: '🏢' });
+    }
+
+    adminItems.push(
+      { to: '/admin/teams', label: 'Teams', icon: '👥' },
+      { to: '/admin/event-types', label: 'Event Types', icon: '📅' },
+      { to: '/admin/users', label: 'Users', icon: '👤' },
+      { to: '/admin/routing-forms', label: 'Routing Forms', icon: '🔀' },
+      { to: '/admin/analytics', label: 'Analytics', icon: '📊' },
+      { to: '/admin/settings', label: 'Einstellungen', icon: '⚙️' },
+    );
+
+    sections.push({ title: 'Administration', items: adminItems });
+  }
+
+  // Personal section (all roles)
+  sections.push({
+    title: 'Mein Bereich',
+    items: [
+      { to: '/dashboard', label: 'Meine Termine', icon: '📋' },
+      { to: '/dashboard/availability', label: 'Verfügbarkeit', icon: '🕐' },
+      { to: '/dashboard/my-event-types', label: 'Meine Buchungsseiten', icon: '🔗' },
+      { to: '/dashboard/api-keys', label: 'API Keys', icon: '🔑' },
+    ],
+  });
+
+  return sections;
+}
 
 export function Sidebar() {
   const { user, logout } = useAuth();
   if (!user) return null;
 
   const role = user.activeRole ?? 'USER';
-  const items = navItems[role] ?? navItems.USER;
+  const sections = getNavSections(role);
 
   return (
     <aside className="flex h-screen w-64 flex-col border-r border-gray-200 bg-white">
       <div className="border-b border-gray-200 p-4">
         <h1 className="text-xl font-bold text-gray-900">Calendfree</h1>
-        <p className="mt-1 text-xs text-gray-500">{role.replace('_', ' ')}</p>
+        <p className="mt-1 text-xs text-gray-500">{role.replace(/_/g, ' ')}</p>
       </div>
 
       <nav className="flex-1 overflow-y-auto p-3">
-        <ul className="space-y-1">
-          {items.map((item) => (
-            <li key={item.to}>
-              <NavLink
-                to={item.to}
-                end={item.to === '/admin' || item.to === '/dashboard'}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-md px-3 py-2 text-sm transition ${
-                    isActive ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-50'
-                  }`
-                }
-              >
-                <span>{item.icon}</span>
-                {item.label}
-              </NavLink>
-            </li>
-          ))}
-        </ul>
+        {sections.map((section) => (
+          <div key={section.title} className="mb-4">
+            <h3 className="mb-1 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+              {section.title}
+            </h3>
+            <ul className="space-y-1">
+              {section.items.map((item) => (
+                <li key={item.to}>
+                  <NavLink
+                    to={item.to}
+                    end={item.to === '/admin' || item.to === '/dashboard'}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 rounded-md px-3 py-2 text-sm transition ${
+                        isActive ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-50'
+                      }`
+                    }
+                  >
+                    <span>{item.icon}</span>
+                    {item.label}
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
       </nav>
 
       <div className="border-t border-gray-200 p-4">

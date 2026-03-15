@@ -45,15 +45,22 @@ async function main() {
     },
   });
 
-  // Create admin user
+  // Create admin user (Henning Ziech = Org Admin)
   const admin = await prisma.user.upsert({
-    where: { email: 'admin@seibert.group' },
+    where: { email: 'henning.ziech@seibert.group' },
     update: {},
     create: {
-      email: 'admin@seibert.group',
-      name: 'Admin User',
+      email: 'henning.ziech@seibert.group',
+      name: 'Henning Ziech',
       organizationId: org.id,
     },
+  });
+
+  // Ensure availability config exists
+  await prisma.availabilityConfig.upsert({
+    where: { userId: admin.id },
+    update: {},
+    create: { userId: admin.id },
   });
 
   // Make admin org-admin in both companies

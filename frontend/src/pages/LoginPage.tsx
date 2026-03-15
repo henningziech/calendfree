@@ -9,16 +9,15 @@ export function LoginPage() {
   if (isAuthenticated) return <Navigate to="/dashboard" replace />;
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-[#F8FAFC] via-white to-[#F8FAFC]">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-white">
       <div className="w-full max-w-lg px-4">
-        {/* Big logo — full size, centered */}
+        {/* Full logo with text — centered, full size */}
         <div className="mb-8 flex justify-center">
-          <img src="/logo-big.png" alt="Calendfree" className="w-full max-w-md" />
+          <img src="/logo.jpg" alt="Calendfree" className="w-full max-w-md" />
         </div>
 
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-[#1E293B]">Calendfree</h1>
-          <p className="mt-2 text-[#64748B]">Terminplanung, die einfach funktioniert.</p>
+          <p className="text-[#64748B]">Terminplanung, die einfach funktioniert.</p>
         </div>
 
         <div className="mx-auto max-w-sm">

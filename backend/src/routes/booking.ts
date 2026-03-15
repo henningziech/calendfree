@@ -309,4 +309,58 @@ export async function bookingRoutes(app: FastifyInstance) {
 
     return { success: true, message: 'Booking cancelled' };
   });
+
+  /** GET /api/booking/:companySlug/info — Public company info (branding) */
+  app.get('/api/booking/:companySlug/info', async (request, reply) => {
+    const { companySlug } = request.params as { companySlug: string };
+    const company = await prisma.company.findFirst({
+      where: { slug: companySlug },
+      include: {
+        branding: true,
+        organization: { include: { branding: true } },
+      },
+    });
+    if (!company) return reply.status(404).send({ error: 'Company not found' });
+
+    // Use company branding, fall back to org branding
+    const branding = company.branding ?? company.organization.branding;
+
+    return {
+      name: company.name,
+      slug: company.slug,
+      branding: branding ? {
+        primaryColor: branding.primaryColor,
+        accentColor: branding.accentColor,
+        logoUrl: branding.logoUrl,
+        fontFamily: branding.fontFamily,
+      } : null,
+    };
+  });
+
+  /** GET /api/booking/:companySlug/:eventTypeSlug/info — Public event type info */
+  app.get('/api/booking/:companySlug/:eventTypeSlug/info', async (request, reply) => {
+    const { companySlug, eventTypeSlug } = request.params as { companySlug: string; eventTypeSlug: string };
+
+    const company = await prisma.company.findFirst({ where: { slug: companySlug } });
+    if (!company) return reply.status(404).send({ error: 'Company not found' });
+
+    const eventType = await prisma.eventType.findFirst({
+      where: { companyId: company.id, slug: eventTypeSlug, active: true },
+      include: {
+        formFields: { orderBy: { order: 'asc' } },
+        team: { select: { name: true } },
+      },
+    });
+    if (!eventType) return reply.status(404).send({ error: 'Event type not found' });
+
+    return {
+      title: eventType.title,
+      slug: eventType.slug,
+      description: eventType.description,
+      duration: eventType.duration,
+      color: eventType.color,
+      teamName: eventType.team?.name ?? null,
+      formFields: eventType.formFields,
+    };
+  });
 }

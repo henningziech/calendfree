@@ -77,3 +77,37 @@ export async function updateBookingNotes(bookingId: string, notes: string) {
 export async function cancelBookingAsUser(bookingId: string) {
   return apiRequest(`/me/bookings/${bookingId}/cancel`, { method: 'POST' });
 }
+
+/** Fetch single booking with comments. */
+export async function getBookingDetail(bookingId: string) {
+  return apiRequest<any>(`/me/bookings/${bookingId}`);
+}
+
+/** Change booking status (COMPLETED, NO_SHOW). */
+export async function updateBookingStatus(bookingId: string, status: string) {
+  return apiRequest(`/me/bookings/${bookingId}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  });
+}
+
+/** Create a comment on a booking. */
+export async function createBookingComment(bookingId: string, content: string) {
+  return apiRequest<any>(`/me/bookings/${bookingId}/comments`, {
+    method: 'POST',
+    body: JSON.stringify({ content }),
+  });
+}
+
+/** Edit own comment. */
+export async function updateBookingComment(bookingId: string, commentId: string, content: string) {
+  return apiRequest<any>(`/me/bookings/${bookingId}/comments/${commentId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ content }),
+  });
+}
+
+/** Delete own comment. */
+export async function deleteBookingComment(bookingId: string, commentId: string) {
+  return apiRequest(`/me/bookings/${bookingId}/comments/${commentId}`, { method: 'DELETE' });
+}

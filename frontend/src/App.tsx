@@ -23,6 +23,7 @@ import { ApiKeysPage } from './pages/dashboard/ApiKeysPage';
 import { MyEventTypesPage } from './pages/dashboard/MyEventTypesPage';
 import { MyTeamsPage } from './pages/dashboard/MyTeamsPage';
 import { TeamDetailPage } from './pages/dashboard/TeamDetailPage';
+import { BookingDetailPage } from './pages/dashboard/BookingDetailPage';
 
 export default function App() {
   return (
@@ -55,6 +56,7 @@ export default function App() {
             <Route path="my-event-types" element={<MyEventTypesPage />} />
             <Route path="teams" element={<MyTeamsPage />} />
             <Route path="teams/:teamId" element={<TeamDetailPage />} />
+            <Route path="bookings/:bookingId" element={<BookingDetailPage />} />
             <Route path="api-keys" element={<ApiKeysPage />} />
           </Route>
 

@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, Link } from 'react-router';
+import { useParams, Link, useNavigate } from 'react-router';
 import { getTeamDetail, getTeamBookings, type TeamBookingsParams } from '../../api/admin';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { ErrorMessage } from '../../components/ui/ErrorMessage';
 import { BookingCard } from '../../components/bookings/BookingCard';
-import { BookingDetailModal } from '../../components/bookings/BookingDetailModal';
 import type { Booking } from '../../components/bookings/types';
 
 export function TeamDetailPage() {
   const { teamId } = useParams<{ teamId: string }>();
+  const navigate = useNavigate();
   const [team, setTeam] = useState<any>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [totalPages, setTotalPages] = useState(1);
@@ -16,7 +16,6 @@ export function TeamDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [bookingsLoading, setBookingsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
 
   // Filters
   const [page, setPage] = useState(1);
@@ -60,15 +59,6 @@ export function TeamDetailPage() {
 
   // Reset page when filters change
   useEffect(() => { setPage(1); }, [showPast, filterUserId]);
-
-  const handleNotesUpdated = (id: string, notes: string | null) => {
-    setBookings((prev) => prev.map((b) => b.id === id ? { ...b, internalNotes: notes } : b));
-    if (selectedBooking?.id === id) setSelectedBooking((prev) => prev ? { ...prev, internalNotes: notes } : prev);
-  };
-
-  const handleCancelled = (id: string) => {
-    setBookings((prev) => prev.map((b) => b.id === id ? { ...b, status: 'CANCELLED' } : b));
-  };
 
   if (isLoading) return <LoadingSpinner />;
   if (error) return <ErrorMessage message={error} />;
@@ -175,7 +165,7 @@ export function TeamDetailPage() {
                 <BookingCard
                   key={b.id}
                   booking={b}
-                  onClick={() => setSelectedBooking(b)}
+                  onClick={() => navigate(`/dashboard/bookings/${b.id}`)}
                   showAssignee
                 />
               ))}
@@ -207,14 +197,6 @@ export function TeamDetailPage() {
         )}
       </div>
 
-      {/* Detail Modal */}
-      <BookingDetailModal
-        booking={selectedBooking}
-        open={!!selectedBooking}
-        onClose={() => setSelectedBooking(null)}
-        onNotesUpdated={handleNotesUpdated}
-        onCancelled={handleCancelled}
-      />
     </div>
   );
 }

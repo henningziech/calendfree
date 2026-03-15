@@ -1,19 +1,19 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router';
 import { getMyBookings, getTeamBookings } from '../../api/booking';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { BookingCard } from '../../components/bookings/BookingCard';
-import { BookingDetailModal } from '../../components/bookings/BookingDetailModal';
 import type { Booking } from '../../components/bookings/types';
 import { parseISO, isPast } from 'date-fns';
 
 export function UserDashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'mine' | 'team'>('mine');
   const [myBookings, setMyBookings] = useState<Booking[]>([]);
   const [teamBookings, setTeamBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [hasTeamMemberships, setHasTeamMemberships] = useState(false);
 
   const loadData = useCallback(async () => {
@@ -34,19 +34,6 @@ export function UserDashboard() {
   }, []);
 
   useEffect(() => { loadData(); }, [loadData]);
-
-  const handleNotesUpdated = (id: string, notes: string | null) => {
-    const update = (list: Booking[]) => list.map((b) => b.id === id ? { ...b, internalNotes: notes } : b);
-    setMyBookings(update);
-    setTeamBookings(update);
-    if (selectedBooking?.id === id) setSelectedBooking((prev) => prev ? { ...prev, internalNotes: notes } : prev);
-  };
-
-  const handleCancelled = (id: string) => {
-    const update = (list: Booking[]) => list.map((b) => b.id === id ? { ...b, status: 'CANCELLED' } : b);
-    setMyBookings(update);
-    setTeamBookings(update);
-  };
 
   if (isLoading) return <LoadingSpinner />;
 
@@ -110,7 +97,7 @@ export function UserDashboard() {
                   <BookingCard
                     key={b.id}
                     booking={b}
-                    onClick={() => setSelectedBooking(b)}
+                    onClick={() => navigate(`/dashboard/bookings/${b.id}`)}
                     showAssignee={activeTab === 'team'}
                   />
                 ))}
@@ -128,7 +115,7 @@ export function UserDashboard() {
                   <BookingCard
                     key={b.id}
                     booking={b}
-                    onClick={() => setSelectedBooking(b)}
+                    onClick={() => navigate(`/dashboard/bookings/${b.id}`)}
                     showAssignee={activeTab === 'team'}
                   />
                 ))}
@@ -137,15 +124,6 @@ export function UserDashboard() {
           )}
         </div>
       )}
-
-      {/* Detail Modal */}
-      <BookingDetailModal
-        booking={selectedBooking}
-        open={!!selectedBooking}
-        onClose={() => setSelectedBooking(null)}
-        onNotesUpdated={handleNotesUpdated}
-        onCancelled={handleCancelled}
-      />
     </div>
   );
 }

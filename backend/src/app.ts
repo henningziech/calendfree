@@ -8,6 +8,7 @@ import { config } from './config.js';
 import sessionPlugin from './plugins/session.js';
 import { redis } from './redis.js';
 import { prisma } from './db.js';
+import { authRoutes } from './routes/auth.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -57,6 +58,9 @@ export async function buildApp(): Promise<FastifyInstance> {
     },
   });
   await app.register(swaggerUi, { routePrefix: '/api/docs' });
+
+  // Auth routes
+  await app.register(authRoutes);
 
   // Health check
   app.get('/api/health', async () => {

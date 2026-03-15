@@ -11,8 +11,8 @@ export async function startJobQueue(): Promise<PgBoss> {
     retryLimit: 3,
     retryDelay: 60, // 1 minute
     retryBackoff: true,
-    expireInHours: 24,
-    archiveCompletedAfterSeconds: 7 * 24 * 60 * 60, // 7 days
+    expireInHours: 4,
+    archiveCompletedAfterSeconds: 60 * 60, // 1 hour
   });
 
   boss.on('error', (err) => {

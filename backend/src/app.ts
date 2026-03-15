@@ -9,6 +9,7 @@ import sessionPlugin from './plugins/session.js';
 import { redis } from './redis.js';
 import { prisma } from './db.js';
 import { authRoutes } from './routes/auth.js';
+import { bookingRoutes } from './routes/booking.js';
 import tenantPlugin from './middleware/tenant.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
@@ -65,6 +66,9 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // Auth routes
   await app.register(authRoutes);
+
+  // Booking routes (public)
+  await app.register(bookingRoutes);
 
   // Health check
   app.get('/api/health', async () => {

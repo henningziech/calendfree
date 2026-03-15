@@ -28,6 +28,21 @@ export const UpdateBookingNotesSchema = z.object({
 });
 export type UpdateBookingNotes = z.infer<typeof UpdateBookingNotesSchema>;
 
+export const CreateBookingCommentSchema = z.object({
+  content: z.string().min(1).max(5000),
+});
+export type CreateBookingComment = z.infer<typeof CreateBookingCommentSchema>;
+
+export const UpdateBookingCommentSchema = z.object({
+  content: z.string().min(1).max(5000),
+});
+export type UpdateBookingComment = z.infer<typeof UpdateBookingCommentSchema>;
+
+export const UpdateBookingStatusSchema = z.object({
+  status: z.enum(['COMPLETED', 'NO_SHOW']),
+});
+export type UpdateBookingStatus = z.infer<typeof UpdateBookingStatusSchema>;
+
 export const BookingResponseSchema = z.object({
   id: z.string().uuid(),
   startTime: z.string().datetime(),

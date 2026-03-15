@@ -129,6 +129,7 @@ model User {
   personalEventTypes EventType[]      @relation("PersonalEventTypes")
   apiKeys        ApiKey[]
   auditLogs      AuditLog[]
+  bookingComments BookingComment[]
 
   // Slug is unique within the organization (for personal booking pages)
   @@unique([organizationId, slug])
@@ -297,6 +298,21 @@ model Booking {
   eventType    EventType       @relation(fields: [eventTypeId], references: [id], onDelete: Cascade)
   assignedUser User            @relation(fields: [assignedUserId], references: [id], onDelete: Cascade)
   formData     BookingFormData?
+  comments     BookingComment[]
+}
+
+model BookingComment {
+  id        String   @id @default(uuid())
+  bookingId String
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
 }
 
 model BookingFormData {

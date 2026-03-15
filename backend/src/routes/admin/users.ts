@@ -101,8 +101,8 @@ export async function userRoutes(app: FastifyInstance) {
     const bookings = await prisma.booking.findMany({
       where: { assignedUserId: user.id },
       include: {
-        eventType: { select: { title: true, slug: true, duration: true, company: { select: { slug: true } } } },
-        formData: { select: { name: true, email: true } },
+        eventType: { select: { title: true, slug: true, duration: true, teamId: true, company: { select: { slug: true } } } },
+        formData: { select: { name: true, email: true, data: true } },
       },
       orderBy: { startTime: 'desc' },
       take: 50,

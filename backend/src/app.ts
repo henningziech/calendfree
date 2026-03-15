@@ -13,6 +13,8 @@ import { bookingRoutes } from './routes/booking.js';
 import { organizationRoutes } from './routes/admin/organization.js';
 import { companyRoutes } from './routes/admin/company.js';
 import { teamRoutes } from './routes/admin/teams.js';
+import { userRoutes } from './routes/admin/users.js';
+import { eventTypeRoutes } from './routes/admin/event-types.js';
 import tenantPlugin from './middleware/tenant.js';
 import { startJobQueue, stopJobQueue } from './jobs/queue.js';
 import { registerNotificationHandlers } from './jobs/notification-jobs.js';
@@ -79,6 +81,8 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(organizationRoutes);
   await app.register(companyRoutes);
   await app.register(teamRoutes);
+  await app.register(userRoutes);
+  await app.register(eventTypeRoutes);
 
   // Health check
   app.get('/api/health', async () => {

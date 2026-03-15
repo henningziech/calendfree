@@ -13,6 +13,7 @@ import { CompaniesPage } from './pages/admin/CompaniesPage';
 import { TeamsPage } from './pages/admin/TeamsPage';
 import { EventTypesPage } from './pages/admin/EventTypesPage';
 import { UsersPage } from './pages/admin/UsersPage';
+import { UserDetailPage } from './pages/admin/UserDetailPage';
 import { SettingsPage } from './pages/admin/SettingsPage';
 import { AnalyticsPage } from './pages/admin/AnalyticsPage';
 import { RoutingFormsPage } from './pages/admin/RoutingFormsPage';
@@ -41,6 +42,7 @@ export default function App() {
             <Route path="teams" element={<TeamsPage />} />
             <Route path="event-types" element={<EventTypesPage />} />
             <Route path="users" element={<UsersPage />} />
+            <Route path="users/:userId" element={<UserDetailPage />} />
             <Route path="routing-forms" element={<RoutingFormsPage />} />
             <Route path="analytics" element={<AnalyticsPage />} />
             <Route path="settings" element={<SettingsPage />} />

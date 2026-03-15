@@ -130,6 +130,26 @@ export interface TeamBookingsResponse {
   totalPages: number;
 }
 
+// User Detail (Admin)
+export async function getUserDetail(userId: string) {
+  return apiRequest<any>(`/admin/users/${userId}`);
+}
+
+export async function updateUserStatus(userId: string, status: 'AVAILABLE' | 'ABSENT', absentUntil?: string) {
+  return apiRequest(`/admin/users/${userId}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status, absentUntil }),
+  });
+}
+
+export async function getUserBookings(userId: string) {
+  return apiRequest<any[]>(`/admin/users/${userId}/bookings`);
+}
+
+export async function deleteUser(userId: string) {
+  return apiRequest(`/admin/users/${userId}`, { method: 'DELETE' });
+}
+
 export async function getTeamBookings(teamId: string, params: TeamBookingsParams = {}) {
   const qs = new URLSearchParams();
   if (params.page) qs.set('page', String(params.page));

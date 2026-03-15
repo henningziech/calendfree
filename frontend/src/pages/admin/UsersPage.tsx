@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router';
 import { useAuth } from '../../context/AuthContext';
 import { getCompanyUsers, inviteUser, removeUser } from '../../api/admin';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
@@ -74,11 +75,12 @@ export function UsersPage() {
             <div className="flex items-center gap-3">
               {u.avatarUrl && <img src={u.avatarUrl} className="h-8 w-8 rounded-full ring-2 ring-[#E2E8F0]" alt="" />}
               <div>
-                <h3 className="font-medium text-[#1E293B]">{u.name}</h3>
+                <Link to={`/admin/users/${u.id}`} className="font-medium text-[#1E293B] hover:text-[#0B8ECA] transition-colors">{u.name}</Link>
                 <p className="text-sm text-[#64748B]">{u.email}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <span className={`h-2 w-2 rounded-full ${u.status === 'ABSENT' ? 'bg-[#EF4444]' : 'bg-[#10B981]'}`} title={u.status === 'ABSENT' ? 'Abwesend' : 'Verfügbar'} />
               <span className="rounded-full bg-[#0B8ECA]/10 px-3 py-1 text-xs font-medium text-[#0B8ECA]">{u.role}</span>
               <span className={`h-2 w-2 rounded-full ${u.googleConnected ? 'bg-[#10B981]' : 'bg-[#E2E8F0]'}`} title={u.googleConnected ? 'Google verbunden' : 'Nicht verbunden'} />
               <button onClick={() => { if (confirm(`${u.name} entfernen?`)) removeUser(companyId!, u.id).then(load); }} className="text-sm font-medium text-[#EF4444] transition-colors hover:text-red-600">Entfernen</button>

@@ -15,6 +15,8 @@ import { companyRoutes } from './routes/admin/company.js';
 import { teamRoutes } from './routes/admin/teams.js';
 import { userRoutes } from './routes/admin/users.js';
 import { eventTypeRoutes } from './routes/admin/event-types.js';
+import { apiKeyAuth } from './middleware/api-key.js';
+import { apiKeyRoutes } from './routes/admin/api-keys.js';
 import tenantPlugin from './middleware/tenant.js';
 import { startJobQueue, stopJobQueue } from './jobs/queue.js';
 import { registerNotificationHandlers } from './jobs/notification-jobs.js';
@@ -68,6 +70,9 @@ export async function buildApp(): Promise<FastifyInstance> {
   });
   await app.register(swaggerUi, { routePrefix: '/api/docs' });
 
+  // API key authentication (before session check, populates session.user if valid key)
+  app.addHook('preHandler', apiKeyAuth);
+
   // Tenant context (decorates request with organizationId/companyId)
   await app.register(tenantPlugin);
 
@@ -83,6 +88,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(teamRoutes);
   await app.register(userRoutes);
   await app.register(eventTypeRoutes);
+  await app.register(apiKeyRoutes);
 
   // Health check
   app.get('/api/health', async () => {

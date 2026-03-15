@@ -65,6 +65,7 @@ export const CreateEventTypeSchema = z.object({
   autoMeetLink: z.boolean().default(true),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
   teamId: z.string().uuid().nullable().optional(),
+  roundRobinMode: z.enum(['SEQUENTIAL', 'LEAST_BUSY', 'WEIGHTED']).default('SEQUENTIAL'),
   formFields: z.array(z.object({
     label: z.string().min(1).max(255),
     type: z.enum(['text', 'email', 'phone', 'select', 'textarea']).default('text'),

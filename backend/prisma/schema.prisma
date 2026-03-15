@@ -219,6 +219,8 @@ model EventType {
   autoMeetLink Boolean @default(true)
   active       Boolean @default(true)
   color        String? @default("#2563EB")
+  /// Round-robin mode (only used when teamId is set)
+  roundRobinMode RoundRobinMode @default(SEQUENTIAL)
 
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)

@@ -26,6 +26,7 @@ export function MyEventTypesPage() {
     maxAdvance: 60,
     autoMeetLink: true,
     teamId: '' as string | null,
+    roundRobinMode: 'SEQUENTIAL' as string,
     color: '#2563EB',
   });
 
@@ -54,7 +55,7 @@ export function MyEventTypesPage() {
   useEffect(() => { load(); }, [companyId]);
 
   const resetForm = () => {
-    setForm({ title: '', slug: '', description: '', duration: 30, bufferBefore: 0, bufferAfter: 15, minNotice: 4, maxAdvance: 60, autoMeetLink: true, teamId: null, color: '#2563EB' });
+    setForm({ title: '', slug: '', description: '', duration: 30, bufferBefore: 0, bufferAfter: 15, minNotice: 4, maxAdvance: 60, autoMeetLink: true, teamId: null, roundRobinMode: 'SEQUENTIAL', color: '#2563EB' });
     setEditingId(null);
     setShowCreate(false);
   };
@@ -90,6 +91,7 @@ export function MyEventTypesPage() {
       maxAdvance: et.maxAdvance,
       autoMeetLink: et.autoMeetLink,
       teamId: et.teamId,
+      roundRobinMode: et.roundRobinMode ?? 'SEQUENTIAL',
       color: et.color ?? '#2563EB',
     });
     setEditingId(et.id);
@@ -230,17 +232,32 @@ export function MyEventTypesPage() {
             <h4 className="text-sm font-semibold text-gray-700 mb-3">Zuweisung & Features</h4>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-gray-600">Team (Round-Robin)</label>
+                <label className="block text-xs font-medium text-gray-600">Team</label>
                 <select value={form.teamId ?? ''} onChange={(e) => setForm({ ...form, teamId: e.target.value || null })} className="mt-1 w-full rounded-md border px-3 py-2 text-sm">
                   <option value="">Kein Team — persönliche Buchungsseite</option>
                   {teams.map((t: any) => (
-                    <option key={t.id} value={t.id}>{t.name} ({t.rrConfig?.mode?.replace('_', ' ')})</option>
+                    <option key={t.id} value={t.id}>{t.name} ({t.memberships?.length ?? 0} Mitglieder)</option>
                   ))}
                 </select>
                 <p className="mt-1 text-xs text-gray-400">
                   {form.teamId ? 'Termine werden per Round-Robin im Team verteilt' : 'Alle Termine werden direkt bei Ihnen gebucht'}
                 </p>
               </div>
+              {form.teamId && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-600">Round-Robin Verfahren</label>
+                  <select value={form.roundRobinMode} onChange={(e) => setForm({ ...form, roundRobinMode: e.target.value })} className="mt-1 w-full rounded-md border px-3 py-2 text-sm">
+                    <option value="SEQUENTIAL">Sequential — der Reihe nach</option>
+                    <option value="LEAST_BUSY">Least Busy — wenigste Termine</option>
+                    <option value="WEIGHTED">Weighted — nach Gewichtung</option>
+                  </select>
+                  <p className="mt-1 text-xs text-gray-400">
+                    {form.roundRobinMode === 'SEQUENTIAL' && 'Jedes Teammitglied kommt abwechselnd dran'}
+                    {form.roundRobinMode === 'LEAST_BUSY' && 'Wer die wenigsten Termine hat, bekommt den nächsten'}
+                    {form.roundRobinMode === 'WEIGHTED' && 'Verteilung nach Gewichtung (Team-Einstellung)'}
+                  </p>
+                </div>
+              )}
               <div className="flex items-start gap-3 pt-5">
                 <input type="checkbox" id="autoMeet" checked={form.autoMeetLink} onChange={(e) => setForm({ ...form, autoMeetLink: e.target.checked })} className="mt-0.5" />
                 <div>
@@ -339,7 +356,7 @@ export function MyEventTypesPage() {
                 </div>
                 <div>
                   <span className="text-gray-400">Zuweisung</span>
-                  <p className="font-medium">{et.team ? `Team: ${et.team.name}` : 'Persönlich'}</p>
+                  <p className="font-medium">{et.team ? `Team: ${et.team.name} (${et.roundRobinMode?.replace('_', ' ')})` : 'Persönlich'}</p>
                 </div>
                 <div>
                   <span className="text-gray-400">Meet Link</span>

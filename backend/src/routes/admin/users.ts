@@ -95,6 +95,21 @@ export async function userRoutes(app: FastifyInstance) {
     });
   });
 
+  /** GET /api/me/bookings — Get own bookings */
+  app.get('/api/me/bookings', { preHandler: [requireAuth] }, async (request) => {
+    const user = request.session.user!;
+    const bookings = await prisma.booking.findMany({
+      where: { assignedUserId: user.id },
+      include: {
+        eventType: { select: { title: true, slug: true, duration: true, company: { select: { slug: true } } } },
+        formData: { select: { name: true, email: true } },
+      },
+      orderBy: { startTime: 'desc' },
+      take: 50,
+    });
+    return bookings;
+  });
+
   /** PATCH /api/me/timezone — Update own timezone */
   app.patch('/api/me/timezone', { preHandler: [requireAuth] }, async (request) => {
     const user = request.session.user!;

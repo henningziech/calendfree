@@ -161,7 +161,7 @@ export async function bookingRoutes(app: FastifyInstance) {
         return reply.status(409).send({ error: 'Slot is no longer available' });
       }
 
-      const assignment = await assignUser(eventType.teamId, matchingSlot.availableUserIds);
+      const assignment = await assignUser(eventType.teamId, matchingSlot.availableUserIds, eventType.roundRobinMode);
       assignedUserId = assignment.userId;
     } else {
       return reply.status(400).send({ error: 'Event type has no team or user' });

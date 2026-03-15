@@ -9,16 +9,18 @@ interface RoundRobinResult {
 }
 
 /**
- * Assign a user from a team using the configured round-robin mode.
+ * Assign a user from a team using the specified round-robin mode.
  * Uses SELECT FOR UPDATE for concurrency safety.
  * @param teamId - The team to assign from
  * @param availableUserIds - Users who are available for the requested slot
+ * @param mode - Round-robin mode (from EventType, not from Team)
  * @returns The assigned user ID
  * @throws Error if no user can be assigned after retries
  */
 export async function assignUser(
   teamId: string,
   availableUserIds: string[],
+  mode: 'SEQUENTIAL' | 'LEAST_BUSY' | 'WEIGHTED' = 'SEQUENTIAL',
 ): Promise<RoundRobinResult> {
   if (availableUserIds.length === 0) {
     throw new Error('No available users for this slot');
@@ -47,7 +49,8 @@ export async function assignUser(
 
         let selectedUserId: string;
 
-        switch (rrConfig.mode) {
+        // Mode comes from EventType parameter, not from RoundRobinConfig
+        switch (mode) {
           case 'SEQUENTIAL':
             selectedUserId = await assignSequential(tx, rrConfig, availableUserIds);
             break;

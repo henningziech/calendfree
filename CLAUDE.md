@@ -38,6 +38,12 @@ docker compose up -d     # Start PostgreSQL and Redis
 - Commits follow conventional commits: `feat:`, `fix:`, `refactor:`, `test:`, `docs:`
 - JSDoc on all exported functions and interfaces
 
+## Git Workflow
+
+- **IMMER committen** nach jeder abgeschlossenen Änderung
+- **IMMER pushen** nach jedem Commit (`git push` nach jedem `git commit`)
+- Nicht auf explizite Aufforderung warten — Commit + Push ist der Default
+
 ## Environment
 
 Copy `.env.example` to `backend/.env` for local development. Required variables:

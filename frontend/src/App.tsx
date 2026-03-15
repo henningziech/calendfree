@@ -1,22 +1,58 @@
 import { BrowserRouter, Routes, Route } from 'react-router';
+import { AuthProvider } from './context/AuthContext';
+import { AdminLayout } from './components/layout/AdminLayout';
 import { BookingPage } from './pages/booking/BookingPage';
 import { ConfirmationPage } from './pages/booking/ConfirmationPage';
 import { CancelPage } from './pages/manage/CancelPage';
 import { ReschedulePage } from './pages/manage/ReschedulePage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { HomePage } from './pages/HomePage';
+import { LoginPage } from './pages/LoginPage';
+import { AdminDashboard } from './pages/admin/AdminDashboard';
+import { CompaniesPage } from './pages/admin/CompaniesPage';
+import { TeamsPage } from './pages/admin/TeamsPage';
+import { EventTypesPage } from './pages/admin/EventTypesPage';
+import { UsersPage } from './pages/admin/UsersPage';
+import { SettingsPage } from './pages/admin/SettingsPage';
+import { UserDashboard } from './pages/dashboard/UserDashboard';
+import { AvailabilityPage } from './pages/dashboard/AvailabilityPage';
+import { ApiKeysPage } from './pages/dashboard/ApiKeysPage';
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/:companySlug/:eventTypeSlug" element={<BookingPage />} />
-        <Route path="/:companySlug/:eventTypeSlug/confirmed" element={<ConfirmationPage />} />
-        <Route path="/manage/:token/cancel" element={<CancelPage />} />
-        <Route path="/manage/:token/reschedule" element={<ReschedulePage />} />
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Public */}
+          <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/manage/:token/cancel" element={<CancelPage />} />
+          <Route path="/manage/:token/reschedule" element={<ReschedulePage />} />
+
+          {/* Admin (protected) */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="companies" element={<CompaniesPage />} />
+            <Route path="teams" element={<TeamsPage />} />
+            <Route path="event-types" element={<EventTypesPage />} />
+            <Route path="users" element={<UsersPage />} />
+            <Route path="settings" element={<SettingsPage />} />
+          </Route>
+
+          {/* User dashboard (protected) */}
+          <Route path="/dashboard" element={<AdminLayout />}>
+            <Route index element={<UserDashboard />} />
+            <Route path="availability" element={<AvailabilityPage />} />
+            <Route path="api-keys" element={<ApiKeysPage />} />
+          </Route>
+
+          {/* Booking (public, must be last due to catch-all slug pattern) */}
+          <Route path="/:companySlug/:eventTypeSlug" element={<BookingPage />} />
+          <Route path="/:companySlug/:eventTypeSlug/confirmed" element={<ConfirmationPage />} />
+
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }

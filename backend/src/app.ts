@@ -21,6 +21,7 @@ import { routingFormAdminRoutes } from './routes/admin/routing-forms.js';
 import { routingRoutes } from './routes/routing.js';
 import { hubspotRoutes } from './routes/admin/hubspot.js';
 import { analyticsRoutes } from './routes/admin/analytics.js';
+import { domainRoutes } from './routes/admin/domains.js';
 import { embedRoutes } from './routes/embed.js';
 import { registerHubSpotHandlers } from './jobs/hubspot-jobs.js';
 import tenantPlugin from './middleware/tenant.js';
@@ -98,6 +99,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(routingFormAdminRoutes);
   await app.register(hubspotRoutes);
   await app.register(analyticsRoutes);
+  await app.register(domainRoutes);
 
   // Public routing routes
   await app.register(routingRoutes);

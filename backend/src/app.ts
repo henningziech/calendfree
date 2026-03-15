@@ -21,6 +21,7 @@ import { routingFormAdminRoutes } from './routes/admin/routing-forms.js';
 import { routingRoutes } from './routes/routing.js';
 import { hubspotRoutes } from './routes/admin/hubspot.js';
 import { analyticsRoutes } from './routes/admin/analytics.js';
+import { embedRoutes } from './routes/embed.js';
 import { registerHubSpotHandlers } from './jobs/hubspot-jobs.js';
 import tenantPlugin from './middleware/tenant.js';
 import { startJobQueue, stopJobQueue } from './jobs/queue.js';
@@ -100,6 +101,9 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // Public routing routes
   await app.register(routingRoutes);
+
+  // Embed widget
+  await app.register(embedRoutes);
 
   // Health check
   app.get('/api/health', async () => {

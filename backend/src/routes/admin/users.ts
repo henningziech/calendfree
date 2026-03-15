@@ -2,7 +2,7 @@
 import type { FastifyInstance } from 'fastify';
 import { prisma } from '../../db.js';
 import { requireAuth, requireRole } from '../../middleware/auth.js';
-import { InviteUserSchema, UpdateMembershipRoleSchema, UpdateAvailabilitySchema, UpdateBookingNotesSchema } from '@calendfree/shared';
+import { InviteUserSchema, UpdateMembershipRoleSchema, UpdateAvailabilitySchema, UpdateBookingNotesSchema, CreateBookingCommentSchema, UpdateBookingCommentSchema, UpdateBookingStatusSchema } from '@calendfree/shared';
 import { logAudit } from '../../services/audit-log.js';
 import { cancelBookingNotifications } from '../../jobs/notification-jobs.js';
 import { config } from '../../config.js';
@@ -310,6 +310,117 @@ export async function userRoutes(app: FastifyInstance) {
       try { await cancelBookingNotifications(id); } catch (err) { app.log.error(err, 'Failed to send cancellation notification'); }
     }
 
+    return { success: true };
+  });
+
+  /** Helper: Check if user has access to a booking (owner or team member) */
+  async function checkBookingAccess(userId: string, bookingId: string) {
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: { eventType: { select: { teamId: true } } },
+    });
+    if (!booking) return { booking: null as any, hasAccess: false };
+
+    let hasAccess = booking.assignedUserId === userId;
+    if (!hasAccess && booking.eventType.teamId) {
+      const membership = await prisma.teamMembership.findUnique({
+        where: { userId_teamId: { userId, teamId: booking.eventType.teamId } },
+      });
+      hasAccess = !!membership;
+    }
+    return { booking, hasAccess };
+  }
+
+  /** GET /api/me/bookings/:bookingId — Single booking with comments */
+  app.get('/api/me/bookings/:bookingId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const user = request.session.user!;
+    const { bookingId } = request.params as { bookingId: string };
+
+    const { booking, hasAccess } = await checkBookingAccess(user.id, bookingId);
+    if (!booking) return reply.status(404).send({ error: 'Booking not found' });
+    if (!hasAccess) return reply.status(403).send({ error: 'Access denied' });
+
+    const full = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        eventType: { select: { title: true, slug: true, duration: true, teamId: true, team: { select: { name: true } }, company: { select: { slug: true } } } },
+        formData: { select: { name: true, email: true, data: true } },
+        assignedUser: { select: { id: true, name: true, email: true, avatarUrl: true } },
+        comments: {
+          include: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
+          orderBy: { createdAt: 'asc' },
+        },
+      },
+    });
+
+    return full;
+  });
+
+  /** PATCH /api/me/bookings/:bookingId/status — Change booking status */
+  app.patch('/api/me/bookings/:bookingId/status', { preHandler: [requireAuth] }, async (request, reply) => {
+    const user = request.session.user!;
+    const { bookingId } = request.params as { bookingId: string };
+    const { status } = UpdateBookingStatusSchema.parse(request.body);
+
+    const { booking, hasAccess } = await checkBookingAccess(user.id, bookingId);
+    if (!booking) return reply.status(404).send({ error: 'Booking not found' });
+    if (!hasAccess) return reply.status(403).send({ error: 'Access denied' });
+
+    const updated = await prisma.booking.update({
+      where: { id: bookingId },
+      data: { status },
+    });
+
+    return { success: true, status: updated.status };
+  });
+
+  /** POST /api/me/bookings/:bookingId/comments — Create comment */
+  app.post('/api/me/bookings/:bookingId/comments', { preHandler: [requireAuth] }, async (request, reply) => {
+    const user = request.session.user!;
+    const { bookingId } = request.params as { bookingId: string };
+    const { content } = CreateBookingCommentSchema.parse(request.body);
+
+    const { booking, hasAccess } = await checkBookingAccess(user.id, bookingId);
+    if (!booking) return reply.status(404).send({ error: 'Booking not found' });
+    if (!hasAccess) return reply.status(403).send({ error: 'Access denied' });
+
+    const comment = await prisma.bookingComment.create({
+      data: { bookingId, userId: user.id, content },
+      include: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
+    });
+
+    return reply.status(201).send(comment);
+  });
+
+  /** PATCH /api/me/bookings/:bookingId/comments/:commentId — Edit own comment */
+  app.patch('/api/me/bookings/:bookingId/comments/:commentId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const user = request.session.user!;
+    const { commentId } = request.params as { bookingId: string; commentId: string };
+    const { content } = UpdateBookingCommentSchema.parse(request.body);
+
+    const comment = await prisma.bookingComment.findUnique({ where: { id: commentId } });
+    if (!comment) return reply.status(404).send({ error: 'Comment not found' });
+    if (comment.userId !== user.id) return reply.status(403).send({ error: 'Can only edit own comments' });
+
+    const updated = await prisma.bookingComment.update({
+      where: { id: commentId },
+      data: { content },
+      include: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
+    });
+
+    return updated;
+  });
+
+  /** DELETE /api/me/bookings/:bookingId/comments/:commentId — Delete own comment */
+  app.delete('/api/me/bookings/:bookingId/comments/:commentId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const user = request.session.user!;
+    const { commentId } = request.params as { bookingId: string; commentId: string };
+
+    const comment = await prisma.bookingComment.findUnique({ where: { id: commentId } });
+    if (!comment) return reply.status(404).send({ error: 'Comment not found' });
+    if (comment.userId !== user.id) return reply.status(403).send({ error: 'Can only delete own comments' });
+
+    await prisma.bookingComment.delete({ where: { id: commentId } });
     return { success: true };
   });
 

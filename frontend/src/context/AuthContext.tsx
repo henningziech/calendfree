@@ -29,8 +29,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => { refresh(); }, []);
 
   const logout = async () => {
-    await apiLogout();
+    try {
+      await apiLogout();
+    } catch {
+      // Session may already be destroyed, ignore errors
+    }
     setUser(null);
+    window.location.href = '/login';
   };
 
   return (

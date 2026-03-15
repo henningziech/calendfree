@@ -15,7 +15,7 @@ export function UsersPage() {
   const companyId = user?.activeCompanyId;
 
   const load = async () => {
-    if (!companyId) return;
+    if (!companyId) { setIsLoading(false); return; }
     setIsLoading(true);
     try {
       setUsers(await getCompanyUsers(companyId));

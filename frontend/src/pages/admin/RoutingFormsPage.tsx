@@ -15,7 +15,7 @@ export function RoutingFormsPage() {
   const companyId = user?.activeCompanyId;
 
   const load = async () => {
-    if (!companyId) return;
+    if (!companyId) { setIsLoading(false); return; }
     setIsLoading(true);
     try {
       setForms(await apiRequest(`/admin/companies/${companyId}/routing-forms`));

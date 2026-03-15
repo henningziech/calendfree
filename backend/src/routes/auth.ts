@@ -36,11 +36,25 @@ export async function authRoutes(app: FastifyInstance) {
     }
   });
 
-  /** Get current session user */
+  /** Get current session user — refreshes role/company from DB */
   app.get('/api/auth/me', async (request, reply) => {
     if (!request.session.user) {
       return reply.status(401).send({ error: 'Not authenticated' });
     }
+
+    // Refresh membership data from DB (in case roles changed since login)
+    const { prisma } = await import('../db.js');
+    const memberships = await prisma.companyMembership.findMany({
+      where: { userId: request.session.user.id },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const activeMembership = memberships[0] ?? null;
+
+    // Update session with fresh data
+    request.session.user.activeCompanyId = activeMembership?.companyId ?? null;
+    request.session.user.activeRole = activeMembership?.role ?? null;
+
     return request.session.user;
   });
 

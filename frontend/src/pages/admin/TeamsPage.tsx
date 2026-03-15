@@ -16,7 +16,7 @@ export function TeamsPage() {
   const companyId = user?.activeCompanyId;
 
   const load = async () => {
-    if (!companyId) return;
+    if (!companyId) { setIsLoading(false); return; }
     setIsLoading(true);
     try {
       setTeams(await getTeams(companyId));

@@ -27,7 +27,10 @@ export function MyEventTypesPage() {
   const companyId = user?.activeCompanyId;
 
   const load = async () => {
-    if (!companyId) return;
+    if (!companyId) {
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     try {
       const [et, t] = await Promise.all([

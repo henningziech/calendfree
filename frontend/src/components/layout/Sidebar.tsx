@@ -8,6 +8,7 @@ const navItems = {
     { to: '/admin/teams', label: 'Teams', icon: '👥' },
     { to: '/admin/event-types', label: 'Event Types', icon: '📅' },
     { to: '/admin/users', label: 'Users', icon: '👤' },
+    { to: '/admin/analytics', label: 'Analytics', icon: '📊' },
     { to: '/admin/settings', label: 'Einstellungen', icon: '⚙️' },
   ],
   COMPANY_ADMIN: [
@@ -15,6 +16,7 @@ const navItems = {
     { to: '/admin/teams', label: 'Teams', icon: '👥' },
     { to: '/admin/event-types', label: 'Event Types', icon: '📅' },
     { to: '/admin/users', label: 'Users', icon: '👤' },
+    { to: '/admin/analytics', label: 'Analytics', icon: '📊' },
     { to: '/admin/settings', label: 'Einstellungen', icon: '⚙️' },
   ],
   USER: [

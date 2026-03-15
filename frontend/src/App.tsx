@@ -17,6 +17,7 @@ import { SettingsPage } from './pages/admin/SettingsPage';
 import { UserDashboard } from './pages/dashboard/UserDashboard';
 import { AvailabilityPage } from './pages/dashboard/AvailabilityPage';
 import { ApiKeysPage } from './pages/dashboard/ApiKeysPage';
+import { AnalyticsPage } from './pages/admin/AnalyticsPage';
 
 export default function App() {
   return (
@@ -37,6 +38,7 @@ export default function App() {
             <Route path="event-types" element={<EventTypesPage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="analytics" element={<AnalyticsPage />} />
           </Route>
 
           {/* User dashboard (protected) */}

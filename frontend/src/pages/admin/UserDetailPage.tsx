@@ -194,6 +194,10 @@ export function UserDetailPage() {
           <p className="text-sm text-[#64748B]">{userDetail.email}</p>
           <p className="text-xs text-[#64748B]/70">
             {userDetail.googleTokens?.connected ? 'Google Kalender verbunden' : 'Google nicht verbunden'}
+            {userDetail.lastLoginAt && (
+              <> · Letzter Login: {new Date(userDetail.lastLoginAt).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</>
+            )}
+            {!userDetail.lastLoginAt && <> · Noch nie eingeloggt</>}
           </p>
         </div>
       </div>

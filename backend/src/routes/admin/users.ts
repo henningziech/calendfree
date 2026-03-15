@@ -29,6 +29,7 @@ export async function userRoutes(app: FastifyInstance) {
       role: m.role,
       status: m.user.status,
       absentUntil: m.user.absentUntil,
+      lastLoginAt: m.user.lastLoginAt,
       googleConnected: m.user.googleTokens?.connected ?? false,
     }));
   });

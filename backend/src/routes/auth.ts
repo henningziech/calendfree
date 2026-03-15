@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { getAuthUrl, handleCallback } from '../services/google-auth.js';
 import { config } from '../config.js';
 import { logAudit } from '../services/audit-log.js';
+import { prisma } from '../db.js';
 
 export async function authRoutes(app: FastifyInstance) {
   /** Redirect to Google OAuth consent screen */
@@ -22,6 +23,9 @@ export async function authRoutes(app: FastifyInstance) {
     try {
       const sessionUser = await handleCallback(code);
       request.session.user = sessionUser;
+
+      // Update lastLoginAt
+      await prisma.user.update({ where: { id: sessionUser.id }, data: { lastLoginAt: new Date() } });
 
       logAudit({
         userId: sessionUser.id,

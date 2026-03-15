@@ -116,6 +116,7 @@ model User {
   /// Optional end date for absence — status auto-resets to AVAILABLE when reached
   absentUntil    DateTime?
   organizationId String
+  lastLoginAt    DateTime?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

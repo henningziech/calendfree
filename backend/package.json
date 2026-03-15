@@ -33,6 +33,7 @@
     "fastify-plugin": "^5.1.0",
     "google-auth-library": "^9.15.0",
     "googleapis": "^171.4.0",
+    "handlebars": "^4.7.8",
     "ioredis": "^5.4.0",
     "pg-boss": "^10.1.0",
     "pino": "^9.6.0",

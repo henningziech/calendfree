@@ -137,3 +137,21 @@ export const CreateApiKeySchema = z.object({
   expiresAt: z.string().datetime().nullable().optional(),
 });
 export type CreateApiKey = z.infer<typeof CreateApiKeySchema>;
+
+// Self-service status
+export const UpdateMyStatusSchema = z.object({
+  status: z.enum(['AVAILABLE', 'ABSENT']),
+  absentUntil: z.string().datetime().nullable().optional(),
+});
+export type UpdateMyStatus = z.infer<typeof UpdateMyStatusSchema>;
+
+// Vacation periods
+export const CreateVacationSchema = z.object({
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  label: z.string().max(255).nullable().optional(),
+}).refine((data) => data.startDate <= data.endDate, {
+  message: 'startDate must be before or equal to endDate',
+  path: ['endDate'],
+});
+export type CreateVacation = z.infer<typeof CreateVacationSchema>;

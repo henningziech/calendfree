@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router';
 import { useAuth } from '../../context/AuthContext';
 import { getEventTypes, createEventType, updateEventType, toggleEventType, deleteEventType, getTeams } from '../../api/admin';
 import { getCompanies } from '../../api/admin';
@@ -7,6 +8,7 @@ import { ErrorMessage } from '../../components/ui/ErrorMessage';
 
 export function MyEventTypesPage() {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [eventTypes, setEventTypes] = useState<any[]>([]);
   const [teams, setTeams] = useState<any[]>([]);
   const [companySlug, setCompanySlug] = useState<string>('');
@@ -30,6 +32,9 @@ export function MyEventTypesPage() {
     color: '#0B8ECA',
     bookableHours: null as Record<string, Array<{start: string; end: string}>> | null,
     allowComment: false,
+    eventCategory: 'PERSONAL' as 'PERSONAL' | 'TEAM' | 'GROUP',
+    maxInvitees: 2,
+    showRemainingSpots: false,
   });
 
   const companyId = user?.activeCompanyId;
@@ -56,8 +61,23 @@ export function MyEventTypesPage() {
 
   useEffect(() => { load(); }, [companyId]);
 
+  useEffect(() => {
+    const createParam = searchParams.get('create');
+    if (createParam) {
+      setShowCreate(true);
+      const category = createParam.toUpperCase() as 'PERSONAL' | 'TEAM' | 'GROUP';
+      setForm((prev: any) => ({
+        ...prev,
+        eventCategory: category,
+        teamId: category === 'TEAM' ? '' : null,
+      }));
+      // Clear the query param
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams]);
+
   const resetForm = () => {
-    setForm({ title: '', slug: '', description: '', duration: 30, bufferBefore: 0, bufferAfter: 15, minNotice: 4, maxAdvance: 60, autoMeetLink: true, teamId: null, roundRobinMode: 'SEQUENTIAL', color: '#0B8ECA', bookableHours: null, allowComment: false });
+    setForm({ title: '', slug: '', description: '', duration: 30, bufferBefore: 0, bufferAfter: 15, minNotice: 4, maxAdvance: 60, autoMeetLink: true, teamId: null, roundRobinMode: 'SEQUENTIAL', color: '#0B8ECA', bookableHours: null, allowComment: false, eventCategory: 'PERSONAL', maxInvitees: 2, showRemainingSpots: false });
     setEditingId(null);
     setShowCreate(false);
   };
@@ -69,10 +89,26 @@ export function MyEventTypesPage() {
       if (editingId) {
         // Update existing
         const { slug, ...updateData } = form;
-        await updateEventType(editingId, { ...updateData, teamId: updateData.teamId || null });
+        await updateEventType(editingId, {
+          ...updateData,
+          teamId: updateData.teamId || null,
+          eventCategory: updateData.eventCategory,
+          ...(updateData.eventCategory === 'GROUP' ? {
+            maxInvitees: updateData.maxInvitees,
+            showRemainingSpots: updateData.showRemainingSpots,
+          } : {}),
+        });
       } else {
         // Create new
-        await createEventType(companyId, { ...form, teamId: form.teamId || null });
+        await createEventType(companyId, {
+          ...form,
+          teamId: form.teamId || null,
+          eventCategory: form.eventCategory,
+          ...(form.eventCategory === 'GROUP' ? {
+            maxInvitees: form.maxInvitees,
+            showRemainingSpots: form.showRemainingSpots,
+          } : {}),
+        });
       }
       resetForm();
       load();
@@ -97,6 +133,9 @@ export function MyEventTypesPage() {
       color: et.color ?? '#0B8ECA',
       bookableHours: et.bookableHours ?? null,
       allowComment: et.allowComment ?? false,
+      eventCategory: et.eventCategory ?? 'PERSONAL',
+      maxInvitees: et.maxInvitees ?? 2,
+      showRemainingSpots: et.showRemainingSpots ?? false,
     });
     setEditingId(et.id);
     setShowCreate(true);
@@ -136,6 +175,13 @@ export function MyEventTypesPage() {
       {showCreate && (
         <form onSubmit={handleSubmit} className="mt-4 space-y-5 rounded-xl border border-[#E2E8F0] bg-white p-6 shadow-sm">
           <h3 className="text-lg font-semibold text-[#1E293B]">{editingId ? 'Event Type bearbeiten' : 'Neuen Event Type erstellen'}</h3>
+
+          {/* Event Category indicator */}
+          <div className="mb-4 rounded-lg bg-[#F8FAFC] px-3 py-2 text-sm text-[#64748B]">
+            {form.eventCategory === 'PERSONAL' && 'Persönlicher Planer — 1 Host → 1 Teilnehmer'}
+            {form.eventCategory === 'TEAM' && 'Team-Planer — Rotierende Hosts → 1 Teilnehmer'}
+            {form.eventCategory === 'GROUP' && 'Gruppe — 1 Host → Mehrere Teilnehmer'}
+          </div>
 
           {/* Basic info */}
           <div className="space-y-4">
@@ -320,9 +366,10 @@ export function MyEventTypesPage() {
           <div>
             <h4 className="text-sm font-semibold text-[#1E293B] mb-3">Zuweisung & Features</h4>
             <div className="grid grid-cols-2 gap-4">
+              {form.eventCategory !== 'GROUP' && (
               <div>
                 <label className="block text-xs font-medium text-[#64748B]">Team</label>
-                <select value={form.teamId ?? ''} onChange={(e) => setForm({ ...form, teamId: e.target.value || null })} className="mt-1 w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none">
+                <select value={form.teamId ?? ''} onChange={(e) => setForm({ ...form, teamId: e.target.value || null })} required={form.eventCategory === 'TEAM'} className="mt-1 w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none">
                   <option value="">Kein Team — persönliche Buchungsseite</option>
                   {teams.map((t: any) => (
                     <option key={t.id} value={t.id}>{t.name} ({t.memberships?.length ?? 0} Mitglieder)</option>
@@ -332,7 +379,8 @@ export function MyEventTypesPage() {
                   {form.teamId ? 'Termine werden per Round-Robin im Team verteilt' : 'Alle Termine werden direkt bei Ihnen gebucht'}
                 </p>
               </div>
-              {form.teamId && (
+              )}
+              {form.eventCategory !== 'GROUP' && form.teamId && (
                 <div>
                   <label className="block text-xs font-medium text-[#64748B]">Round-Robin Verfahren</label>
                   <select value={form.roundRobinMode} onChange={(e) => setForm({ ...form, roundRobinMode: e.target.value })} className="mt-1 w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none">
@@ -365,6 +413,29 @@ export function MyEventTypesPage() {
               </div>
             </div>
           </div>
+
+          {/* GROUP-specific fields */}
+          {form.eventCategory === 'GROUP' && (
+            <div className="rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-sm">
+              <h4 className="font-semibold text-[#1E293B]">Teilnehmer-Limit</h4>
+              <p className="text-sm text-[#64748B]">Max. Teilnehmer pro Termin</p>
+              <input
+                type="number"
+                value={form.maxInvitees ?? 2}
+                onChange={(e) => setForm({ ...form, maxInvitees: +e.target.value || 2 })}
+                min={2} max={1000}
+                className="mt-2 w-24 rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none"
+              />
+              <label className="mt-3 flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={form.showRemainingSpots ?? false}
+                  onChange={(e) => setForm({ ...form, showRemainingSpots: e.target.checked })}
+                />
+                <span className="text-sm text-[#64748B]">Verbleibende Plätze auf Buchungsseite anzeigen</span>
+              </label>
+            </div>
+          )}
 
           <div className="flex gap-3 border-t border-[#E2E8F0] pt-4">
             <button type="submit" className="rounded-xl bg-gradient-to-r from-[#0B8ECA] to-[#14B8A6] px-6 py-2 text-sm font-medium text-white shadow-sm transition-all hover:shadow-md">{editingId ? 'Speichern' : 'Event Type erstellen'}</button>

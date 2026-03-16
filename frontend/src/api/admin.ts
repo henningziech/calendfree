@@ -159,3 +159,12 @@ export async function getTeamBookings(teamId: string, params: TeamBookingsParams
   const query = qs.toString();
   return apiRequest<TeamBookingsResponse>(`/admin/teams/${teamId}/bookings${query ? `?${query}` : ''}`);
 }
+
+// Holidays
+export async function getHolidays(country: string = 'de', year?: number): Promise<Array<{ name: string; date: string; countryCode: string }>> {
+  const params = new URLSearchParams({ country });
+  if (year) params.set('year', String(year));
+  const res = await fetch(`/api/holidays?${params}`, { credentials: 'include' });
+  if (!res.ok) throw new Error('Failed to fetch holidays');
+  return res.json();
+}

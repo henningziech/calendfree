@@ -23,6 +23,7 @@ import { hubspotRoutes } from './routes/admin/hubspot.js';
 import { analyticsRoutes } from './routes/admin/analytics.js';
 import { domainRoutes } from './routes/admin/domains.js';
 import { embedRoutes } from './routes/embed.js';
+import { holidayRoutes } from './routes/holidays.js';
 import { registerHubSpotHandlers } from './jobs/hubspot-jobs.js';
 import tenantPlugin from './middleware/tenant.js';
 import { startJobQueue, stopJobQueue } from './jobs/queue.js';
@@ -106,6 +107,9 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // Embed widget
   await app.register(embedRoutes);
+
+  // Holidays
+  await app.register(holidayRoutes);
 
   // Health check
   app.get('/api/health', async () => {

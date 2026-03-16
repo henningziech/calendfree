@@ -9,7 +9,7 @@ const CALENDAR_BASE = 'https://www.googleapis.com/calendar/v3';
 /**
  * Get a valid access token for a user. Handles refresh automatically.
  */
-async function getAccessToken(userId: string): Promise<string> {
+export async function getAccessToken(userId: string): Promise<string> {
   const tokens = await prisma.googleTokens.findUnique({ where: { userId } });
   if (!tokens || !tokens.connected) {
     throw new Error(`User ${userId} has no connected Google account`);

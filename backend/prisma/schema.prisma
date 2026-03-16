@@ -24,6 +24,12 @@ enum RoundRobinMode {
   WEIGHTED
 }
 
+enum EventCategory {
+  PERSONAL
+  TEAM
+  GROUP
+}
+
 enum BookingStatus {
   CONFIRMED
   CANCELLED
@@ -236,6 +242,12 @@ model EventType {
   bookableHours  Json?
   /// Allow customer to leave a comment when booking
   allowComment   Boolean @default(false)
+  /// Event category: PERSONAL (1:1), TEAM (round-robin), GROUP (1 host, many invitees)
+  eventCategory    EventCategory @default(PERSONAL)
+  /// Max invitees per slot (GROUP event types only)
+  maxInvitees      Int?
+  /// Show remaining spots on public booking page
+  showRemainingSpots Boolean @default(false)
 
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)

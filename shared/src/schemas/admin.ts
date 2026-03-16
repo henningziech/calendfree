@@ -53,7 +53,7 @@ export const UpdateMembershipRoleSchema = z.object({
 export type UpdateMembershipRole = z.infer<typeof UpdateMembershipRoleSchema>;
 
 // Event type management
-export const CreateEventTypeSchema = z.object({
+const CreateEventTypeBaseSchema = z.object({
   title: z.string().min(1).max(255),
   slug: SlugSchema,
   description: z.string().max(2000).optional(),
@@ -82,9 +82,33 @@ export const CreateEventTypeSchema = z.object({
   maxInvitees: z.number().int().min(2).max(1000).nullable().optional(),
   showRemainingSpots: z.boolean().default(false),
 });
+
+export const CreateEventTypeSchema = CreateEventTypeBaseSchema.superRefine((data, ctx) => {
+  if (data.eventCategory === 'GROUP' && (data.maxInvitees === null || data.maxInvitees === undefined)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'maxInvitees is required for GROUP event types (min 2)',
+      path: ['maxInvitees'],
+    });
+  }
+  if (data.eventCategory === 'GROUP' && data.teamId) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'GROUP event types cannot have a teamId',
+      path: ['teamId'],
+    });
+  }
+  if (data.eventCategory === 'TEAM' && !data.teamId) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'TEAM event types require a teamId',
+      path: ['teamId'],
+    });
+  }
+});
 export type CreateEventType = z.infer<typeof CreateEventTypeSchema>;
 
-export const UpdateEventTypeSchema = CreateEventTypeSchema.partial().omit({ slug: true, formFields: true });
+export const UpdateEventTypeSchema = CreateEventTypeBaseSchema.partial().omit({ slug: true, formFields: true });
 export type UpdateEventType = z.infer<typeof UpdateEventTypeSchema>;
 
 // Availability

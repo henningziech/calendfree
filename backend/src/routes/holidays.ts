@@ -2,6 +2,7 @@
 import type { FastifyInstance } from 'fastify';
 import { getAccessToken } from '../services/calendar.js';
 import { redis } from '../redis.js';
+import { requireAuth } from '../middleware/auth.js';
 
 interface HolidayEvent {
   name: string;
@@ -21,9 +22,8 @@ const COUNTRY_CALENDAR_MAP: Record<string, string> = {
  * Fetch public holidays from Google Calendar for a given country and year.
  */
 export async function holidayRoutes(app: FastifyInstance) {
-  app.get('/api/holidays', async (request, reply) => {
-    const userId = (request as any).session?.userId;
-    if (!userId) return reply.status(401).send({ error: 'Unauthorized' });
+  app.get('/api/holidays', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { id: userId } = request.session.user!;
 
     const { country = 'de', year } = request.query as { country?: string; year?: string };
     const targetYear = year ? parseInt(year, 10) : new Date().getFullYear();

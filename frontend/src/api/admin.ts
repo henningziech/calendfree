@@ -164,7 +164,5 @@ export async function getTeamBookings(teamId: string, params: TeamBookingsParams
 export async function getHolidays(country: string = 'de', year?: number): Promise<Array<{ name: string; date: string; countryCode: string }>> {
   const params = new URLSearchParams({ country });
   if (year) params.set('year', String(year));
-  const res = await fetch(`/api/holidays?${params}`, { credentials: 'include' });
-  if (!res.ok) throw new Error('Failed to fetch holidays');
-  return res.json();
+  return apiRequest(`/holidays?${params}`);
 }

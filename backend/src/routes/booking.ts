@@ -162,7 +162,7 @@ export async function bookingRoutes(app: FastifyInstance) {
               endTime,
               customerTimezone,
               bookingToken: randomBytes(32).toString('hex'),
-              tokenExpiresAt: addMinutes(new Date(), 60 * 24 * 7),
+              tokenExpiresAt: new Date(startTime),
               formData: {
                 create: {
                   name: body.name,

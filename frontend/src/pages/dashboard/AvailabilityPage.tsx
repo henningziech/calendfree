@@ -36,8 +36,6 @@ const HOLIDAY_COUNTRIES = [
   { code: 'ch', label: 'Schweiz' },
   { code: 'gb', label: 'Vereinigtes Königreich' },
   { code: 'us', label: 'USA' },
-  { code: 'fr', label: 'Frankreich' },
-  { code: 'nl', label: 'Niederlande' },
 ];
 
 interface TimeSlot {

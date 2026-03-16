@@ -92,6 +92,8 @@ export const UpdateAvailabilitySchema = z.object({
   }))).optional(),
   maxPerDay: z.number().int().min(1).max(50).nullable().optional(),
   maxPerWeek: z.number().int().min(1).max(200).nullable().optional(),
+  blockedHolidays: z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).nullable().optional(),
+  holidayCountry: z.string().min(2).max(5).nullable().optional(),
 });
 export type UpdateAvailability = z.infer<typeof UpdateAvailabilitySchema>;
 

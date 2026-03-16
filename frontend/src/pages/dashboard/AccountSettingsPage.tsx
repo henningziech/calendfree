@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router';
-import { getMyProfile } from '../../api/admin';
+import { getMyProfile, updateMyStatus, getMyVacations, createVacation, deleteVacation } from '../../api/admin';
 import { ApiKeysTab } from './ApiKeysPage';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 
@@ -40,20 +40,75 @@ export function AccountSettingsPage() {
   );
 }
 
-/** Profile tab — displays read-only user info sourced from Google Workspace */
+/** Profile tab with status toggle and vacation management */
 function ProfileTab() {
   const [profile, setProfile] = useState<any>(null);
+  const [vacations, setVacations] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [addingVacation, setAddingVacation] = useState(false);
+  const [newVacStart, setNewVacStart] = useState('');
+  const [newVacEnd, setNewVacEnd] = useState('');
+  const [newVacLabel, setNewVacLabel] = useState('');
+  const [absentUntil, setAbsentUntil] = useState('');
 
-  useEffect(() => {
-    getMyProfile().then(setProfile).finally(() => setIsLoading(false));
-  }, []);
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  const load = async () => {
+    setIsLoading(true);
+    try {
+      const [p, v] = await Promise.all([getMyProfile(), getMyVacations()]);
+      setProfile(p);
+      setVacations(v);
+      setAbsentUntil(p.absentUntil ? new Date(p.absentUntil).toISOString().split('T')[0] : '');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const handleStatusChange = async (newStatus: 'AVAILABLE' | 'ABSENT') => {
+    await updateMyStatus(newStatus, newStatus === 'ABSENT' && absentUntil ? new Date(absentUntil).toISOString() : null);
+    setProfile((p: any) => ({ ...p, status: newStatus, absentUntil: newStatus === 'AVAILABLE' ? null : p.absentUntil }));
+  };
+
+  const handleAbsentUntilChange = async (dateStr: string) => {
+    setAbsentUntil(dateStr);
+    if (profile.status === 'ABSENT') {
+      await updateMyStatus('ABSENT', dateStr ? new Date(dateStr).toISOString() : null);
+    }
+  };
+
+  const handleAddVacation = async () => {
+    if (!newVacStart || !newVacEnd) return;
+    await createVacation({ startDate: newVacStart, endDate: newVacEnd, label: newVacLabel || null });
+    setAddingVacation(false);
+    setNewVacStart('');
+    setNewVacEnd('');
+    setNewVacLabel('');
+    const v = await getMyVacations();
+    setVacations(v);
+  };
+
+  const handleDeleteVacation = async (id: string) => {
+    await deleteVacation(id);
+    setVacations((prev) => prev.filter((v) => v.id !== id));
+  };
+
+  const formatDateDE = (dateStr: string) => {
+    try {
+      return new Date(dateStr).toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' });
+    } catch { return dateStr; }
+  };
 
   if (isLoading) return <LoadingSpinner />;
   if (!profile) return <p className="text-[#64748B]">Profil konnte nicht geladen werden.</p>;
 
+  const sortedVacations = [...vacations].sort((a, b) => a.startDate.localeCompare(b.startDate));
+
   return (
     <div className="space-y-4">
+      {/* Profile info */}
       <div className="rounded-xl border border-[#E2E8F0] bg-white p-6 shadow-sm">
         <div className="flex items-center gap-4">
           {profile.avatarUrl ? (
@@ -73,12 +128,142 @@ function ProfileTab() {
             <label className="block text-xs font-medium text-[#64748B]">Zeitzone</label>
             <p className="text-sm text-[#1E293B]">{profile.timezone ?? 'Europe/Berlin'}</p>
           </div>
-          <div>
-            <label className="block text-xs font-medium text-[#64748B]">Status</label>
-            <p className="text-sm text-[#1E293B]">{profile.status === 'ABSENT' ? 'Abwesend' : 'Verfügbar'}</p>
-          </div>
         </div>
-        <p className="mt-4 text-xs text-[#94A3B8]">Profildaten werden über Google Workspace verwaltet.</p>
+      </div>
+
+      {/* Status */}
+      <div className="rounded-xl border border-[#E2E8F0] bg-white p-6 shadow-sm">
+        <h3 className="text-base font-semibold text-[#1E293B]">Status</h3>
+        <div className="mt-3 flex items-center gap-3">
+          <button
+            onClick={() => handleStatusChange('AVAILABLE')}
+            className={`rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
+              profile.status !== 'ABSENT'
+                ? 'bg-[#14B8A6]/10 text-[#14B8A6]'
+                : 'border border-[#E2E8F0] text-[#64748B] hover:bg-[#F8FAFC]'
+            }`}
+          >
+            Verfügbar
+          </button>
+          <button
+            onClick={() => handleStatusChange('ABSENT')}
+            className={`rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
+              profile.status === 'ABSENT'
+                ? 'bg-[#EF4444]/10 text-[#EF4444]'
+                : 'border border-[#E2E8F0] text-[#64748B] hover:bg-[#F8FAFC]'
+            }`}
+          >
+            Abwesend
+          </button>
+        </div>
+        {profile.status === 'ABSENT' && (
+          <div className="mt-3 flex items-center gap-2">
+            <label className="text-sm text-[#64748B]">bis</label>
+            <input
+              type="date"
+              value={absentUntil}
+              min={todayStr}
+              onChange={(e) => handleAbsentUntilChange(e.target.value)}
+              className="rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none"
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Vacations */}
+      <div className="rounded-xl border border-[#E2E8F0] bg-white p-6 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-base font-semibold text-[#1E293B]">Urlaub &amp; Abwesenheiten</h3>
+            <p className="mt-0.5 text-xs text-[#94A3B8]">Zeiträume in denen keine Termine gebucht werden können</p>
+          </div>
+          {!addingVacation && (
+            <button
+              onClick={() => setAddingVacation(true)}
+              className="rounded-xl bg-[#0B8ECA] px-3 py-1.5 text-sm font-medium text-white"
+            >
+              + Urlaub hinzufügen
+            </button>
+          )}
+        </div>
+
+        {addingVacation && (
+          <div className="mt-4 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-4">
+            <div className="flex flex-wrap items-end gap-3">
+              <div>
+                <label className="block text-xs font-medium text-[#64748B]">Von</label>
+                <input
+                  type="date"
+                  value={newVacStart}
+                  min={todayStr}
+                  onChange={(e) => setNewVacStart(e.target.value)}
+                  className="mt-1 rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#64748B]">Bis</label>
+                <input
+                  type="date"
+                  value={newVacEnd}
+                  min={newVacStart || todayStr}
+                  onChange={(e) => setNewVacEnd(e.target.value)}
+                  className="mt-1 rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#64748B]">Bezeichnung</label>
+                <input
+                  type="text"
+                  value={newVacLabel}
+                  onChange={(e) => setNewVacLabel(e.target.value)}
+                  placeholder="z.B. Sommerurlaub"
+                  className="mt-1 rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleAddVacation}
+                  className="rounded-xl bg-[#0B8ECA] px-3 py-1.5 text-sm font-medium text-white"
+                >
+                  Hinzufügen
+                </button>
+                <button
+                  onClick={() => { setAddingVacation(false); setNewVacStart(''); setNewVacEnd(''); setNewVacLabel(''); }}
+                  className="rounded-xl border border-[#E2E8F0] px-3 py-1.5 text-sm text-[#64748B]"
+                >
+                  Abbrechen
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="mt-4">
+          {sortedVacations.length === 0 ? (
+            <p className="text-sm text-[#94A3B8]">Keine Urlaube eingetragen.</p>
+          ) : (
+            <ul className="divide-y divide-[#E2E8F0]">
+              {sortedVacations.map((vac) => (
+                <li key={vac.id} className="flex items-center justify-between py-3">
+                  <div>
+                    <span className="text-sm text-[#1E293B]">
+                      {formatDateDE(vac.startDate)} – {formatDateDE(vac.endDate)}
+                    </span>
+                    {vac.label && (
+                      <span className="ml-2 text-sm text-[#64748B]">({vac.label})</span>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => handleDeleteVacation(vac.id)}
+                    className="text-sm text-[#EF4444] hover:underline"
+                  >
+                    Löschen
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
     </div>
   );

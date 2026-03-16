@@ -477,6 +477,9 @@ function AdvancedSettingsTab({
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [holidaysLoading, setHolidaysLoading] = useState(false);
   const [holidaysError, setHolidaysError] = useState<string | null>(null);
+  const [hidePast, setHidePast] = useState(true);
+  const [holidayPage, setHolidayPage] = useState(0);
+  const HOLIDAYS_PER_PAGE = 10;
 
   /** Load holidays when country changes. */
   useEffect(() => {
@@ -577,6 +580,23 @@ function AdvancedSettingsTab({
           </p>
         </div>
 
+        {/* Hide past toggle */}
+        <div className="mt-3 flex items-center justify-between">
+          <label className="text-sm text-[#64748B]">Vergangene Feiertage ausblenden</label>
+          <button
+            onClick={() => { setHidePast(!hidePast); setHolidayPage(0); }}
+            className={`relative h-6 w-11 rounded-full transition-colors ${
+              hidePast ? 'bg-[#0B8ECA]' : 'bg-[#E2E8F0]'
+            }`}
+          >
+            <div
+              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                hidePast ? 'translate-x-[22px]' : 'translate-x-0.5'
+              }`}
+            />
+          </button>
+        </div>
+
         {/* Holiday list */}
         <div className="mt-4">
           {holidaysLoading && (
@@ -587,39 +607,70 @@ function AdvancedSettingsTab({
             <p className="text-sm text-red-500">Fehler: {holidaysError}</p>
           )}
 
-          {!holidaysLoading && !holidaysError && holidays.length === 0 && (
-            <p className="text-sm text-[#94A3B8]">Keine Feiertage gefunden.</p>
-          )}
+          {!holidaysLoading && !holidaysError && (() => {
+            const today = new Date().toISOString().split('T')[0];
+            const filtered = hidePast ? holidays.filter((h) => h.date >= today) : holidays;
+            const totalPages = Math.ceil(filtered.length / HOLIDAYS_PER_PAGE);
+            const pageHolidays = filtered.slice(holidayPage * HOLIDAYS_PER_PAGE, (holidayPage + 1) * HOLIDAYS_PER_PAGE);
 
-          {!holidaysLoading && holidays.length > 0 && (
-            <div className="space-y-2">
-              {holidays.map((h) => {
-                const isBlocked = blockedHolidays.includes(h.date);
-                return (
-                  <div key={h.date} className="flex items-center justify-between rounded-lg px-2 py-1.5 hover:bg-[#F8FAFC]">
-                    <div>
-                      <p className="text-sm font-medium text-[#1E293B]">{h.name}</p>
-                      <p className="text-xs text-[#94A3B8]">{formatDate(h.date)}</p>
-                    </div>
-                    {/* Toggle switch */}
+            if (filtered.length === 0) {
+              return <p className="text-sm text-[#94A3B8]">Keine Feiertage gefunden.</p>;
+            }
+
+            return (
+              <>
+                <div className="space-y-2">
+                  {pageHolidays.map((h) => {
+                    const isBlocked = blockedHolidays.includes(h.date);
+                    return (
+                      <div key={h.date} className="flex items-center justify-between rounded-lg px-2 py-1.5 hover:bg-[#F8FAFC]">
+                        <div>
+                          <p className="text-sm font-medium text-[#1E293B]">{h.name}</p>
+                          <p className="text-xs text-[#94A3B8]">{formatDate(h.date)}</p>
+                        </div>
+                        <button
+                          onClick={() => toggleHoliday(h.date)}
+                          className={`relative h-6 w-11 rounded-full transition-colors ${
+                            isBlocked ? 'bg-[#0B8ECA]' : 'bg-[#E2E8F0]'
+                          }`}
+                          title={isBlocked ? 'Feiertag blockiert' : 'Feiertag nicht blockiert'}
+                        >
+                          <div
+                            className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                              isBlocked ? 'translate-x-[22px]' : 'translate-x-0.5'
+                            }`}
+                          />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="mt-3 flex items-center justify-between border-t border-[#F1F5F9] pt-3">
                     <button
-                      onClick={() => toggleHoliday(h.date)}
-                      className={`relative h-6 w-11 rounded-full transition-colors ${
-                        isBlocked ? 'bg-[#0B8ECA]' : 'bg-[#E2E8F0]'
-                      }`}
-                      title={isBlocked ? 'Feiertag blockiert' : 'Feiertag nicht blockiert'}
+                      onClick={() => setHolidayPage((p) => Math.max(0, p - 1))}
+                      disabled={holidayPage === 0}
+                      className="rounded-lg px-3 py-1 text-sm text-[#64748B] hover:bg-[#F8FAFC] disabled:opacity-30 disabled:cursor-not-allowed"
                     >
-                      <div
-                        className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
-                          isBlocked ? 'translate-x-[22px]' : 'translate-x-0.5'
-                        }`}
-                      />
+                      ← Zurück
+                    </button>
+                    <span className="text-xs text-[#94A3B8]">
+                      Seite {holidayPage + 1} von {totalPages}
+                    </span>
+                    <button
+                      onClick={() => setHolidayPage((p) => Math.min(totalPages - 1, p + 1))}
+                      disabled={holidayPage >= totalPages - 1}
+                      className="rounded-lg px-3 py-1 text-sm text-[#64748B] hover:bg-[#F8FAFC] disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      Weiter →
                     </button>
                   </div>
-                );
-              })}
-            </div>
-          )}
+                )}
+              </>
+            );
+          })()}
         </div>
       </div>
     </div>

@@ -2,7 +2,7 @@
 import type { FastifyInstance } from 'fastify';
 import { prisma } from '../../db.js';
 import { requireAuth, requireRole } from '../../middleware/auth.js';
-import { InviteUserSchema, UpdateMembershipRoleSchema, UpdateAvailabilitySchema, UpdateBookingNotesSchema, CreateBookingCommentSchema, UpdateBookingCommentSchema, UpdateBookingStatusSchema } from '@calendfree/shared';
+import { InviteUserSchema, UpdateMembershipRoleSchema, UpdateAvailabilitySchema, UpdateBookingNotesSchema, CreateBookingCommentSchema, UpdateBookingCommentSchema, UpdateBookingStatusSchema, UpdateMyStatusSchema, CreateVacationSchema } from '@calendfree/shared';
 import { logAudit } from '../../services/audit-log.js';
 import { cancelBookingNotifications } from '../../jobs/notification-jobs.js';
 import { config } from '../../config.js';
@@ -175,6 +175,63 @@ export async function userRoutes(app: FastifyInstance) {
       update: body,
       create: { userId: user.id, ...body },
     });
+  });
+
+  /** Self-service status update — users can set their own availability status. */
+  app.patch('/api/me/status', { preHandler: [requireAuth] }, async (request) => {
+    const user = request.session.user!;
+    const body = UpdateMyStatusSchema.parse(request.body);
+
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        status: body.status,
+        absentUntil: body.status === 'ABSENT' && body.absentUntil
+          ? new Date(body.absentUntil)
+          : null,
+      },
+      select: { status: true, absentUntil: true },
+    });
+
+    return updated;
+  });
+
+  /** List my vacations (future + current only). */
+  app.get('/api/me/vacations', { preHandler: [requireAuth] }, async (request) => {
+    const user = request.session.user!;
+    return prisma.vacationPeriod.findMany({
+      where: { userId: user.id, endDate: { gte: new Date() } },
+      orderBy: { startDate: 'asc' },
+    });
+  });
+
+  /** Create a vacation period. */
+  app.post('/api/me/vacations', { preHandler: [requireAuth] }, async (request) => {
+    const user = request.session.user!;
+    const body = CreateVacationSchema.parse(request.body);
+
+    return prisma.vacationPeriod.create({
+      data: {
+        userId: user.id,
+        startDate: new Date(body.startDate),
+        endDate: new Date(body.endDate),
+        label: body.label ?? null,
+      },
+    });
+  });
+
+  /** Delete a vacation period. */
+  app.delete('/api/me/vacations/:id', { preHandler: [requireAuth] }, async (request, reply) => {
+    const user = request.session.user!;
+    const { id } = request.params as { id: string };
+
+    const vacation = await prisma.vacationPeriod.findFirst({
+      where: { id, userId: user.id },
+    });
+    if (!vacation) return reply.status(404).send({ error: 'Not found' });
+
+    await prisma.vacationPeriod.delete({ where: { id } });
+    return { success: true };
   });
 
   /** GET /api/me/bookings — Get own bookings */

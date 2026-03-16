@@ -69,7 +69,7 @@ export function MyEventTypesPage() {
       setForm((prev: any) => ({
         ...prev,
         eventCategory: category,
-        teamId: category === 'TEAM' ? '' : null,
+        teamId: category === 'TEAM' ? (teams.length > 0 ? teams[0].id : '') : null,
       }));
       // Clear the query param
       setSearchParams({}, { replace: true });

@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
+import { Navigate } from 'react-router';
 import { getMyApiKeys, createApiKey, deleteApiKey } from '../../api/admin';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { ErrorMessage } from '../../components/ui/ErrorMessage';
 
-export function ApiKeysPage() {
+/** Tab content for API Keys — no page-level heading, used inside AccountSettingsPage */
+export function ApiKeysTab() {
   const [keys, setKeys] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,8 +51,7 @@ export function ApiKeysPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-[#1E293B]">API Keys</h1>
-      <p className="mt-2 text-sm text-[#64748B]">Erstellen Sie API Keys für programmatischen Zugriff auf Ihre Termine.</p>
+      <p className="text-sm text-[#64748B]">Erstellen Sie API Keys für programmatischen Zugriff auf Ihre Termine.</p>
 
       {error && <ErrorMessage message={error} />}
 
@@ -89,4 +90,9 @@ export function ApiKeysPage() {
       </div>
     </div>
   );
+}
+
+/** Backwards compatibility redirect — old /dashboard/api-keys route now points to settings */
+export function ApiKeysPage() {
+  return <Navigate to="/dashboard/settings?tab=apikeys" replace />;
 }

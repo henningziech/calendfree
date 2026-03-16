@@ -20,6 +20,7 @@ import { RoutingFormsPage } from './pages/admin/RoutingFormsPage';
 import { UserDashboard } from './pages/dashboard/UserDashboard';
 import { AvailabilityPage } from './pages/dashboard/AvailabilityPage';
 import { ApiKeysPage } from './pages/dashboard/ApiKeysPage';
+import { AccountSettingsPage } from './pages/dashboard/AccountSettingsPage';
 import { MyEventTypesPage } from './pages/dashboard/MyEventTypesPage';
 import { MyTeamsPage } from './pages/dashboard/MyTeamsPage';
 import { TeamDetailPage } from './pages/dashboard/TeamDetailPage';
@@ -58,6 +59,7 @@ export default function App() {
             <Route path="teams/:teamId" element={<TeamDetailPage />} />
             <Route path="bookings/:bookingId" element={<BookingDetailPage />} />
             <Route path="api-keys" element={<ApiKeysPage />} />
+            <Route path="settings" element={<AccountSettingsPage />} />
           </Route>
 
           {/* Booking (public, must be last due to catch-all slug pattern) */}

@@ -99,6 +99,21 @@ export async function getAvailableSlots(params: AvailabilityParams): Promise<Slo
   const effectiveStart = isAfter(dateRangeStart, earliestBooking) ? dateRangeStart : earliestBooking;
   const effectiveEnd = isBefore(dateRangeEnd, latestBooking) ? dateRangeEnd : latestBooking;
 
+  // Fetch vacation periods for all active users within the date range
+  const vacationPeriods = await prisma.vacationPeriod.findMany({
+    where: {
+      userId: { in: activeUserIds },
+      endDate: { gte: effectiveStart },
+      startDate: { lte: effectiveEnd },
+    },
+  });
+  const vacationsByUser = new Map<string, Array<{ startDate: Date; endDate: Date }>>();
+  for (const v of vacationPeriods) {
+    const list = vacationsByUser.get(v.userId) ?? [];
+    list.push({ startDate: v.startDate, endDate: v.endDate });
+    vacationsByUser.set(v.userId, list);
+  }
+
   if (isAfter(effectiveStart, effectiveEnd)) return [];
 
   const isGroup = eventType.eventCategory === 'GROUP';
@@ -186,6 +201,14 @@ export async function getAvailableSlots(params: AvailabilityParams): Promise<Slo
       const dayInTzForHoliday = toZonedTime(day, bookableHoursTz);
       const dayDateStr = `${dayInTzForHoliday.getFullYear()}-${String(dayInTzForHoliday.getMonth() + 1).padStart(2, '0')}-${String(dayInTzForHoliday.getDate()).padStart(2, '0')}`;
       if (blockedHolidays.includes(dayDateStr)) continue;
+
+      // Check if this day falls within a vacation period for this user
+      const userVacations = vacationsByUser.get(userId) ?? [];
+      const dayAsDate = new Date(dayDateStr);
+      const isOnVacation = userVacations.some((v) =>
+        dayAsDate >= v.startDate && dayAsDate <= v.endDate
+      );
+      if (isOnVacation) continue;
 
       // Resolve day windows: date-specific override > weekly schedule
       const dateSpecificHours = (userConfig?.dateSpecificHours as Record<string, TimeWindow[]> | null) ?? null;

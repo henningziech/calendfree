@@ -35,6 +35,7 @@ interface Slot {
   start: Date;
   end: Date;
   availableUserIds: string[];
+  remainingSpots?: number;
 }
 
 /**
@@ -99,6 +100,29 @@ export async function getAvailableSlots(params: AvailabilityParams): Promise<Slo
   const effectiveEnd = isBefore(dateRangeEnd, latestBooking) ? dateRangeEnd : latestBooking;
 
   if (isAfter(effectiveStart, effectiveEnd)) return [];
+
+  const isGroup = eventType.eventCategory === 'GROUP';
+  const maxInvitees = eventType.maxInvitees;
+
+  // For GROUP events, fetch all bookings for this event type in the range
+  // (not per-user, since multiple invitees share a slot)
+  let groupBookingCounts: Map<string, number> | undefined;
+  if (isGroup) {
+    const groupBookings = await prisma.booking.findMany({
+      where: {
+        eventTypeId: eventTypeId,
+        status: { in: ['CONFIRMED', 'PENDING_CALENDAR_SYNC'] },
+        startTime: { gte: effectiveStart },
+        endTime: { lte: effectiveEnd },
+      },
+      select: { startTime: true },
+    });
+    groupBookingCounts = new Map();
+    for (const b of groupBookings) {
+      const key = b.startTime.toISOString();
+      groupBookingCounts.set(key, (groupBookingCounts.get(key) ?? 0) + 1);
+    }
+  }
 
   // Fetch existing Calendfree bookings in parallel with Google Calendar
   const existingBookings = await prisma.booking.findMany({
@@ -208,13 +232,27 @@ export async function getAvailableSlots(params: AvailabilityParams): Promise<Slo
           );
 
           if (!isGcalBusy && !isBooked) {
+            // For GROUP events, check if slot is full
+            if (isGroup && maxInvitees && groupBookingCounts) {
+              const count = groupBookingCounts.get(slotStart.toISOString()) ?? 0;
+              if (count >= maxInvitees) {
+                slotStart = addMinutes(slotStart, duration);
+                continue;
+              }
+            }
+
             const existingSlot = allSlots.find(
               (s) => s.start.getTime() === slotStart.getTime() && s.end.getTime() === slotEnd.getTime(),
             );
             if (existingSlot) {
               existingSlot.availableUserIds.push(userId);
             } else {
-              allSlots.push({ start: slotStart, end: slotEnd, availableUserIds: [userId] });
+              const newSlot: Slot = { start: slotStart, end: slotEnd, availableUserIds: [userId] };
+              if (isGroup && maxInvitees && groupBookingCounts) {
+                const count = groupBookingCounts.get(slotStart.toISOString()) ?? 0;
+                newSlot.remainingSpots = maxInvitees - count;
+              }
+              allSlots.push(newSlot);
             }
           }
 

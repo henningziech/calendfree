@@ -167,8 +167,7 @@ export async function getAvailableSlots(params: AvailabilityParams): Promise<Slo
 
   for (const day of days) {
     const dayOfWeek = DAY_NAMES[getDay(day)];
-    const dayWindows = bookableHours[dayOfWeek];
-    if (!dayWindows || dayWindows.length === 0) continue;
+    const defaultDayWindows = bookableHours[dayOfWeek];
 
     for (const userId of eligibleUserIds) {
       // Check booking limits per day
@@ -187,6 +186,18 @@ export async function getAvailableSlots(params: AvailabilityParams): Promise<Slo
       const dayInTzForHoliday = toZonedTime(day, bookableHoursTz);
       const dayDateStr = `${dayInTzForHoliday.getFullYear()}-${String(dayInTzForHoliday.getMonth() + 1).padStart(2, '0')}-${String(dayInTzForHoliday.getDate()).padStart(2, '0')}`;
       if (blockedHolidays.includes(dayDateStr)) continue;
+
+      // Resolve day windows: date-specific override > weekly schedule
+      const dateSpecificHours = (userConfig?.dateSpecificHours as Record<string, TimeWindow[]> | null) ?? null;
+      let dayWindows: TimeWindow[] | undefined;
+
+      if (dateSpecificHours && dayDateStr in dateSpecificHours) {
+        dayWindows = dateSpecificHours[dayDateStr];
+        if (!dayWindows || dayWindows.length === 0) continue; // Empty = unavailable
+      } else {
+        dayWindows = defaultDayWindows;
+        if (!dayWindows || dayWindows.length === 0) continue;
+      }
 
       for (const window of dayWindows) {
         const [startH, startM] = window.start.split(':').map(Number);

@@ -89,6 +89,9 @@ export async function bookingRoutes(app: FastifyInstance) {
       slots: slots.map((s) => ({
         start: s.start.toISOString(),
         end: s.end.toISOString(),
+        ...(eventType.showRemainingSpots && s.remainingSpots !== undefined
+          ? { remainingSpots: s.remainingSpots }
+          : {}),
       })),
     };
   });
@@ -129,6 +132,125 @@ export async function bookingRoutes(app: FastifyInstance) {
     const startTime = new Date(body.startTime);
     const endTime = addMinutes(startTime, eventType.duration);
     const customerTimezone = body.timezone ?? 'Europe/Berlin';
+
+    // GROUP event type — concurrency-safe booking with max invitees
+    if (eventType.eventCategory === 'GROUP') {
+      const maxInvitees = eventType.maxInvitees;
+
+      let booking;
+      try {
+        booking = await prisma.$transaction(async (tx) => {
+          // Count existing bookings for this exact slot
+          const existingCount = await tx.booking.count({
+            where: {
+              eventTypeId: eventType.id,
+              startTime: new Date(body.startTime),
+              status: { in: ['CONFIRMED', 'PENDING_CALENDAR_SYNC'] },
+            },
+          });
+
+          if (maxInvitees && existingCount >= maxInvitees) {
+            throw new Error('SLOT_FULL');
+          }
+
+          // Create booking assigned to the event type's userId (the host)
+          return tx.booking.create({
+            data: {
+              eventTypeId: eventType.id,
+              assignedUserId: eventType.userId!,
+              startTime,
+              endTime,
+              customerTimezone,
+              bookingToken: randomBytes(32).toString('hex'),
+              tokenExpiresAt: addMinutes(new Date(), 60 * 24 * 7),
+              formData: {
+                create: {
+                  name: body.name,
+                  email: body.email,
+                  data: { ...body.formData, ...(body.comment ? { _comment: body.comment } : {}) },
+                },
+              },
+            },
+            include: {
+              formData: true,
+              assignedUser: { select: { name: true, email: true } },
+            },
+          });
+        }, {
+          isolationLevel: 'Serializable',
+          maxWait: 5000,
+          timeout: 10000,
+        });
+      } catch (err: any) {
+        if (err.message === 'SLOT_FULL') {
+          return reply.status(409).send({ error: 'This time slot is fully booked' });
+        }
+        throw err;
+      }
+
+      // Create Google Calendar event (non-blocking on failure)
+      let meetLink: string | null = null;
+      try {
+        const calEvent = await createCalendarEvent({
+          userId: eventType.userId!,
+          summary: `${eventType.title} — ${body.name}`,
+          description: `Booked via Calendfree\n\nCustomer: ${body.name} (${body.email})${body.comment ? `\n\nKommentar: ${body.comment}` : ''}`,
+          startTime,
+          endTime,
+          attendeeEmail: body.email,
+          attendeeName: body.name,
+          autoMeetLink: eventType.autoMeetLink,
+        });
+
+        meetLink = calEvent.meetLink;
+        await prisma.booking.update({
+          where: { id: booking.id },
+          data: { calendarEventId: calEvent.eventId },
+        });
+      } catch (err) {
+        app.log.error(err, 'Failed to create calendar event for GROUP booking, marking as pending');
+        await prisma.booking.update({
+          where: { id: booking.id },
+          data: { status: 'PENDING_CALENDAR_SYNC' },
+        });
+      }
+
+      logAudit({
+        userId: eventType.userId!,
+        action: 'BOOKING_CREATED',
+        details: { bookingId: booking.id, customerEmail: body.email, eventCategory: 'GROUP' },
+      });
+
+      // Schedule notification emails (non-blocking on failure)
+      if (config.NODE_ENV !== 'test') {
+        try {
+          await scheduleBookingNotifications({
+            bookingId: booking.id,
+            startTime,
+            endTime,
+          });
+        } catch (err) {
+          app.log.error(err, 'Failed to schedule notifications');
+        }
+
+        try { await queueHubSpotSync(booking.id); } catch (err) { app.log.error(err, 'Failed to queue HubSpot sync'); }
+      }
+
+      const baseUrl = config.FRONTEND_URL;
+
+      return reply.status(201).send({
+        id: booking.id,
+        startTime: booking.startTime.toISOString(),
+        endTime: booking.endTime.toISOString(),
+        assignedUser: {
+          name: booking.assignedUser.name,
+          email: booking.assignedUser.email,
+        },
+        meetLink,
+        cancelUrl: `${baseUrl}/manage/${booking.bookingToken}/cancel`,
+        rescheduleUrl: `${baseUrl}/manage/${booking.bookingToken}/reschedule`,
+      });
+    }
 
     // Determine assigned user
     let assignedUserId: string;

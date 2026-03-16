@@ -136,6 +136,7 @@ model User {
   apiKeys        ApiKey[]
   auditLogs      AuditLog[]
   bookingComments BookingComment[]
+  vacations       VacationPeriod[]
 
   // Slug is unique within the organization (for personal booking pages)
   @@unique([organizationId, slug])
@@ -362,6 +363,22 @@ model AvailabilityConfig {
   dateSpecificHours Json?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VacationPeriod {
+  id        String   @id @default(uuid())
+  userId    String
+  /// Start date of vacation (inclusive)
+  startDate DateTime @db.Date
+  /// End date of vacation (inclusive)
+  endDate   DateTime @db.Date
+  /// Optional label (e.g. "Sommerurlaub", "Krank")
+  label     String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, startDate, endDate])
 }
 
 // ──────────────────────────────────────────────

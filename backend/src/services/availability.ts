@@ -73,6 +73,12 @@ export async function getAvailableSlots(params: AvailabilityParams): Promise<Slo
 
   if (activeUserIds.length === 0) return [];
 
+  // Fetch availability configs for all active users (batch, not per-user)
+  const availabilityConfigs = await prisma.availabilityConfig.findMany({
+    where: { userId: { in: activeUserIds } },
+  });
+  const configByUser = new Map(availabilityConfigs.map((c) => [c.userId, c]));
+
   const eventType = await prisma.eventType.findUniqueOrThrow({
     where: { id: eventTypeId },
   });
@@ -148,8 +154,15 @@ export async function getAvailableSlots(params: AvailabilityParams): Promise<Slo
         return b.assignedUserId === userId && bDay.toDateString() === thisDay.toDateString();
       });
 
-      // Simple limit: max 8 bookings per day (can be made configurable later)
-      if (dayBookings.length >= 8) continue;
+      const userConfig = configByUser.get(userId);
+      const maxPerDay = userConfig?.maxPerDay ?? 8;
+      if (dayBookings.length >= maxPerDay) continue;
+
+      // Check if this day is a blocked holiday for this user
+      const blockedHolidays = (userConfig?.blockedHolidays as string[] | null) ?? [];
+      const dayInTzForHoliday = toZonedTime(day, bookableHoursTz);
+      const dayDateStr = `${dayInTzForHoliday.getFullYear()}-${String(dayInTzForHoliday.getMonth() + 1).padStart(2, '0')}-${String(dayInTzForHoliday.getDate()).padStart(2, '0')}`;
+      if (blockedHolidays.includes(dayDateStr)) continue;
 
       for (const window of dayWindows) {
         const [startH, startM] = window.start.split(':').map(Number);

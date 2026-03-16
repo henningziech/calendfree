@@ -357,6 +357,9 @@ model AvailabilityConfig {
   blockedHolidays Json?
   /// Country code for holiday calendar (e.g. "de" for Germany)
   holidayCountry  String? @default("de")
+  /// Date-specific availability overrides as JSON: { "2026-03-25": [{"start":"10:00","end":"14:00"}], "2026-03-26": [] }
+  /// Empty array = unavailable that day. Null/missing = use weekly schedule.
+  dateSpecificHours Json?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

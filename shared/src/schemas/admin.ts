@@ -78,6 +78,9 @@ export const CreateEventTypeSchema = z.object({
     required: z.boolean().default(false),
     options: z.array(z.string()).default([]),
   })).default([]),
+  eventCategory: z.enum(['PERSONAL', 'TEAM', 'GROUP']).default('PERSONAL'),
+  maxInvitees: z.number().int().min(2).max(1000).nullable().optional(),
+  showRemainingSpots: z.boolean().default(false),
 });
 export type CreateEventType = z.infer<typeof CreateEventTypeSchema>;
 

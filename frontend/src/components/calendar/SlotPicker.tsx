@@ -95,6 +95,11 @@ export function SlotPicker({ slots, selectedSlot, onSelectSlot, timezone: _timez
               }`}
             >
               {format(parseISO(slot.start), 'HH:mm')}
+              {slot.remainingSpots !== undefined && (
+                <span className="ml-2 rounded-full bg-[#FEF3C7] px-2 py-0.5 text-xs font-medium text-[#92400E]">
+                  {slot.remainingSpots} {slot.remainingSpots === 1 ? 'Platz' : 'Plätze'} frei
+                </span>
+              )}
             </button>
           ))}
         </div>

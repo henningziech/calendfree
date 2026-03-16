@@ -3,6 +3,8 @@ import { apiRequest } from './client';
 export interface TimeSlot {
   start: string;
   end: string;
+  /** Number of remaining spots for GROUP event types. */
+  remainingSpots?: number;
 }
 
 export interface BookingResponse {

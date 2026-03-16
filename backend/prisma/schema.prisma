@@ -341,6 +341,10 @@ model AvailabilityConfig {
   maxPerDay  Int? @default(8)
   /// Max bookings per week
   maxPerWeek Int? @default(30)
+  /// Array of holiday date strings (ISO) that block availability: ["2026-12-25", "2027-01-01"]
+  blockedHolidays Json?
+  /// Country code for holiday calendar (e.g. "de" for Germany)
+  holidayCountry  String? @default("de")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

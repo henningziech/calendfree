@@ -116,18 +116,33 @@ function CopyPopover({
 
 // ─── Schedules Tab ─────────────────────────────────────────────────────────────
 
+/** Format date string in German locale. */
+function formatDateDE(dateStr: string): string {
+  const date = new Date(dateStr + 'T00:00:00');
+  return date.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+type DateSpecificHours = Record<string, TimeSlot[]>;
+
 function SchedulesTab({
   schedule,
   timezone,
+  dateSpecificHours,
   onScheduleChange,
   onTimezoneChange,
+  onDateSpecificHoursChange,
 }: {
   schedule: WeeklySchedule;
   timezone: string;
+  dateSpecificHours: DateSpecificHours;
   onScheduleChange: (s: WeeklySchedule) => void;
   onTimezoneChange: (tz: string) => void;
+  onDateSpecificHoursChange: (dsh: DateSpecificHours) => void;
 }) {
   const [copyDay, setCopyDay] = useState<string | null>(null);
+  const [dshFormOpen, setDshFormOpen] = useState(false);
+  const [dshDate, setDshDate] = useState('');
+  const [dshSlots, setDshSlots] = useState<TimeSlot[]>([{ ...DEFAULT_SLOT }]);
 
   /** Toggle a day on/off. */
   const toggleDay = (dayKey: string) => {
@@ -275,12 +290,150 @@ function SchedulesTab({
         </div>
       </div>
 
-      {/* Date-specific hours placeholder */}
+      {/* Date-specific hours */}
       <div className="rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-sm">
-        <h3 className="text-sm font-semibold text-[#64748B] uppercase tracking-wide">
-          Datumsabhängige Stunden
-        </h3>
-        <button className="mt-3 text-sm text-[#0B8ECA] hover:underline">+ Stunden</button>
+        <div className="flex items-start justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-[#64748B] uppercase tracking-wide">
+              Datumsabhängige Stunden
+            </h3>
+            <p className="mt-1 text-xs text-[#94A3B8]">Passe Verfügbarkeit für bestimmte Tage an</p>
+          </div>
+          {!dshFormOpen && (
+            <button
+              onClick={() => {
+                setDshDate('');
+                setDshSlots([{ ...DEFAULT_SLOT }]);
+                setDshFormOpen(true);
+              }}
+              className="text-sm text-[#0B8ECA] hover:underline"
+            >
+              + Stunden
+            </button>
+          )}
+        </div>
+
+        {/* Inline add form */}
+        {dshFormOpen && (
+          <div className="mt-4 space-y-3 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-3">
+            <div>
+              <label className="block text-xs font-medium text-[#1E293B]">Datum</label>
+              <input
+                type="date"
+                value={dshDate}
+                min={new Date().toISOString().split('T')[0]}
+                onChange={(e) => setDshDate(e.target.value)}
+                className="mt-1 rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-[#1E293B]">Zeitfenster</label>
+              <div className="mt-1 space-y-1.5">
+                {dshSlots.map((slot, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <input
+                      type="time"
+                      value={slot.start}
+                      onChange={(e) => {
+                        const next = [...dshSlots];
+                        next[idx] = { ...next[idx], start: e.target.value };
+                        setDshSlots(next);
+                      }}
+                      className="rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none"
+                    />
+                    <span className="text-[#64748B]">–</span>
+                    <input
+                      type="time"
+                      value={slot.end}
+                      onChange={(e) => {
+                        const next = [...dshSlots];
+                        next[idx] = { ...next[idx], end: e.target.value };
+                        setDshSlots(next);
+                      }}
+                      className="rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none"
+                    />
+                    {dshSlots.length > 1 && (
+                      <button
+                        onClick={() => setDshSlots(dshSlots.filter((_, i) => i !== idx))}
+                        className="text-[#94A3B8] hover:text-red-500"
+                        title="Zeitfenster entfernen"
+                      >
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <button
+                  onClick={() => {
+                    const lastEnd = dshSlots.length > 0 ? dshSlots[dshSlots.length - 1].end : '09:00';
+                    setDshSlots([...dshSlots, { start: lastEnd, end: '17:00' }]);
+                  }}
+                  className="text-xs text-[#0B8ECA] hover:underline"
+                >
+                  + Zeitfenster
+                </button>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  if (!dshDate) return;
+                  onDateSpecificHoursChange({ ...dateSpecificHours, [dshDate]: dshSlots });
+                  setDshFormOpen(false);
+                }}
+                disabled={!dshDate}
+                className="rounded-xl bg-[#0B8ECA] px-3 py-1.5 text-sm font-medium text-white disabled:opacity-40"
+              >
+                Hinzufügen
+              </button>
+              <button
+                onClick={() => setDshFormOpen(false)}
+                className="rounded-xl border border-[#E2E8F0] px-3 py-1.5 text-sm text-[#64748B]"
+              >
+                Abbrechen
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Existing entries */}
+        {(() => {
+          const today = new Date().toISOString().split('T')[0];
+          const futureDates = Object.keys(dateSpecificHours)
+            .filter((d) => d >= today && dateSpecificHours[d].length > 0)
+            .sort();
+          if (futureDates.length === 0) return null;
+          return (
+            <div className="mt-4 space-y-2">
+              {futureDates.map((date) => (
+                <div key={date} className="flex items-center justify-between rounded-lg px-2 py-1.5 hover:bg-[#F8FAFC]">
+                  <div>
+                    <p className="text-sm font-medium text-[#1E293B]">{formatDateDE(date)}</p>
+                    <p className="text-xs text-[#94A3B8]">
+                      {dateSpecificHours[date].map((s) => `${s.start}–${s.end}`).join(', ')}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const { [date]: _, ...rest } = dateSpecificHours;
+                      onDateSpecificHoursChange(rest);
+                    }}
+                    className="text-[#EF4444] hover:text-red-700"
+                    title="Eintrag löschen"
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
       </div>
 
       {/* Timezone */}
@@ -499,6 +652,7 @@ export function AvailabilityPage() {
   const maxPerWeek: number | null = profile?.availability?.maxPerWeek ?? null;
   const blockedHolidays: string[] = profile?.availability?.blockedHolidays ?? [];
   const holidayCountry: string = profile?.availability?.holidayCountry ?? 'de';
+  const dateSpecificHours: DateSpecificHours = profile?.availability?.dateSpecificHours ?? {};
 
   const load = async () => {
     setIsLoading(true);
@@ -524,6 +678,7 @@ export function AvailabilityPage() {
         maxPerWeek,
         blockedHolidays,
         holidayCountry,
+        dateSpecificHours,
       });
       await updateMyTimezone(timezone);
     } catch (err: any) {
@@ -588,8 +743,10 @@ export function AvailabilityPage() {
           <SchedulesTab
             schedule={schedule}
             timezone={timezone}
+            dateSpecificHours={dateSpecificHours}
             onScheduleChange={(s) => patchAvailability({ weeklySchedule: s })}
             onTimezoneChange={(tz) => setProfile((prev: any) => ({ ...prev, timezone: tz }))}
+            onDateSpecificHoursChange={(dsh) => patchAvailability({ dateSpecificHours: dsh })}
           />
         )}
 

@@ -166,3 +166,27 @@ export async function getHolidays(country: string = 'de', year?: number): Promis
   if (year) params.set('year', String(year));
   return apiRequest(`/holidays?${params}`);
 }
+
+// Self-service status
+export async function updateMyStatus(status: 'AVAILABLE' | 'ABSENT', absentUntil?: string | null) {
+  return apiRequest('/me/status', {
+    method: 'PATCH',
+    body: JSON.stringify({ status, absentUntil }),
+  });
+}
+
+// Vacations
+export async function getMyVacations(): Promise<Array<{ id: string; startDate: string; endDate: string; label: string | null }>> {
+  return apiRequest('/me/vacations');
+}
+
+export async function createVacation(data: { startDate: string; endDate: string; label?: string | null }) {
+  return apiRequest('/me/vacations', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteVacation(id: string) {
+  return apiRequest(`/me/vacations/${id}`, { method: 'DELETE' });
+}

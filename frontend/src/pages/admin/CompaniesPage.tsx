@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router';
 import { getCompanies, createCompany, deleteCompany } from '../../api/admin';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { ErrorMessage } from '../../components/ui/ErrorMessage';
@@ -72,7 +73,7 @@ export function CompaniesPage() {
 
       <div className="mt-4 space-y-2">
         {companies.map((c) => (
-          <div key={c.id} className="flex items-center justify-between rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-sm transition-all hover:shadow-md">
+          <Link key={c.id} to={`/admin/companies/${c.id}`} className="flex items-center justify-between rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-sm transition-all hover:border-[#0B8ECA]/30 hover:shadow-md">
             <div className="flex items-center gap-3">
               <div className="h-8 w-1 rounded-full bg-[#0B8ECA]" />
               <div>
@@ -80,8 +81,8 @@ export function CompaniesPage() {
                 <p className="text-sm text-[#64748B]">/{c.slug}</p>
               </div>
             </div>
-            <button onClick={() => handleDelete(c.id, c.name)} className="text-sm font-medium text-[#EF4444] transition-colors hover:text-red-600">Löschen</button>
-          </div>
+            <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(c.id, c.name); }} className="text-sm font-medium text-[#EF4444] transition-colors hover:text-red-600">Löschen</button>
+          </Link>
         ))}
         {companies.length === 0 && <p className="text-[#64748B] text-sm">Keine Companies vorhanden.</p>}
       </div>

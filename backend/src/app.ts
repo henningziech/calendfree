@@ -8,6 +8,11 @@ import multipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
+import {
+  serializerCompiler,
+  validatorCompiler,
+  jsonSchemaTransform,
+} from 'fastify-type-provider-zod';
 import { config } from './config.js';
 import sessionPlugin from './plugins/session.js';
 import { redis } from './redis.js';
@@ -44,6 +49,9 @@ export async function buildApp(): Promise<FastifyInstance> {
     genReqId: () => crypto.randomUUID(),
   });
 
+  app.setValidatorCompiler(validatorCompiler);
+  app.setSerializerCompiler(serializerCompiler);
+
   // Security
   await app.register(helmet, {
     contentSecurityPolicy: config.NODE_ENV === 'production',
@@ -74,8 +82,12 @@ export async function buildApp(): Promise<FastifyInstance> {
     decorateReply: false,
   });
 
-  // Session management (Redis-backed)
-  await app.register(sessionPlugin);
+  const isDocgen = config.NODE_ENV === 'docgen';
+
+  if (!isDocgen) {
+    // Session management (Redis-backed)
+    await app.register(sessionPlugin);
+  }
 
   // Swagger / OpenAPI
   await app.register(swagger, {
@@ -92,14 +104,17 @@ export async function buildApp(): Promise<FastifyInstance> {
         },
       },
     },
+    transform: jsonSchemaTransform,
   });
   await app.register(swaggerUi, { routePrefix: '/api/docs' });
 
-  // API key authentication (before session check, populates session.user if valid key)
-  app.addHook('preHandler', apiKeyAuth);
+  if (!isDocgen) {
+    // API key authentication (before session check, populates session.user if valid key)
+    app.addHook('preHandler', apiKeyAuth);
 
-  // Tenant context (decorates request with organizationId/companyId)
-  await app.register(tenantPlugin);
+    // Tenant context (decorates request with organizationId/companyId)
+    await app.register(tenantPlugin);
+  }
 
   // Auth routes
   await app.register(authRoutes);
@@ -140,7 +155,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   });
 
   // Start job queue (only in non-test environments)
-  if (config.NODE_ENV !== 'test') {
+  if (config.NODE_ENV !== 'test' && !isDocgen) {
     app.addHook('onReady', async () => {
       await startJobQueue();
       await registerNotificationHandlers();

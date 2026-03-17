@@ -26,6 +26,14 @@ export async function deleteCompany(id: string) {
   return apiRequest(`/admin/companies/${id}`, { method: 'DELETE' });
 }
 
+export async function getCompanyDetail(id: string) {
+  return apiRequest(`/admin/companies/${id}`);
+}
+
+export async function getCompanyBookings(companyId: string) {
+  return apiRequest(`/admin/companies/${companyId}/bookings`);
+}
+
 // Teams
 export async function getTeams(companyId: string) {
   return apiRequest<any[]>(`/admin/companies/${companyId}/teams`);

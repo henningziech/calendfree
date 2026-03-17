@@ -84,6 +84,7 @@ model Company {
   name           String
   slug           String
   customDomain   String?  @unique
+  language       String   @default("en")
   organizationId String
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -132,6 +133,7 @@ model User {
   absentUntil    DateTime?
   organizationId String
   lastLoginAt    DateTime?
+  language       String   @default("en")
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

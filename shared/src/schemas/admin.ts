@@ -3,11 +3,15 @@ import { z } from 'zod';
 import { SlugSchema, BrandingConfigSchema } from './organization.js';
 import { RoleSchema } from './auth.js';
 
+export const LanguageSchema = z.enum(['en', 'de']);
+export type Language = z.infer<typeof LanguageSchema>;
+
 // Company management
 export const UpdateCompanySchema = z.object({
   name: z.string().min(1).max(255).optional(),
   slug: SlugSchema.optional(),
   customDomain: z.string().max(255).nullable().optional(),
+  language: LanguageSchema.optional(),
 });
 export type UpdateCompany = z.infer<typeof UpdateCompanySchema>;
 
@@ -148,6 +152,11 @@ export const UpdateMyStatusSchema = z.object({
   absentUntil: z.string().datetime().nullable().optional(),
 });
 export type UpdateMyStatus = z.infer<typeof UpdateMyStatusSchema>;
+
+export const UpdateMyLanguageSchema = z.object({
+  language: LanguageSchema,
+});
+export type UpdateMyLanguage = z.infer<typeof UpdateMyLanguageSchema>;
 
 // Vacation periods
 export const CreateVacationSchema = z.object({

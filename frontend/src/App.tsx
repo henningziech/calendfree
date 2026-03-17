@@ -1,5 +1,7 @@
+import './i18n';
 import { BrowserRouter, Routes, Route } from 'react-router';
 import { AuthProvider } from './context/AuthContext';
+import { LanguageProvider } from './i18n/LanguageProvider';
 import { AdminLayout } from './components/layout/AdminLayout';
 import { BookingPage } from './pages/booking/BookingPage';
 import { ConfirmationPage } from './pages/booking/ConfirmationPage';
@@ -34,6 +36,7 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <LanguageProvider>
         <Routes>
           {/* Public */}
           <Route path="/" element={<HomePage />} />
@@ -78,6 +81,7 @@ export default function App() {
 
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
+        </LanguageProvider>
       </BrowserRouter>
     </AuthProvider>
   );

@@ -8,6 +8,7 @@ export interface SessionUser {
   organizationId: string;
   activeCompanyId: string | null;
   activeRole: 'ORG_ADMIN' | 'COMPANY_ADMIN' | 'USER' | null;
+  language: string;
   companyMemberships: Array<{
     companyId: string;
     companyName: string;

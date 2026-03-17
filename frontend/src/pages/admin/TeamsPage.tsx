@@ -1,17 +1,18 @@
 import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext';
-import { getTeams, createTeam, deleteTeam, updateRoundRobin } from '../../api/admin';
+import { getTeams, createTeam } from '../../api/admin';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { ErrorMessage } from '../../components/ui/ErrorMessage';
 
 export function TeamsPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [teams, setTeams] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
-  const [newMode, setNewMode] = useState('SEQUENTIAL');
 
   const companyId = user?.activeCompanyId;
 
@@ -31,21 +32,12 @@ export function TeamsPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!companyId) return;
+    if (!companyId || !newName.trim()) return;
     try {
-      await createTeam(companyId, { name: newName, roundRobinMode: newMode });
-      setShowCreate(false);
+      const team = await createTeam(companyId, { name: newName.trim() });
       setNewName('');
-      load();
-    } catch (err: any) {
-      setError(err.message);
-    }
-  };
-
-  const handleModeChange = async (teamId: string, mode: string) => {
-    try {
-      await updateRoundRobin(teamId, mode);
-      load();
+      setShowCreate(false);
+      navigate(`/dashboard/teams/${team.id}`);
     } catch (err: any) {
       setError(err.message);
     }
@@ -58,7 +50,10 @@ export function TeamsPage() {
     <div>
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-[#1E293B]">Teams</h1>
-        <button onClick={() => setShowCreate(true)} className="rounded-xl bg-[#0B8ECA] px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-[#0874A6] hover:shadow-md">
+        <button
+          onClick={() => setShowCreate(!showCreate)}
+          className="rounded-xl bg-gradient-to-r from-[#0B8ECA] to-[#14B8A6] px-4 py-2 text-sm font-medium text-white shadow-sm hover:shadow-md"
+        >
           + Neues Team
         </button>
       </div>
@@ -66,59 +61,61 @@ export function TeamsPage() {
       {error && <ErrorMessage message={error} />}
 
       {showCreate && (
-        <form onSubmit={handleCreate} className="mt-4 flex gap-3 rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-sm">
-          <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Team-Name" required className="flex-1 rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:ring-2 focus:ring-[#0B8ECA]/20 focus:outline-none" />
-          <select value={newMode} onChange={(e) => setNewMode(e.target.value)} className="rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:ring-2 focus:ring-[#0B8ECA]/20 focus:outline-none">
-            <option value="SEQUENTIAL">Sequential</option>
-            <option value="LEAST_BUSY">Least Busy</option>
-            <option value="WEIGHTED">Weighted</option>
-          </select>
-          <button type="submit" className="rounded-xl bg-[#0B8ECA] px-4 py-2 text-sm font-medium text-white hover:bg-[#0874A6]">Erstellen</button>
-          <button type="button" onClick={() => setShowCreate(false)} className="rounded-xl bg-[#F8FAFC] px-4 py-2 text-sm text-[#64748B] ring-1 ring-[#E2E8F0] hover:bg-[#E2E8F0]">Abbrechen</button>
+        <form onSubmit={handleCreate} className="mt-4 rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-sm">
+          <label className="block text-sm font-medium text-[#1E293B]">Teamname</label>
+          <div className="mt-1 flex gap-2">
+            <input
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder="z.B. Vertrieb, Support"
+              className="flex-1 rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none"
+              autoFocus
+            />
+            <button type="submit" className="rounded-xl bg-[#0B8ECA] px-4 py-2 text-sm font-medium text-white">
+              Erstellen
+            </button>
+            <button type="button" onClick={() => setShowCreate(false)} className="rounded-xl border border-[#E2E8F0] px-4 py-2 text-sm text-[#64748B]">
+              Abbrechen
+            </button>
+          </div>
         </form>
       )}
 
-      <div className="mt-4 space-y-3">
-        {teams.map((t) => (
-          <div key={t.id} className="rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-sm transition-all hover:shadow-md">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-1 rounded-full bg-[#14B8A6]" />
-                <div>
-                  <h3 className="font-medium text-[#1E293B]">{t.name}</h3>
-                  <p className="text-sm text-[#64748B]">
-                    {t.memberships?.length ?? 0} Mitglieder · {t._count?.eventTypes ?? 0} Event Types
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <select
-                  value={t.rrConfig?.mode ?? 'SEQUENTIAL'}
-                  onChange={(e) => handleModeChange(t.id, e.target.value)}
-                  className="rounded-xl border border-[#E2E8F0] px-2 py-1 text-sm focus:border-[#0B8ECA] focus:outline-none"
-                >
-                  <option value="SEQUENTIAL">Sequential</option>
-                  <option value="LEAST_BUSY">Least Busy</option>
-                  <option value="WEIGHTED">Weighted</option>
-                </select>
-                <button onClick={() => { if (confirm(`Team "${t.name}" löschen?`)) deleteTeam(t.id).then(load); }} className="text-sm font-medium text-[#EF4444] transition-colors hover:text-red-600">
-                  Löschen
-                </button>
-              </div>
-            </div>
-            {t.memberships?.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {t.memberships.map((m: any) => (
-                  <span key={m.user.id} className="rounded-full bg-[#F8FAFC] px-3 py-1 text-xs text-[#1E293B] ring-1 ring-[#E2E8F0]">
-                    {m.user.name} {t.rrConfig?.mode === 'WEIGHTED' ? `(${m.weight}%)` : ''}
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {teams.map((team: any) => (
+          <Link
+            key={team.id}
+            to={`/dashboard/teams/${team.id}`}
+            className="rounded-xl border border-[#E2E8F0] bg-white p-5 shadow-sm transition-all hover:border-[#0B8ECA]/30 hover:shadow-md"
+          >
+            <h3 className="font-semibold text-[#1E293B]">{team.name}</h3>
+            <p className="mt-2 text-sm text-[#64748B]">
+              {team.memberships?.length ?? 0} Mitglieder · {team._count?.eventTypes ?? team.eventTypes?.length ?? 0} Event-Typen
+            </p>
+            {team.memberships?.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {team.memberships.slice(0, 5).map((m: any) => (
+                  <span key={m.user?.id} className="rounded-full bg-[#F8FAFC] px-2 py-0.5 text-xs text-[#64748B] ring-1 ring-[#E2E8F0]">
+                    {m.user?.name}
                   </span>
                 ))}
+                {team.memberships.length > 5 && (
+                  <span className="rounded-full bg-[#F8FAFC] px-2 py-0.5 text-xs text-[#94A3B8] ring-1 ring-[#E2E8F0]">
+                    +{team.memberships.length - 5}
+                  </span>
+                )}
               </div>
             )}
-          </div>
+          </Link>
         ))}
-        {teams.length === 0 && <p className="text-[#64748B] text-sm">Keine Teams vorhanden.</p>}
       </div>
+
+      {teams.length === 0 && !showCreate && (
+        <div className="mt-12 text-center">
+          <p className="text-lg text-[#64748B]">Keine Teams vorhanden</p>
+          <p className="text-sm text-[#94A3B8]">Erstelle ein Team, um Termine im Round-Robin-Verfahren zu verteilen.</p>
+        </div>
+      )}
     </div>
   );
 }

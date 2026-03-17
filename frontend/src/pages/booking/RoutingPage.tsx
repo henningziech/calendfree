@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { apiRequest } from '../../api/client';
 import { getCompanyBranding, type BrandingConfig } from '../../api/branding';
 import { BrandedLayout } from '../../components/layout/BrandedLayout';
@@ -17,9 +18,11 @@ interface RoutingFormData {
 export function RoutingPage() {
   const { companySlug, formSlug } = useParams<{ companySlug: string; formSlug: string }>();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation('routing');
   const [form, setForm] = useState<RoutingFormData | null>(null);
   const [branding, setBranding] = useState<BrandingConfig | null>(null);
   const [companyName, setCompanyName] = useState<string>('');
+  const [companyInfo, setCompanyInfo] = useState<{ language?: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,20 +39,27 @@ export function RoutingPage() {
       apiRequest<RoutingFormData>(`/routing/${companySlug}/${formSlug}`),
       getCompanyBranding(companySlug),
     ])
-      .then(([formData, companyInfo]) => {
+      .then(([formData, info]) => {
         setForm(formData);
-        setBranding(companyInfo.branding);
-        setCompanyName(companyInfo.name);
+        setBranding(info.branding);
+        setCompanyName(info.name);
+        setCompanyInfo(info);
       })
       .catch((err) => {
         if (err.status === 404) {
-          setError('Dieses Formular ist nicht mehr verfügbar.');
+          setError(t('public.unavailable'));
         } else {
-          setError('Formular konnte nicht geladen werden.');
+          setError(t('public.loadError'));
         }
       })
       .finally(() => setIsLoading(false));
   }, [companySlug, formSlug]);
+
+  useEffect(() => {
+    if (companyInfo?.language) {
+      i18n.changeLanguage(companyInfo.language);
+    }
+  }, [companyInfo?.language, i18n]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,7 +96,7 @@ export function RoutingPage() {
           break;
       }
     } catch (err: any) {
-      setError(err.message || 'Ein Fehler ist aufgetreten.');
+      setError(err.message || t('public.genericError'));
     } finally {
       setIsSubmitting(false);
     }
@@ -133,7 +143,7 @@ export function RoutingPage() {
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             {form?.collectName && (
               <div>
-                <label className="block text-sm font-medium text-[#1E293B]">Name</label>
+                <label className="block text-sm font-medium text-[#1E293B]">{t('public.nameLabel')}</label>
                 <input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -144,7 +154,7 @@ export function RoutingPage() {
 
             {form?.collectEmail && (
               <div>
-                <label className="block text-sm font-medium text-[#1E293B]">E-Mail</label>
+                <label className="block text-sm font-medium text-[#1E293B]">{t('public.emailLabel')}</label>
                 <input
                   type="email"
                   value={email}
@@ -162,7 +172,7 @@ export function RoutingPage() {
                 required
                 className="mt-1 w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none"
               >
-                <option value="">— Bitte wählen —</option>
+                <option value="">{t('public.selectPlaceholder')}</option>
                 {form?.options.map((opt) => (
                   <option key={opt.id} value={opt.id}>{opt.label}</option>
                 ))}
@@ -176,7 +186,7 @@ export function RoutingPage() {
               disabled={isSubmitting || !selectedOptionId}
               className="w-full rounded-xl bg-gradient-to-r from-[#0B8ECA] to-[#14B8A6] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:shadow-md disabled:opacity-50"
             >
-              {isSubmitting ? 'Wird verarbeitet...' : 'Weiter'}
+              {isSubmitting ? t('public.processing') : t('public.continue')}
             </button>
           </form>
         </div>

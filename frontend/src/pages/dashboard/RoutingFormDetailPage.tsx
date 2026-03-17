@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { getRoutingForm, updateRoutingForm } from '../../api/admin';
 import { apiRequest } from '../../api/client';
@@ -16,6 +17,7 @@ interface RoutingOptionRow {
 export function RoutingFormDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const { t } = useTranslation('routing');
   const [form, setForm] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -88,7 +90,7 @@ export function RoutingFormDetailPage() {
         fallbackValue,
         options: options.map((o, i) => ({ ...o, order: i })),
       });
-      setSuccess('Gespeichert!');
+      setSuccess(t('detail.saved'));
       setTimeout(() => setSuccess(null), 2000);
     } catch (err: any) {
       setError(err.message);
@@ -123,14 +125,14 @@ export function RoutingFormDetailPage() {
   const companySlug = form?.company?.slug;
 
   if (isLoading) return <LoadingSpinner />;
-  if (!form) return <ErrorMessage message="Routing Form nicht gefunden." />;
+  if (!form) return <ErrorMessage message={t('detail.notFound')} />;
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
         <Link to="/dashboard/routing-forms" className="text-sm font-medium text-[#0B8ECA] hover:text-[#0874A6]">
-          ← Zurück zu Routing Forms
+          {t('detail.backToList')}
         </Link>
         <div className="mt-2 flex items-center gap-4">
           {editingTitle ? (
@@ -156,7 +158,7 @@ export function RoutingFormDetailPage() {
             onClick={() => { setActive(!active); }}
             className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${active ? 'bg-[#14B8A6]/10 text-[#14B8A6]' : 'bg-[#64748B]/10 text-[#64748B]'}`}
           >
-            {active ? 'Aktiv' : 'Inaktiv'}
+            {active ? t('detail.active') : t('detail.inactive')}
           </button>
         </div>
       </div>
@@ -166,20 +168,20 @@ export function RoutingFormDetailPage() {
 
       {/* Settings */}
       <div className="rounded-xl border border-[#E2E8F0] bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-[#1E293B]">Einstellungen</h2>
+        <h2 className="text-lg font-semibold text-[#1E293B]">{t('detail.settings')}</h2>
         <div className="mt-4 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-[#1E293B]">Beschreibung (optional)</label>
+            <label className="block text-sm font-medium text-[#1E293B]">{t('detail.descriptionLabel')}</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Wählen Sie Ihr Thema und wir verbinden Sie mit dem richtigen Ansprechpartner."
+              placeholder={t('detail.descriptionPlaceholder')}
               rows={2}
               className="mt-1 w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-[#1E293B]">Frage</label>
+            <label className="block text-sm font-medium text-[#1E293B]">{t('detail.questionLabel')}</label>
             <input
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
@@ -189,15 +191,15 @@ export function RoutingFormDetailPage() {
           <div className="flex gap-6">
             <label className="flex items-center gap-2 text-sm text-[#1E293B]">
               <input type="checkbox" checked={collectName} onChange={(e) => setCollectName(e.target.checked)} className="rounded" />
-              Name abfragen
+              {t('detail.collectName')}
             </label>
             <label className="flex items-center gap-2 text-sm text-[#1E293B]">
               <input type="checkbox" checked={collectEmail} onChange={(e) => setCollectEmail(e.target.checked)} className="rounded" />
-              E-Mail abfragen
+              {t('detail.collectEmail')}
             </label>
           </div>
           <div>
-            <label className="block text-sm font-medium text-[#64748B]">Slug</label>
+            <label className="block text-sm font-medium text-[#64748B]">{t('detail.slugLabel')}</label>
             <p className="mt-1 text-sm text-[#94A3B8]">/{form.slug}</p>
           </div>
         </div>
@@ -205,8 +207,8 @@ export function RoutingFormDetailPage() {
 
       {/* Option Mapping Table */}
       <div className="rounded-xl border border-[#E2E8F0] bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-[#1E293B]">Optionen</h2>
-        <p className="mt-1 text-sm text-[#64748B]">Jede Dropdown-Option wird einem Ziel zugeordnet.</p>
+        <h2 className="text-lg font-semibold text-[#1E293B]">{t('detail.options')}</h2>
+        <p className="mt-1 text-sm text-[#64748B]">{t('detail.optionsHint')}</p>
 
         <div className="mt-4 space-y-3">
           {options.map((opt, i) => (
@@ -221,7 +223,7 @@ export function RoutingFormDetailPage() {
               <input
                 value={opt.label}
                 onChange={(e) => updateOption(i, 'label', e.target.value)}
-                placeholder="Option Label"
+                placeholder={t('detail.optionLabelPlaceholder')}
                 className="w-40 rounded-lg border border-[#E2E8F0] px-3 py-1.5 text-sm focus:border-[#0B8ECA] focus:outline-none"
               />
 
@@ -233,9 +235,9 @@ export function RoutingFormDetailPage() {
                 onChange={(e) => updateOption(i, 'targetType', e.target.value)}
                 className="rounded-lg border border-[#E2E8F0] px-2 py-1.5 text-sm focus:border-[#0B8ECA] focus:outline-none"
               >
-                <option value="EVENT_TYPE">Event Type</option>
-                <option value="MESSAGE">Nachricht</option>
-                <option value="URL">Externe URL</option>
+                <option value="EVENT_TYPE">{t('detail.targetTypeEventType')}</option>
+                <option value="MESSAGE">{t('detail.targetTypeMessage')}</option>
+                <option value="URL">{t('detail.targetTypeUrl')}</option>
               </select>
 
               {/* Target value */}
@@ -245,7 +247,7 @@ export function RoutingFormDetailPage() {
                   onChange={(e) => updateOption(i, 'targetValue', e.target.value)}
                   className="flex-1 rounded-lg border border-[#E2E8F0] px-2 py-1.5 text-sm focus:border-[#0B8ECA] focus:outline-none"
                 >
-                  <option value="">— Event Type wählen —</option>
+                  <option value="">{t('detail.selectEventType')}</option>
                   {eventTypes.map((et: any) => (
                     <option key={et.id} value={et.slug}>{et.title} ({et.duration} Min)</option>
                   ))}
@@ -254,7 +256,7 @@ export function RoutingFormDetailPage() {
                 <input
                   value={opt.targetValue}
                   onChange={(e) => updateOption(i, 'targetValue', e.target.value)}
-                  placeholder={opt.targetType === 'URL' ? 'https://...' : 'Nachricht...'}
+                  placeholder={opt.targetType === 'URL' ? 'https://...' : t('detail.messagePlaceholder')}
                   className="flex-1 rounded-lg border border-[#E2E8F0] px-3 py-1.5 text-sm focus:border-[#0B8ECA] focus:outline-none"
                 />
               )}
@@ -269,23 +271,23 @@ export function RoutingFormDetailPage() {
           onClick={addOption}
           className="mt-3 rounded-xl border border-dashed border-[#CBD5E1] px-4 py-2 text-sm text-[#64748B] transition-colors hover:border-[#0B8ECA] hover:text-[#0B8ECA]"
         >
-          + Option hinzufügen
+          {t('detail.addOption')}
         </button>
       </div>
 
       {/* Fallback */}
       <div className="rounded-xl border border-[#F59E0B]/30 bg-[#FFFBEB] p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-[#92400E]">Fallback</h2>
-        <p className="mt-1 text-sm text-[#A16207]">Was passiert, wenn keine Option passt.</p>
+        <h2 className="text-lg font-semibold text-[#92400E]">{t('detail.fallback')}</h2>
+        <p className="mt-1 text-sm text-[#A16207]">{t('detail.fallbackHint')}</p>
         <div className="mt-4 flex items-center gap-3">
           <select
             value={fallbackType}
             onChange={(e) => setFallbackType(e.target.value as any)}
             className="rounded-lg border border-[#E2E8F0] px-2 py-1.5 text-sm focus:border-[#0B8ECA] focus:outline-none"
           >
-            <option value="EVENT_TYPE">Event Type</option>
-            <option value="MESSAGE">Nachricht</option>
-            <option value="URL">Externe URL</option>
+            <option value="EVENT_TYPE">{t('detail.targetTypeEventType')}</option>
+            <option value="MESSAGE">{t('detail.targetTypeMessage')}</option>
+            <option value="URL">{t('detail.targetTypeUrl')}</option>
           </select>
           {fallbackType === 'EVENT_TYPE' ? (
             <select
@@ -293,7 +295,7 @@ export function RoutingFormDetailPage() {
               onChange={(e) => setFallbackValue(e.target.value)}
               className="flex-1 rounded-lg border border-[#E2E8F0] px-2 py-1.5 text-sm focus:border-[#0B8ECA] focus:outline-none"
             >
-              <option value="">— Event Type wählen —</option>
+              <option value="">{t('detail.selectEventType')}</option>
               {eventTypes.map((et: any) => (
                 <option key={et.id} value={et.slug}>{et.title} ({et.duration} Min)</option>
               ))}
@@ -302,17 +304,17 @@ export function RoutingFormDetailPage() {
             <input
               value={fallbackValue}
               onChange={(e) => setFallbackValue(e.target.value)}
-              placeholder={fallbackType === 'URL' ? 'https://...' : 'Nachricht...'}
+              placeholder={fallbackType === 'URL' ? 'https://...' : t('detail.messagePlaceholder')}
               className="flex-1 rounded-lg border border-[#E2E8F0] px-3 py-1.5 text-sm focus:border-[#0B8ECA] focus:outline-none"
             />
           )}
         </div>
       </div>
 
-      {/* Vorschau Link */}
+      {/* Preview Link */}
       {form.slug && (
         <div className="rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-sm">
-          <label className="block text-sm font-medium text-[#64748B]">Vorschau-Link</label>
+          <label className="block text-sm font-medium text-[#64748B]">{t('detail.previewLink')}</label>
           <a
             href={`/${companySlug || ''}/routing/${form.slug}`}
             target="_blank"
@@ -331,7 +333,7 @@ export function RoutingFormDetailPage() {
           disabled={isSaving}
           className="rounded-xl bg-gradient-to-r from-[#0B8ECA] to-[#14B8A6] px-6 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:shadow-md disabled:opacity-50"
         >
-          {isSaving ? 'Speichern...' : 'Speichern'}
+          {isSaving ? t('detail.saving') : t('detail.save')}
         </button>
       </div>
     </div>

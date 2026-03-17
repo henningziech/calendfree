@@ -1,8 +1,21 @@
 // backend/src/routes/admin/teams.ts
 import type { FastifyInstance } from 'fastify';
+import { z } from 'zod/v4';
 import { prisma } from '../../db.js';
 import { requireAuth, requireRole } from '../../middleware/auth.js';
 import { CreateTeamSchema, UpdateTeamSchema, AddTeamMemberSchema, UpdateTeamMemberSchema, UpdateTeamMemberRoleSchema, UpdateRoundRobinSchema } from '@calendfree/shared';
+
+const ErrorResponse = z.object({ error: z.string() });
+const SuccessResponse = z.object({ success: z.boolean() });
+
+const TeamIdParam = z.object({
+  id: z.string().describe('Team ID'),
+});
+
+const TeamMemberParams = z.object({
+  teamId: z.string().describe('Team ID'),
+  userId: z.string().describe('User ID'),
+});
 
 /** Check if user can manage a team (is Owner or Company/Org Admin). */
 async function canManageTeam(userId: string, userRole: string, teamId: string): Promise<boolean> {
@@ -19,7 +32,26 @@ export async function teamRoutes(app: FastifyInstance) {
   app.addHook('preHandler', requireRole('USER', 'COMPANY_ADMIN', 'ORG_ADMIN'));
 
   /** POST /api/admin/companies/:companyId/teams — Create team */
-  app.post('/api/admin/companies/:companyId/teams', async (request, reply) => {
+  app.post('/api/admin/companies/:companyId/teams', {
+    schema: {
+      summary: 'Create a team',
+      description: 'Creates a new team within a company. The authenticated user becomes the team owner with default sequential round-robin configuration.',
+      tags: ['Teams'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: z.object({
+        companyId: z.string().describe('Company ID'),
+      }),
+      body: CreateTeamSchema,
+      response: {
+        201: z.object({
+          id: z.string().describe('Team ID'),
+          name: z.string().describe('Team name'),
+          companyId: z.string().describe('Company ID'),
+        }).passthrough(),
+        400: ErrorResponse,
+      },
+    },
+  }, async (request, reply) => {
     const { companyId } = request.params as { companyId: string };
     const user = request.session.user!;
     const body = CreateTeamSchema.parse(request.body);
@@ -41,7 +73,24 @@ export async function teamRoutes(app: FastifyInstance) {
   });
 
   /** GET /api/admin/companies/:companyId/teams — List teams */
-  app.get('/api/admin/companies/:companyId/teams', async (request) => {
+  app.get('/api/admin/companies/:companyId/teams', {
+    schema: {
+      summary: 'List teams for a company',
+      description: 'Returns all teams belonging to a company, including round-robin configuration, member details, and event type counts.',
+      tags: ['Teams'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: z.object({
+        companyId: z.string().describe('Company ID'),
+      }),
+      response: {
+        200: z.array(z.object({
+          id: z.string().describe('Team ID'),
+          name: z.string().describe('Team name'),
+          companyId: z.string().describe('Company ID'),
+        }).passthrough()),
+      },
+    },
+  }, async (request) => {
     const { companyId } = request.params as { companyId: string };
     return prisma.team.findMany({
       where: { companyId },
@@ -54,7 +103,23 @@ export async function teamRoutes(app: FastifyInstance) {
   });
 
   /** GET /api/admin/teams/:id — Get team details */
-  app.get('/api/admin/teams/:id', async (request, reply) => {
+  app.get('/api/admin/teams/:id', {
+    schema: {
+      summary: 'Get team details',
+      description: 'Returns detailed team information including round-robin config, members with avatars, event types, and company slug.',
+      tags: ['Teams'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: TeamIdParam,
+      response: {
+        200: z.object({
+          id: z.string().describe('Team ID'),
+          name: z.string().describe('Team name'),
+          companyId: z.string().describe('Company ID'),
+        }).passthrough(),
+        404: ErrorResponse,
+      },
+    },
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const team = await prisma.team.findUnique({
       where: { id },
@@ -70,7 +135,35 @@ export async function teamRoutes(app: FastifyInstance) {
   });
 
   /** GET /api/admin/teams/:id/bookings — Paginated team bookings with filters */
-  app.get('/api/admin/teams/:id/bookings', async (request, reply) => {
+  app.get('/api/admin/teams/:id/bookings', {
+    schema: {
+      summary: 'List team bookings',
+      description: 'Returns paginated bookings for a team. Supports filtering by status (upcoming/all) and assigned user. Requires team membership.',
+      tags: ['Teams'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: TeamIdParam,
+      querystring: z.object({
+        page: z.string().optional().describe('Page number (default: 1)'),
+        limit: z.string().optional().describe('Items per page (default: 15, max: 50)'),
+        status: z.string().optional().describe('Filter by status: "upcoming" (default) or "all"'),
+        userId: z.string().optional().describe('Filter by assigned user ID'),
+      }),
+      response: {
+        200: z.object({
+          bookings: z.array(z.object({
+            id: z.string().describe('Booking ID'),
+            startTime: z.string().describe('Start time (ISO 8601)'),
+            endTime: z.string().describe('End time (ISO 8601)'),
+            status: z.string().describe('Booking status'),
+          }).passthrough()),
+          total: z.number().describe('Total number of matching bookings'),
+          page: z.number().describe('Current page number'),
+          totalPages: z.number().describe('Total number of pages'),
+        }),
+        403: ErrorResponse,
+      },
+    },
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const user = request.session.user!;
     const { page = '1', limit = '15', status = 'upcoming', userId } = request.query as {
@@ -129,7 +222,24 @@ export async function teamRoutes(app: FastifyInstance) {
   });
 
   /** PATCH /api/admin/teams/:id — Update team */
-  app.patch('/api/admin/teams/:id', async (request, reply) => {
+  app.patch('/api/admin/teams/:id', {
+    schema: {
+      summary: 'Update a team',
+      description: 'Updates team properties. Requires team owner, company admin, or org admin role.',
+      tags: ['Teams'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: TeamIdParam,
+      body: UpdateTeamSchema,
+      response: {
+        200: z.object({
+          id: z.string().describe('Team ID'),
+          name: z.string().describe('Team name'),
+          companyId: z.string().describe('Company ID'),
+        }).passthrough(),
+        403: ErrorResponse,
+      },
+    },
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const user = request.session.user!;
     if (!(await canManageTeam(user.id, user.activeRole ?? 'USER', id))) {
@@ -141,7 +251,19 @@ export async function teamRoutes(app: FastifyInstance) {
   });
 
   /** DELETE /api/admin/teams/:id — Delete team */
-  app.delete('/api/admin/teams/:id', async (request, reply) => {
+  app.delete('/api/admin/teams/:id', {
+    schema: {
+      summary: 'Delete a team',
+      description: 'Permanently deletes a team and all associated memberships. Requires team owner, company admin, or org admin role.',
+      tags: ['Teams'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: TeamIdParam,
+      response: {
+        200: SuccessResponse,
+        403: ErrorResponse,
+      },
+    },
+  }, async (request, reply) => {
     const { id } = (request.params as { id: string });
     const user = request.session.user!;
     if (!(await canManageTeam(user.id, user.activeRole ?? 'USER', id))) {
@@ -152,7 +274,23 @@ export async function teamRoutes(app: FastifyInstance) {
   });
 
   /** PUT /api/admin/teams/:id/round-robin — Update round-robin config */
-  app.put('/api/admin/teams/:id/round-robin', async (request) => {
+  app.put('/api/admin/teams/:id/round-robin', {
+    schema: {
+      summary: 'Update round-robin configuration',
+      description: 'Updates the round-robin assignment mode for a team. Resets the assignment index to 0.',
+      tags: ['Teams'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: TeamIdParam,
+      body: UpdateRoundRobinSchema,
+      response: {
+        200: z.object({
+          teamId: z.string().describe('Team ID'),
+          mode: z.string().describe('Round-robin mode (SEQUENTIAL, LEAST_BUSY, WEIGHTED)'),
+          lastAssignedIndex: z.number().describe('Last assigned member index'),
+        }).passthrough(),
+      },
+    },
+  }, async (request) => {
     const { id } = request.params as { id: string };
     const body = UpdateRoundRobinSchema.parse(request.body);
     return prisma.roundRobinConfig.update({
@@ -162,7 +300,25 @@ export async function teamRoutes(app: FastifyInstance) {
   });
 
   /** POST /api/admin/teams/:id/members — Add team member */
-  app.post('/api/admin/teams/:id/members', async (request, reply) => {
+  app.post('/api/admin/teams/:id/members', {
+    schema: {
+      summary: 'Add a team member',
+      description: 'Adds a user as a member of the team with a specified weight for round-robin assignment.',
+      tags: ['Teams'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: TeamIdParam,
+      body: AddTeamMemberSchema,
+      response: {
+        201: z.object({
+          userId: z.string().describe('User ID'),
+          teamId: z.string().describe('Team ID'),
+          weight: z.number().describe('Round-robin weight'),
+          role: z.string().describe('Member role (MEMBER or OWNER)'),
+        }).passthrough(),
+        409: ErrorResponse,
+      },
+    },
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const body = AddTeamMemberSchema.parse(request.body);
     const membership = await prisma.teamMembership.create({
@@ -173,7 +329,24 @@ export async function teamRoutes(app: FastifyInstance) {
   });
 
   /** PATCH /api/admin/teams/:teamId/members/:userId — Update member weight */
-  app.patch('/api/admin/teams/:teamId/members/:userId', async (request) => {
+  app.patch('/api/admin/teams/:teamId/members/:userId', {
+    schema: {
+      summary: 'Update team member weight',
+      description: 'Updates the round-robin weight for a team member. Higher weight increases assignment frequency in weighted mode.',
+      tags: ['Teams'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: TeamMemberParams,
+      body: UpdateTeamMemberSchema,
+      response: {
+        200: z.object({
+          userId: z.string().describe('User ID'),
+          teamId: z.string().describe('Team ID'),
+          weight: z.number().describe('Updated round-robin weight'),
+          role: z.string().describe('Member role'),
+        }).passthrough(),
+      },
+    },
+  }, async (request) => {
     const { teamId, userId } = request.params as { teamId: string; userId: string };
     const body = UpdateTeamMemberSchema.parse(request.body);
     return prisma.teamMembership.update({
@@ -183,7 +356,27 @@ export async function teamRoutes(app: FastifyInstance) {
   });
 
   /** PATCH /api/admin/teams/:teamId/members/:userId/role — Update team member role (MEMBER/OWNER). Owner/Admin only. */
-  app.patch('/api/admin/teams/:teamId/members/:userId/role', { preHandler: [requireAuth] }, async (request, reply) => {
+  app.patch('/api/admin/teams/:teamId/members/:userId/role', {
+    schema: {
+      summary: 'Update team member role',
+      description: 'Changes a team member role between MEMBER and OWNER. Cannot demote the last owner. Requires team owner, company admin, or org admin role.',
+      tags: ['Teams'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: TeamMemberParams,
+      body: UpdateTeamMemberRoleSchema,
+      response: {
+        200: z.object({
+          userId: z.string().describe('User ID'),
+          teamId: z.string().describe('Team ID'),
+          role: z.string().describe('Updated member role (MEMBER or OWNER)'),
+          weight: z.number().describe('Round-robin weight'),
+        }).passthrough(),
+        400: ErrorResponse,
+        403: ErrorResponse,
+      },
+    },
+    preHandler: [requireAuth],
+  }, async (request, reply) => {
     const { teamId, userId: targetUserId } = request.params as { teamId: string; userId: string };
     const user = request.session.user!;
 
@@ -211,7 +404,20 @@ export async function teamRoutes(app: FastifyInstance) {
   });
 
   /** DELETE /api/admin/teams/:teamId/members/:userId — Remove team member */
-  app.delete('/api/admin/teams/:teamId/members/:userId', async (request, reply) => {
+  app.delete('/api/admin/teams/:teamId/members/:userId', {
+    schema: {
+      summary: 'Remove a team member',
+      description: 'Removes a user from the team. Cannot remove the last owner. Requires team owner, company admin, or org admin role.',
+      tags: ['Teams'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: TeamMemberParams,
+      response: {
+        200: SuccessResponse,
+        400: ErrorResponse,
+        403: ErrorResponse,
+      },
+    },
+  }, async (request, reply) => {
     const { teamId, userId } = request.params as { teamId: string; userId: string };
     const user = request.session.user!;
     if (!(await canManageTeam(user.id, user.activeRole ?? 'USER', teamId))) {
@@ -235,7 +441,24 @@ export async function teamRoutes(app: FastifyInstance) {
   });
 
   /** POST /api/admin/teams/:id/join — Join team (self) */
-  app.post('/api/admin/teams/:id/join', async (request, reply) => {
+  app.post('/api/admin/teams/:id/join', {
+    schema: {
+      summary: 'Join a team',
+      description: 'Adds the authenticated user as a member of the team with default weight. Returns 409 if already a member.',
+      tags: ['Teams'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: TeamIdParam,
+      response: {
+        201: z.object({
+          userId: z.string().describe('User ID'),
+          teamId: z.string().describe('Team ID'),
+          weight: z.number().describe('Round-robin weight'),
+          role: z.string().describe('Member role'),
+        }).passthrough(),
+        409: ErrorResponse,
+      },
+    },
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const user = request.session.user!;
     try {
@@ -250,7 +473,19 @@ export async function teamRoutes(app: FastifyInstance) {
   });
 
   /** POST /api/admin/teams/:id/leave — Leave team (self) */
-  app.post('/api/admin/teams/:id/leave', async (request, reply) => {
+  app.post('/api/admin/teams/:id/leave', {
+    schema: {
+      summary: 'Leave a team',
+      description: 'Removes the authenticated user from the team. Cannot leave if the user is the last owner.',
+      tags: ['Teams'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: TeamIdParam,
+      response: {
+        200: SuccessResponse,
+        400: ErrorResponse,
+      },
+    },
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const user = request.session.user!;
 
@@ -272,7 +507,29 @@ export async function teamRoutes(app: FastifyInstance) {
   });
 
   /** POST /api/admin/teams/:id/invite — Invite user to team by email */
-  app.post('/api/admin/teams/:id/invite', async (request, reply) => {
+  app.post('/api/admin/teams/:id/invite', {
+    schema: {
+      summary: 'Invite a user to a team',
+      description: 'Adds a user to the team by their email address. Returns 404 if the user is not found, 409 if already a member.',
+      tags: ['Teams'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: TeamIdParam,
+      body: z.object({
+        email: z.string().describe('Email address of the user to invite'),
+        weight: z.number().optional().describe('Round-robin weight (default: 100)'),
+      }),
+      response: {
+        201: z.object({
+          userId: z.string().describe('User ID'),
+          teamId: z.string().describe('Team ID'),
+          weight: z.number().describe('Round-robin weight'),
+          role: z.string().describe('Member role'),
+        }).passthrough(),
+        404: ErrorResponse,
+        409: ErrorResponse,
+      },
+    },
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const { email, weight } = request.body as { email: string; weight?: number };
 

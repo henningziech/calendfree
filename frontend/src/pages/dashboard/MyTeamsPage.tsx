@@ -14,7 +14,7 @@ export function MyTeamsPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
 
-  const companyId = user?.companyMemberships?.[0]?.companyId;
+  const companyId = user?.activeCompanyId;
 
   const load = async () => {
     if (!companyId) return;

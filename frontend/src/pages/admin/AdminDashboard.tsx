@@ -1,19 +1,21 @@
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 
 export function AdminDashboard() {
   const { user } = useAuth();
+  const { t } = useTranslation('admin');
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-[#1E293B]">Dashboard</h1>
+      <h1 className="text-2xl font-bold text-[#1E293B]">{t('dashboard.title')}</h1>
       <p className="mt-2 text-[#64748B]">
-        Willkommen, {user?.name}. Rolle: {user?.activeRole?.replace('_', ' ')}.
+        {t('dashboard.welcome', { name: user?.name, role: user?.activeRole?.replace('_', ' ') })}
       </p>
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         {[
-          { label: 'Companies', href: '/admin/companies', desc: 'Firmen verwalten', accent: '#0B8ECA' },
-          { label: 'Teams', href: '/admin/teams', desc: 'Teams & Round-Robin', accent: '#14B8A6' },
-          { label: 'Event Types', href: '/admin/event-types', desc: 'Terminarten verwalten', accent: '#F59E0B' },
+          { label: t('dashboard.companies'), href: '/admin/companies', desc: t('dashboard.companiesDesc'), accent: '#0B8ECA' },
+          { label: t('dashboard.teams'), href: '/admin/teams', desc: t('dashboard.teamsDesc'), accent: '#14B8A6' },
+          { label: t('dashboard.eventTypes'), href: '/admin/event-types', desc: t('dashboard.eventTypesDesc'), accent: '#F59E0B' },
         ].map((card) => (
           <a
             key={card.href}

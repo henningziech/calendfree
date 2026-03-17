@@ -1,5 +1,6 @@
 // frontend/src/pages/admin/AnalyticsPage.tsx
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { apiRequest } from '../../api/client';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { ErrorMessage } from '../../components/ui/ErrorMessage';
@@ -13,6 +14,7 @@ interface AnalyticsData {
 }
 
 export function AnalyticsPage() {
+  const { t } = useTranslation('admin');
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,15 +37,15 @@ export function AnalyticsPage() {
   if (!data) return null;
 
   const summaryCards = [
-    { label: 'Buchungen (30 Tage)', value: data.summary.total30d, accent: '#0B8ECA' },
-    { label: 'Buchungen (7 Tage)', value: data.summary.totalWeek, accent: '#14B8A6' },
-    { label: 'Stornierungen', value: data.summary.cancelled30d, accent: '#EF4444' },
-    { label: 'Storno-Rate', value: `${data.summary.cancelRate}%`, accent: '#F59E0B' },
+    { label: t('analytics.bookings30d'), value: data.summary.total30d, accent: '#0B8ECA' },
+    { label: t('analytics.bookings7d'), value: data.summary.totalWeek, accent: '#14B8A6' },
+    { label: t('analytics.cancellations'), value: data.summary.cancelled30d, accent: '#EF4444' },
+    { label: t('analytics.cancelRate'), value: `${data.summary.cancelRate}%`, accent: '#F59E0B' },
   ];
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-[#1E293B]">Analytics</h1>
+      <h1 className="text-2xl font-bold text-[#1E293B]">{t('analytics.title')}</h1>
 
       {/* Summary cards */}
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-4">
@@ -58,7 +60,7 @@ export function AnalyticsPage() {
 
       {/* Daily chart */}
       <div className="mt-6 rounded-xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
-        <h3 className="mb-4 font-semibold text-[#1E293B]">Buchungen pro Tag (30 Tage)</h3>
+        <h3 className="mb-4 font-semibold text-[#1E293B]">{t('analytics.dailyChart')}</h3>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={data.daily}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
@@ -72,7 +74,7 @@ export function AnalyticsPage() {
 
       {/* Top users */}
       <div className="mt-6 rounded-xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
-        <h3 className="mb-4 font-semibold text-[#1E293B]">Top Consultants (30 Tage)</h3>
+        <h3 className="mb-4 font-semibold text-[#1E293B]">{t('analytics.topConsultants')}</h3>
         <div className="space-y-3">
           {data.byUser.map((u, i) => (
             <div key={u.name} className="flex items-center gap-3">
@@ -80,7 +82,7 @@ export function AnalyticsPage() {
               <div className="flex-1">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-[#1E293B]">{u.name}</span>
-                  <span className="text-sm text-[#64748B]">{u.count} Buchungen</span>
+                  <span className="text-sm text-[#64748B]">{t('analytics.bookings_other', { count: u.count })}</span>
                 </div>
                 <div className="mt-1.5 h-2 rounded-full bg-[#F8FAFC]">
                   <div
@@ -91,7 +93,7 @@ export function AnalyticsPage() {
               </div>
             </div>
           ))}
-          {data.byUser.length === 0 && <p className="text-sm text-[#64748B]">Noch keine Buchungsdaten.</p>}
+          {data.byUser.length === 0 && <p className="text-sm text-[#64748B]">{t('analytics.noData')}</p>}
         </div>
       </div>
     </div>

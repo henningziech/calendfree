@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { getCompanyUsers, inviteUser, removeUser } from '../../api/admin';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
@@ -7,6 +8,7 @@ import { ErrorMessage } from '../../components/ui/ErrorMessage';
 
 export function UsersPage() {
   const { user } = useAuth();
+  const { t } = useTranslation(['admin', 'common']);
   const [users, setUsers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,9 +49,9 @@ export function UsersPage() {
   return (
     <div>
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[#1E293B]">Users</h1>
+        <h1 className="text-2xl font-bold text-[#1E293B]">{t('admin:users.title')}</h1>
         <button onClick={() => setShowInvite(true)} className="rounded-xl bg-[#0B8ECA] px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-[#0874A6] hover:shadow-md">
-          + User einladen
+          {t('admin:users.invite')}
         </button>
       </div>
 
@@ -57,15 +59,15 @@ export function UsersPage() {
 
       {showInvite && (
         <form onSubmit={handleInvite} className="mt-4 flex gap-3 rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-sm">
-          <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Name" required className="flex-1 rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:ring-2 focus:ring-[#0B8ECA]/20 focus:outline-none" />
-          <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="E-Mail" type="email" required className="flex-1 rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:ring-2 focus:ring-[#0B8ECA]/20 focus:outline-none" />
+          <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={t('admin:users.namePlaceholder')} required className="flex-1 rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:ring-2 focus:ring-[#0B8ECA]/20 focus:outline-none" />
+          <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder={t('admin:users.emailPlaceholder')} type="email" required className="flex-1 rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:ring-2 focus:ring-[#0B8ECA]/20 focus:outline-none" />
           <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} className="rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none">
             <option value="USER">User</option>
             <option value="COMPANY_ADMIN">Company Admin</option>
             <option value="ORG_ADMIN">Org Admin</option>
           </select>
-          <button type="submit" className="rounded-xl bg-[#0B8ECA] px-4 py-2 text-sm font-medium text-white hover:bg-[#0874A6]">Einladen</button>
-          <button type="button" onClick={() => setShowInvite(false)} className="rounded-xl bg-[#F8FAFC] px-4 py-2 text-sm text-[#64748B] ring-1 ring-[#E2E8F0] hover:bg-[#E2E8F0]">Abbrechen</button>
+          <button type="submit" className="rounded-xl bg-[#0B8ECA] px-4 py-2 text-sm font-medium text-white hover:bg-[#0874A6]">{t('admin:users.inviteButton')}</button>
+          <button type="button" onClick={() => setShowInvite(false)} className="rounded-xl bg-[#F8FAFC] px-4 py-2 text-sm text-[#64748B] ring-1 ring-[#E2E8F0] hover:bg-[#E2E8F0]">{t('common:cancel')}</button>
         </form>
       )}
 
@@ -80,10 +82,10 @@ export function UsersPage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <span className={`h-2 w-2 rounded-full ${u.status === 'ABSENT' ? 'bg-[#EF4444]' : 'bg-[#10B981]'}`} title={u.status === 'ABSENT' ? 'Abwesend' : 'Verfügbar'} />
+              <span className={`h-2 w-2 rounded-full ${u.status === 'ABSENT' ? 'bg-[#EF4444]' : 'bg-[#10B981]'}`} title={u.status === 'ABSENT' ? t('admin:users.statusAbsent') : t('admin:users.statusAvailable')} />
               <span className="rounded-full bg-[#0B8ECA]/10 px-3 py-1 text-xs font-medium text-[#0B8ECA]">{u.role}</span>
-              <span className={`h-2 w-2 rounded-full ${u.googleConnected ? 'bg-[#10B981]' : 'bg-[#E2E8F0]'}`} title={u.googleConnected ? 'Google verbunden' : 'Nicht verbunden'} />
-              <button onClick={() => { if (confirm(`${u.name} entfernen?`)) removeUser(companyId!, u.id).then(load); }} className="text-sm font-medium text-[#EF4444] transition-colors hover:text-red-600">Entfernen</button>
+              <span className={`h-2 w-2 rounded-full ${u.googleConnected ? 'bg-[#10B981]' : 'bg-[#E2E8F0]'}`} title={u.googleConnected ? t('admin:users.googleConnected') : t('admin:users.googleNotConnected')} />
+              <button onClick={() => { if (confirm(t('admin:users.confirmRemove', { name: u.name }))) removeUser(companyId!, u.id).then(load); }} className="text-sm font-medium text-[#EF4444] transition-colors hover:text-red-600">{t('admin:users.remove')}</button>
             </div>
           </div>
         ))}

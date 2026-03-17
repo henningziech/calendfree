@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { getUserDetail, updateUserStatus, getUserBookings, deleteUser, getCompanies, getTeams } from '../../api/admin';
 import { apiRequest } from '../../api/client';
@@ -8,11 +9,13 @@ import { ErrorMessage } from '../../components/ui/ErrorMessage';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
 import { BookingCard } from '../../components/bookings/BookingCard';
 import { BookingDetailModal } from '../../components/bookings/BookingDetailModal';
+import { formatDateLocalized } from '../../utils/dateLocale';
 import type { Booking } from '../../components/bookings/types';
 
 export function UserDetailPage() {
   const { userId } = useParams<{ userId: string }>();
   const { user: currentUser } = useAuth();
+  const { t } = useTranslation(['admin', 'common']);
   const navigate = useNavigate();
   const [userDetail, setUserDetail] = useState<any>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -45,11 +48,11 @@ export function UserDetailPage() {
       setAllTeams(teamsArrays.flat());
       setAbsentUntilInput(detail.absentUntil ? detail.absentUntil.split('T')[0] : '');
     } catch (err: any) {
-      setError(err.status === 404 ? 'User nicht gefunden.' : 'Fehler beim Laden.');
+      setError(err.status === 404 ? t('admin:userDetail.notFound') : t('admin:userDetail.loadError'));
     } finally {
       setIsLoading(false);
     }
-  }, [userId]);
+  }, [userId, t]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -65,7 +68,7 @@ export function UserDetailPage() {
       );
       setUserDetail({ ...userDetail, status: newStatus, absentUntil: newStatus === 'ABSENT' && absentUntilInput ? absentUntilInput : null });
     } catch {
-      setError('Status konnte nicht geändert werden.');
+      setError(t('admin:userDetail.statusChangeError'));
     } finally {
       setIsSavingStatus(false);
     }
@@ -78,7 +81,7 @@ export function UserDetailPage() {
       await updateUserStatus(userId, 'ABSENT', absentUntilInput || undefined);
       setUserDetail({ ...userDetail, absentUntil: absentUntilInput || null });
     } catch {
-      setError('Datum konnte nicht gespeichert werden.');
+      setError(t('admin:userDetail.dateChangeError'));
     } finally {
       setIsSavingStatus(false);
     }
@@ -86,12 +89,12 @@ export function UserDetailPage() {
 
   const handleDelete = async () => {
     if (!userId) return;
-    if (!confirm(`${userDetail?.name} wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`)) return;
+    if (!confirm(t('admin:userDetail.deleteConfirm', { name: userDetail?.name }))) return;
     try {
       await deleteUser(userId);
       navigate('/admin/users');
     } catch (err: any) {
-      setError(err.message ?? 'Fehler beim Löschen.');
+      setError(err.message ?? t('admin:userDetail.deleteError'));
     }
   };
 
@@ -104,7 +107,7 @@ export function UserDetailPage() {
       });
       load();
     } catch {
-      setError('Rolle konnte nicht geändert werden.');
+      setError(t('admin:userDetail.roleChangeError'));
     }
   };
 
@@ -119,29 +122,29 @@ export function UserDetailPage() {
       setAddCompanyRole('USER');
       load();
     } catch (err: any) {
-      setError(err.message ?? 'Fehler beim Hinzufügen.');
+      setError(err.message ?? t('admin:userDetail.addToCompanyError'));
     }
   };
 
   const handleRemoveFromCompany = async (companyId: string) => {
     if (!userId) return;
-    if (!confirm('User wirklich aus dieser Company entfernen?')) return;
+    if (!confirm(t('admin:userDetail.removeFromCompanyConfirm'))) return;
     try {
       await apiRequest(`/admin/companies/${companyId}/users/${userId}`, { method: 'DELETE' });
       load();
     } catch {
-      setError('Fehler beim Entfernen.');
+      setError(t('admin:userDetail.removeFromCompanyError'));
     }
   };
 
   const handleRemoveFromTeam = async (teamId: string) => {
     if (!userId) return;
-    if (!confirm('User wirklich aus diesem Team entfernen?')) return;
+    if (!confirm(t('admin:userDetail.removeFromTeamConfirm'))) return;
     try {
       await apiRequest(`/admin/teams/${teamId}/members/${userId}`, { method: 'DELETE' });
       load();
     } catch {
-      setError('Fehler beim Entfernen aus Team.');
+      setError(t('admin:userDetail.removeFromTeamError'));
     }
   };
 
@@ -154,7 +157,7 @@ export function UserDetailPage() {
       });
       load();
     } catch (err: any) {
-      setError(err.message ?? 'Fehler beim Hinzufügen zum Team.');
+      setError(err.message ?? t('admin:userDetail.addToTeamError'));
     }
   };
 
@@ -173,10 +176,22 @@ export function UserDetailPage() {
 
   const isAbsent = userDetail.status === 'ABSENT';
 
+  /** Format last login date using locale-aware formatting. */
+  const formatLastLogin = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleString(undefined, {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
   return (
     <div>
       <Link to="/admin/users" className="text-sm font-medium text-[#0B8ECA] hover:text-[#0874A6] transition-colors">
-        ← Zurück zur Übersicht
+        &larr; {t('admin:userDetail.backToOverview')}
       </Link>
 
       {error && <div className="mt-4"><ErrorMessage message={error} /></div>}
@@ -188,16 +203,16 @@ export function UserDetailPage() {
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold text-[#1E293B]">{userDetail.name}</h1>
             <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${isAbsent ? 'bg-red-100 text-red-700' : 'bg-teal-100 text-teal-700'}`}>
-              {isAbsent ? 'Abwesend' : 'Verfügbar'}
+              {isAbsent ? t('admin:userDetail.absent') : t('admin:userDetail.available')}
             </span>
           </div>
           <p className="text-sm text-[#64748B]">{userDetail.email}</p>
           <p className="text-xs text-[#64748B]/70">
-            {userDetail.googleTokens?.connected ? 'Google Kalender verbunden' : 'Google nicht verbunden'}
+            {userDetail.googleTokens?.connected ? t('admin:userDetail.googleConnected') : t('admin:userDetail.googleNotConnected')}
             {userDetail.lastLoginAt && (
-              <> · Letzter Login: {new Date(userDetail.lastLoginAt).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</>
+              <> · {t('admin:userDetail.lastLogin', { date: formatLastLogin(userDetail.lastLoginAt) })}</>
             )}
-            {!userDetail.lastLoginAt && <> · Noch nie eingeloggt</>}
+            {!userDetail.lastLoginAt && <> · {t('admin:userDetail.neverLoggedIn')}</>}
           </p>
         </div>
       </div>
@@ -205,8 +220,8 @@ export function UserDetailPage() {
       {/* Status Section */}
       <div className="mt-6 rounded-xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
         <div className="flex items-center gap-2 mb-3">
-          <h2 className="text-sm font-semibold text-[#1E293B]">Verfügbarkeitsstatus</h2>
-          <HelpTooltip text="Abwesende User werden in Team-Buchungsseiten nicht berücksichtigt (Round-Robin, Verfügbarkeit)." />
+          <h2 className="text-sm font-semibold text-[#1E293B]">{t('admin:userDetail.availabilityStatus')}</h2>
+          <HelpTooltip text={t('admin:userDetail.availabilityTooltip')} />
         </div>
         <div className="flex flex-wrap items-center gap-4">
           <button
@@ -218,14 +233,14 @@ export function UserDetailPage() {
                 : 'bg-red-50 text-red-700 ring-1 ring-red-200 hover:bg-red-100'
             } disabled:opacity-50`}
           >
-            {isSavingStatus ? 'Wird gespeichert...' : isAbsent ? 'Auf Verfügbar setzen' : 'Auf Abwesend setzen'}
+            {isSavingStatus ? t('admin:userDetail.saving') : isAbsent ? t('admin:userDetail.setAvailable') : t('admin:userDetail.setAbsent')}
           </button>
 
           {isAbsent && (
             <div className="flex items-center gap-2">
               <label className="flex items-center gap-1 text-sm text-[#64748B]">
-                Abwesend bis
-                <HelpTooltip text="Optional. Wird das Datum erreicht, wechselt der Status automatisch zurück auf Verfügbar." />
+                {t('admin:userDetail.absentUntil')}
+                <HelpTooltip text={t('admin:userDetail.absentUntilTooltip')} />
               </label>
               <input
                 type="date"
@@ -238,7 +253,7 @@ export function UserDetailPage() {
                 disabled={isSavingStatus}
                 className="rounded-lg bg-[#0B8ECA] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#0874A6] disabled:opacity-50"
               >
-                Speichern
+                {t('common:save')}
               </button>
             </div>
           )}
@@ -248,8 +263,8 @@ export function UserDetailPage() {
       {/* Company Memberships + Role */}
       <div className="mt-6 rounded-xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
         <div className="flex items-center gap-2 mb-3">
-          <h2 className="text-sm font-semibold text-[#1E293B]">Company-Mitgliedschaften</h2>
-          <HelpTooltip text="ORG_ADMIN: Kann alle Firmen verwalten. COMPANY_ADMIN: Kann eine bestimmte Firma verwalten. USER: Standardrolle." />
+          <h2 className="text-sm font-semibold text-[#1E293B]">{t('admin:userDetail.companyMemberships')}</h2>
+          <HelpTooltip text={t('admin:userDetail.companyMembershipsTooltip')} />
         </div>
 
         {userDetail.companyMemberships?.length > 0 && (
@@ -271,7 +286,7 @@ export function UserDetailPage() {
                     onClick={() => handleRemoveFromCompany(cm.company.id)}
                     className="text-xs text-[#EF4444] hover:text-red-600 transition-colors"
                   >
-                    Entfernen
+                    {t('admin:userDetail.remove')}
                   </button>
                 </div>
               </div>
@@ -291,7 +306,7 @@ export function UserDetailPage() {
                 onChange={(e) => setAddCompanyId(e.target.value)}
                 className="flex-1 rounded-xl border border-[#E2E8F0] px-3 py-1.5 text-sm focus:border-[#0B8ECA] focus:outline-none"
               >
-                <option value="">Company auswählen...</option>
+                <option value="">{t('admin:userDetail.selectCompany')}</option>
                 {availableCompanies.map((c: any) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
@@ -310,7 +325,7 @@ export function UserDetailPage() {
                 disabled={!addCompanyId}
                 className="rounded-xl bg-[#0B8ECA] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#0874A6] disabled:opacity-50 transition-colors"
               >
-                Hinzufügen
+                {t('common:add')}
               </button>
             </div>
           );
@@ -319,7 +334,7 @@ export function UserDetailPage() {
 
       {/* Team Memberships */}
       <div className="mt-4 rounded-xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
-        <h2 className="text-sm font-semibold text-[#1E293B] mb-3">Teams</h2>
+        <h2 className="text-sm font-semibold text-[#1E293B] mb-3">{t('admin:userDetail.teamsSection')}</h2>
 
         {userDetail.teamMemberships?.length > 0 ? (
           <div className="space-y-2 mb-4">
@@ -330,13 +345,13 @@ export function UserDetailPage() {
                   onClick={() => handleRemoveFromTeam(tm.team.id)}
                   className="text-xs text-[#EF4444] hover:text-red-600 transition-colors"
                 >
-                  Entfernen
+                  {t('admin:userDetail.remove')}
                 </button>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-sm text-[#64748B] mb-4">In keinem Team.</p>
+          <p className="text-sm text-[#64748B] mb-4">{t('admin:userDetail.noTeam')}</p>
         )}
 
         {/* Add to team */}
@@ -351,9 +366,9 @@ export function UserDetailPage() {
                 onChange={(e) => setAddTeamId(e.target.value)}
                 className="flex-1 rounded-xl border border-[#E2E8F0] px-3 py-1.5 text-sm focus:border-[#0B8ECA] focus:outline-none"
               >
-                <option value="">Team auswählen...</option>
-                {availableTeams.map((t: any) => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
+                <option value="">{t('admin:userDetail.selectTeam')}</option>
+                {availableTeams.map((team: any) => (
+                  <option key={team.id} value={team.id}>{team.name}</option>
                 ))}
               </select>
               <button
@@ -361,7 +376,7 @@ export function UserDetailPage() {
                 disabled={!addTeamId}
                 className="rounded-xl bg-[#0B8ECA] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#0874A6] disabled:opacity-50 transition-colors"
               >
-                Hinzufügen
+                {t('common:add')}
               </button>
             </div>
           );
@@ -371,10 +386,10 @@ export function UserDetailPage() {
       {/* Upcoming Bookings */}
       <div className="mt-6">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-[#64748B] mb-3">
-          Kommende Termine ({bookings.length})
+          {t('admin:userDetail.upcomingBookings', { count: bookings.length })}
         </h2>
         {bookings.length === 0 ? (
-          <p className="text-sm text-[#64748B]">Keine kommenden Termine.</p>
+          <p className="text-sm text-[#64748B]">{t('admin:userDetail.noBookings')}</p>
         ) : (
           <div className="space-y-2">
             {bookings.map((b) => (
@@ -388,14 +403,14 @@ export function UserDetailPage() {
       {currentUser?.activeRole === 'ORG_ADMIN' && userId !== currentUser?.id && (
         <div className="mt-8 rounded-xl border border-red-200 bg-red-50/50 p-5">
           <div className="flex items-center gap-2 mb-2">
-            <h2 className="text-sm font-semibold text-red-700">Danger Zone</h2>
-            <HelpTooltip text="Entfernt den User und alle seine Mitgliedschaften. Bestehende Buchungen bleiben erhalten." />
+            <h2 className="text-sm font-semibold text-red-700">{t('admin:userDetail.dangerZone')}</h2>
+            <HelpTooltip text={t('admin:userDetail.dangerTooltip')} />
           </div>
           <button
             onClick={handleDelete}
             className="rounded-xl bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition-colors"
           >
-            User löschen
+            {t('admin:userDetail.deleteUser')}
           </button>
         </div>
       )}

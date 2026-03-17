@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import {
   getCompanyDetail,
@@ -22,6 +23,7 @@ import type { Booking } from '../../components/bookings/types';
 export function CompanyDetailPage() {
   const { companyId } = useParams<{ companyId: string }>();
   const { user } = useAuth();
+  const { t } = useTranslation(['admin', 'common']);
   const navigate = useNavigate();
   const isOrgAdmin = user?.activeRole === 'ORG_ADMIN';
 
@@ -65,11 +67,11 @@ export function CompanyDetailPage() {
       setEditDomain(detail.customDomain ?? '');
       setHeaderName(detail.name ?? '');
     } catch (err: any) {
-      setError(err.status === 404 ? 'Company nicht gefunden.' : 'Fehler beim Laden.');
+      setError(err.status === 404 ? t('admin:companyDetail.notFound') : t('admin:companyDetail.loadError'));
     } finally {
       setIsLoading(false);
     }
-  }, [companyId]);
+  }, [companyId, t]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -89,7 +91,7 @@ export function CompanyDetailPage() {
       setInfoSuccess(true);
       setTimeout(() => setInfoSuccess(false), 3000);
     } catch (err: any) {
-      setError(err.message ?? 'Fehler beim Speichern.');
+      setError(err.message ?? t('admin:companyDetail.saveError'));
     } finally {
       setIsSavingInfo(false);
     }
@@ -104,7 +106,7 @@ export function CompanyDetailPage() {
       setEditName(headerName.trim());
       setIsEditingName(false);
     } catch (err: any) {
-      setError(err.message ?? 'Fehler beim Speichern des Namens.');
+      setError(err.message ?? t('admin:companyDetail.saveNameError'));
     }
   };
 
@@ -120,7 +122,7 @@ export function CompanyDetailPage() {
         prev.map((m) => (m.id === userId ? { ...m, role: newRole } : m)),
       );
     } catch {
-      setError('Rolle konnte nicht geändert werden.');
+      setError(t('admin:companyDetail.roleChangeError'));
     }
   };
 
@@ -139,19 +141,19 @@ export function CompanyDetailPage() {
       setShowInvite(false);
       load();
     } catch (err: any) {
-      setError(err.message ?? 'Fehler beim Einladen.');
+      setError(err.message ?? t('admin:companyDetail.inviteError'));
     }
   };
 
   /** Remove a member from the company. */
   const handleRemove = async (userId: string) => {
     if (!companyId) return;
-    if (!confirm('Mitglied wirklich aus der Company entfernen?')) return;
+    if (!confirm(t('admin:companyDetail.removeConfirm'))) return;
     try {
       await removeUser(companyId, userId);
       setMembers((prev) => prev.filter((m) => m.id !== userId));
     } catch (err: any) {
-      setError(err.message ?? 'Fehler beim Entfernen.');
+      setError(err.message ?? t('admin:companyDetail.removeError'));
     }
   };
 
@@ -170,11 +172,11 @@ export function CompanyDetailPage() {
   const roleBadge = (role: string) => {
     switch (role) {
       case 'ORG_ADMIN':
-        return { label: 'Org Admin', className: 'rounded-full bg-[#14B8A6]/10 px-2 py-0.5 text-xs font-medium text-[#14B8A6]' };
+        return { label: t('admin:companyDetail.roleOrgAdmin'), className: 'rounded-full bg-[#14B8A6]/10 px-2 py-0.5 text-xs font-medium text-[#14B8A6]' };
       case 'COMPANY_ADMIN':
-        return { label: 'Admin', className: 'rounded-full bg-[#14B8A6]/10 px-2 py-0.5 text-xs font-medium text-[#14B8A6]' };
+        return { label: t('admin:companyDetail.roleAdmin'), className: 'rounded-full bg-[#14B8A6]/10 px-2 py-0.5 text-xs font-medium text-[#14B8A6]' };
       default:
-        return { label: 'User', className: 'rounded-full bg-[#64748B]/10 px-2 py-0.5 text-xs font-medium text-[#64748B]' };
+        return { label: t('admin:companyDetail.roleUser'), className: 'rounded-full bg-[#64748B]/10 px-2 py-0.5 text-xs font-medium text-[#64748B]' };
     }
   };
 
@@ -186,7 +188,7 @@ export function CompanyDetailPage() {
     <div>
       {/* Back link */}
       <Link to="/admin/companies" className="text-sm text-[#0B8ECA] hover:underline">
-        &larr; Zur&uuml;ck zu Companies
+        &larr; {t('admin:companyDetail.backToCompanies')}
       </Link>
 
       {error && <div className="mt-4"><ErrorMessage message={error} /></div>}
@@ -204,20 +206,20 @@ export function CompanyDetailPage() {
               onClick={handleSaveHeaderName}
               className="rounded-xl bg-[#0B8ECA] px-4 py-2 text-sm font-medium text-white"
             >
-              Speichern
+              {t('common:save')}
             </button>
             <button
               onClick={() => { setIsEditingName(false); setHeaderName(company.name); }}
               className="rounded-xl border border-[#E2E8F0] px-3 py-1.5 text-sm text-[#64748B]"
             >
-              Abbrechen
+              {t('common:cancel')}
             </button>
           </div>
         ) : (
           <h1
             className="text-2xl font-bold text-[#1E293B] cursor-pointer hover:text-[#0B8ECA] transition-colors"
             onClick={() => setIsEditingName(true)}
-            title="Klicken zum Bearbeiten"
+            title={t('admin:companyDetail.clickToEdit')}
           >
             {company.name}
           </h1>
@@ -233,16 +235,16 @@ export function CompanyDetailPage() {
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
           </svg>
-          Branding bearbeiten
+          {t('admin:companyDetail.editBranding')}
         </Link>
       </div>
 
       {/* B) Firmendaten */}
       <div className="mt-6 rounded-xl border border-[#E2E8F0] bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-[#1E293B] mb-4">Firmendaten</h2>
+        <h2 className="text-lg font-semibold text-[#1E293B] mb-4">{t('admin:companyDetail.companyData')}</h2>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-[#1E293B] mb-1">Name</label>
+            <label className="block text-sm font-medium text-[#1E293B] mb-1">{t('admin:companyDetail.nameLabel')}</label>
             <input
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
@@ -250,7 +252,7 @@ export function CompanyDetailPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-[#1E293B] mb-1">Slug</label>
+            <label className="block text-sm font-medium text-[#1E293B] mb-1">{t('admin:companyDetail.slugLabel')}</label>
             <input
               value={editSlug}
               onChange={(e) => setEditSlug(e.target.value)}
@@ -258,11 +260,11 @@ export function CompanyDetailPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-[#1E293B] mb-1">Custom Domain</label>
+            <label className="block text-sm font-medium text-[#1E293B] mb-1">{t('admin:companyDetail.customDomainLabel')}</label>
             <input
               value={editDomain}
               onChange={(e) => setEditDomain(e.target.value)}
-              placeholder="z.B. booking.example.com"
+              placeholder={t('admin:companyDetail.customDomainPlaceholder')}
               className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none"
             />
           </div>
@@ -272,10 +274,10 @@ export function CompanyDetailPage() {
               disabled={isSavingInfo}
               className="rounded-xl bg-[#0B8ECA] px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
             >
-              {isSavingInfo ? 'Wird gespeichert...' : 'Speichern'}
+              {isSavingInfo ? t('admin:companyDetail.saving') : t('common:save')}
             </button>
             {infoSuccess && (
-              <span className="text-sm text-[#14B8A6] font-medium">Gespeichert!</span>
+              <span className="text-sm text-[#14B8A6] font-medium">{t('admin:companyDetail.saved')}</span>
             )}
           </div>
         </div>
@@ -284,12 +286,12 @@ export function CompanyDetailPage() {
       {/* C) Mitglieder */}
       <div className="mt-6 rounded-xl border border-[#E2E8F0] bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-[#1E293B]">Mitglieder</h2>
+          <h2 className="text-lg font-semibold text-[#1E293B]">{t('admin:companyDetail.members')}</h2>
           <button
             onClick={() => setShowInvite(!showInvite)}
             className="rounded-xl border border-[#0B8ECA] px-3 py-1.5 text-sm font-medium text-[#0B8ECA]"
           >
-            Mitglied einladen
+            {t('admin:companyDetail.inviteMember')}
           </button>
         </div>
 
@@ -300,13 +302,13 @@ export function CompanyDetailPage() {
               <input
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
-                placeholder="E-Mail"
+                placeholder={t('admin:companyDetail.emailPlaceholder')}
                 className="flex-1 min-w-[200px] rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none"
               />
               <input
                 value={inviteName}
                 onChange={(e) => setInviteName(e.target.value)}
-                placeholder="Name"
+                placeholder={t('admin:companyDetail.namePlaceholder')}
                 className="flex-1 min-w-[200px] rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none"
               />
               <select
@@ -324,7 +326,7 @@ export function CompanyDetailPage() {
               disabled={!inviteEmail.trim() || !inviteName.trim()}
               className="rounded-xl bg-[#0B8ECA] px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
             >
-              Einladen
+              {t('admin:companyDetail.invite')}
             </button>
           </div>
         )}
@@ -369,21 +371,21 @@ export function CompanyDetailPage() {
                     onClick={() => handleRemove(m.id)}
                     className="text-sm text-[#EF4444] hover:underline"
                   >
-                    Entfernen
+                    {t('admin:companyDetail.remove')}
                   </button>
                 </div>
               </div>
             );
           })}
           {members.length === 0 && (
-            <p className="text-sm text-[#64748B]">Keine Mitglieder vorhanden.</p>
+            <p className="text-sm text-[#64748B]">{t('admin:companyDetail.noMembers')}</p>
           )}
         </div>
       </div>
 
       {/* D) Teams */}
       <div className="mt-6 rounded-xl border border-[#E2E8F0] bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-[#1E293B] mb-4">Teams</h2>
+        <h2 className="text-lg font-semibold text-[#1E293B] mb-4">{t('admin:companyDetail.teams')}</h2>
         {company.teams?.length > 0 ? (
           <div className="space-y-2">
             {company.teams.map((team: any) => (
@@ -395,7 +397,7 @@ export function CompanyDetailPage() {
                 <div>
                   <h3 className="text-sm font-medium text-[#1E293B]">{team.name}</h3>
                   <p className="text-xs text-[#64748B]">
-                    {team._count?.memberships ?? 0} Mitglieder
+                    {t('admin:companyDetail.memberCount_other', { count: team._count?.memberships ?? 0 })}
                   </p>
                 </div>
                 <svg className="h-5 w-5 text-[#94A3B8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -405,13 +407,13 @@ export function CompanyDetailPage() {
             ))}
           </div>
         ) : (
-          <p className="text-sm text-[#64748B]">Keine Teams vorhanden.</p>
+          <p className="text-sm text-[#64748B]">{t('admin:companyDetail.noTeams')}</p>
         )}
       </div>
 
       {/* E) Termine */}
       <div className="mt-6 rounded-xl border border-[#E2E8F0] bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-[#1E293B] mb-4">Termine</h2>
+        <h2 className="text-lg font-semibold text-[#1E293B] mb-4">{t('admin:companyDetail.bookings')}</h2>
         {bookings.length > 0 ? (
           <div className="space-y-2">
             {bookings.map((b) => (
@@ -423,7 +425,7 @@ export function CompanyDetailPage() {
             ))}
           </div>
         ) : (
-          <p className="text-sm text-[#64748B]">Keine Buchungen vorhanden.</p>
+          <p className="text-sm text-[#64748B]">{t('admin:companyDetail.noBookings')}</p>
         )}
       </div>
     </div>

@@ -1,10 +1,13 @@
+import { useTranslation } from 'react-i18next';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
 
 export function SettingsPage() {
+  const { t } = useTranslation('admin');
+
   return (
     <div>
-      <h1 className="text-2xl font-bold text-[#1E293B]">Einstellungen</h1>
-      <p className="mt-2 text-[#64748B]">Branding, Custom Domain und weitere Einstellungen werden hier verwaltet.</p>
+      <h1 className="text-2xl font-bold text-[#1E293B]">{t('settings.title')}</h1>
+      <p className="mt-2 text-[#64748B]">{t('settings.description')}</p>
 
       <div className="mt-6 rounded-xl border border-[#E2E8F0] bg-white p-6 shadow-sm">
         <div className="flex items-center gap-3">
@@ -13,7 +16,7 @@ export function SettingsPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <p className="text-sm text-[#64748B]">Wird in einem zukünftigen Update verfügbar.</p>
+          <p className="text-sm text-[#64748B]">{t('settings.comingSoon')}</p>
         </div>
       </div>
 
@@ -28,14 +31,14 @@ export function SettingsPage() {
             </div>
             <div>
               <div className="flex items-center gap-1">
-                <p className="text-sm font-medium text-[#1E293B]">Personio Abwesenheitssync</p>
-                <HelpTooltip text="Automatischer Abgleich mit Personio-Abwesenheiten. Geplantes Feature." />
+                <p className="text-sm font-medium text-[#1E293B]">{t('settings.personioSync')}</p>
+                <HelpTooltip text={t('settings.personioSyncTooltip')} />
               </div>
-              <p className="text-xs text-[#64748B]">Automatischer Abgleich mit Personio-Abwesenheiten</p>
+              <p className="text-xs text-[#64748B]">{t('settings.personioSyncDesc')}</p>
             </div>
           </div>
           <span className="rounded-full bg-[#F8FAFC] px-3 py-1 text-xs font-medium text-[#64748B] ring-1 ring-[#E2E8F0]">
-            Geplant
+            {t('settings.planned')}
           </span>
         </div>
       </div>

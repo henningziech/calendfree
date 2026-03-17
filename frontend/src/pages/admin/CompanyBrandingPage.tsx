@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import {
   getCompanyDetail,
   updateCompanyBranding,
@@ -18,6 +19,7 @@ const DEFAULTS = {
 
 export function CompanyBrandingPage() {
   const { companyId } = useParams<{ companyId: string }>();
+  const { t } = useTranslation(['admin', 'common']);
 
   const [company, setCompany] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -54,11 +56,11 @@ export function CompanyBrandingPage() {
         setLogoUrl(b.logoUrl || null);
       }
     } catch (err: any) {
-      setError(err.status === 404 ? 'Company nicht gefunden.' : 'Fehler beim Laden.');
+      setError(err.status === 404 ? t('admin:branding.notFound') : t('admin:branding.loadError'));
     } finally {
       setIsLoading(false);
     }
-  }, [companyId]);
+  }, [companyId, t]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -79,7 +81,7 @@ export function CompanyBrandingPage() {
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err: any) {
-      setError(err.message ?? 'Fehler beim Speichern.');
+      setError(err.message ?? t('admin:branding.saveError'));
     } finally {
       setIsSaving(false);
     }
@@ -93,7 +95,7 @@ export function CompanyBrandingPage() {
       const result = await uploadCompanyLogo(companyId, file);
       setLogoUrl(result.logoUrl);
     } catch (err: any) {
-      setError(err.message ?? 'Logo-Upload fehlgeschlagen.');
+      setError(err.message ?? t('admin:branding.logoUploadError'));
     } finally {
       setIsUploadingLogo(false);
     }
@@ -106,7 +108,7 @@ export function CompanyBrandingPage() {
       await deleteCompanyLogo(companyId);
       setLogoUrl(null);
     } catch (err: any) {
-      setError(err.message ?? 'Logo konnte nicht entfernt werden.');
+      setError(err.message ?? t('admin:branding.logoDeleteError'));
     }
   };
 
@@ -123,10 +125,10 @@ export function CompanyBrandingPage() {
   return (
     <div>
       <Link to={`/admin/companies/${companyId}`} className="text-sm text-[#0B8ECA] hover:underline">
-        &larr; Zurück zu {company.name}
+        &larr; {t('admin:branding.backTo', { name: company.name })}
       </Link>
 
-      <h1 className="mt-4 text-2xl font-bold text-[#1E293B]">Branding — {company.name}</h1>
+      <h1 className="mt-4 text-2xl font-bold text-[#1E293B]">{t('admin:branding.title', { name: company.name })}</h1>
 
       {error && <div className="mt-4"><ErrorMessage message={error} /></div>}
 
@@ -135,7 +137,7 @@ export function CompanyBrandingPage() {
         <div className="lg:col-span-3 space-y-6">
           {/* Logo */}
           <div className="rounded-xl border border-[#E2E8F0] bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-[#1E293B] mb-4">Logo</h2>
+            <h2 className="text-lg font-semibold text-[#1E293B] mb-4">{t('admin:branding.logo')}</h2>
             {logoUrl && (
               <div className="mb-4 flex items-center gap-4">
                 <img src={logoUrl} alt="Logo" className="h-12 rounded" />
@@ -143,7 +145,7 @@ export function CompanyBrandingPage() {
                   onClick={handleLogoDelete}
                   className="text-sm text-[#EF4444] hover:underline"
                 >
-                  Entfernen
+                  {t('admin:branding.remove')}
                 </button>
               </div>
             )}
@@ -165,11 +167,11 @@ export function CompanyBrandingPage() {
                 }}
               />
               {isUploadingLogo ? (
-                <p className="text-sm text-[#64748B]">Wird hochgeladen...</p>
+                <p className="text-sm text-[#64748B]">{t('admin:branding.uploading')}</p>
               ) : (
                 <>
-                  <p className="text-sm font-medium text-[#1E293B]">Logo hochladen</p>
-                  <p className="mt-1 text-xs text-[#64748B]">PNG, JPEG, GIF oder WebP — max. 2 MB</p>
+                  <p className="text-sm font-medium text-[#1E293B]">{t('admin:branding.uploadLogo')}</p>
+                  <p className="mt-1 text-xs text-[#64748B]">{t('admin:branding.uploadHint')}</p>
                 </>
               )}
             </div>
@@ -177,29 +179,29 @@ export function CompanyBrandingPage() {
 
           {/* Colors */}
           <div className="rounded-xl border border-[#E2E8F0] bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-[#1E293B] mb-4">Farben</h2>
+            <h2 className="text-lg font-semibold text-[#1E293B] mb-4">{t('admin:branding.colors')}</h2>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <ColorInput label="Primary" value={primaryColor} onChange={setPrimaryColor} defaultValue={DEFAULTS.primaryColor} description="Buttons, Links, aktive Elemente" />
-              <ColorInput label="Accent" value={accentColor} onChange={setAccentColor} defaultValue={DEFAULTS.accentColor} description="Sekundäre Aktionen, Gradient" />
-              <ColorInput label="Hintergrund" value={backgroundColor} onChange={setBackgroundColor} defaultValue={DEFAULTS.backgroundColor} description="Seitenhintergrund" />
-              <ColorInput label="Text" value={textColor} onChange={setTextColor} defaultValue={DEFAULTS.textColor} description="Haupttextfarbe" />
+              <ColorInput label={t('admin:branding.primaryLabel')} value={primaryColor} onChange={setPrimaryColor} defaultValue={DEFAULTS.primaryColor} description={t('admin:branding.primaryDesc')} />
+              <ColorInput label={t('admin:branding.accentLabel')} value={accentColor} onChange={setAccentColor} defaultValue={DEFAULTS.accentColor} description={t('admin:branding.accentDesc')} />
+              <ColorInput label={t('admin:branding.backgroundLabel')} value={backgroundColor} onChange={setBackgroundColor} defaultValue={DEFAULTS.backgroundColor} description={t('admin:branding.backgroundDesc')} />
+              <ColorInput label={t('admin:branding.textLabel')} value={textColor} onChange={setTextColor} defaultValue={DEFAULTS.textColor} description={t('admin:branding.textDesc')} />
             </div>
           </div>
 
           {/* Footer */}
           <div className="rounded-xl border border-[#E2E8F0] bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-[#1E293B] mb-4">Footer</h2>
+            <h2 className="text-lg font-semibold text-[#1E293B] mb-4">{t('admin:branding.footer')}</h2>
             <div className="mb-4">
-              <label className="block text-sm font-medium text-[#1E293B] mb-1">Footer-Text</label>
+              <label className="block text-sm font-medium text-[#1E293B] mb-1">{t('admin:branding.footerTextLabel')}</label>
               <textarea
                 value={footerText}
                 onChange={(e) => setFooterText(e.target.value)}
                 maxLength={200}
                 rows={2}
-                placeholder="Powered by Calendfree (Standard)"
+                placeholder={t('admin:branding.footerPlaceholder')}
                 className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none resize-none"
               />
-              <p className="mt-1 text-xs text-[#64748B]">{footerText.length}/200 Zeichen — leer lassen für Standard-Footer</p>
+              <p className="mt-1 text-xs text-[#64748B]">{t('admin:branding.footerCharCount', { count: footerText.length })}</p>
             </div>
             <label className="flex items-center gap-3">
               <input
@@ -209,8 +211,8 @@ export function CompanyBrandingPage() {
                 className="h-4 w-4 rounded border-[#E2E8F0] text-[#0B8ECA] focus:ring-[#0B8ECA]"
               />
               <div>
-                <span className="text-sm font-medium text-[#1E293B]">„Powered by Calendfree" anzeigen</span>
-                <p className="text-xs text-[#64748B]">Wird angezeigt wenn kein eigener Text gesetzt ist</p>
+                <span className="text-sm font-medium text-[#1E293B]">{t('admin:branding.showPoweredBy')}</span>
+                <p className="text-xs text-[#64748B]">{t('admin:branding.showPoweredByHint')}</p>
               </div>
             </label>
           </div>
@@ -222,10 +224,10 @@ export function CompanyBrandingPage() {
               disabled={isSaving}
               className="rounded-xl bg-[#0B8ECA] px-6 py-2.5 text-sm font-medium text-white disabled:opacity-50"
             >
-              {isSaving ? 'Wird gespeichert...' : 'Branding speichern'}
+              {isSaving ? t('admin:branding.saving') : t('admin:branding.saveBranding')}
             </button>
             {saveSuccess && (
-              <span className="text-sm font-medium text-[#14B8A6]">Gespeichert!</span>
+              <span className="text-sm font-medium text-[#14B8A6]">{t('admin:branding.saved')}</span>
             )}
           </div>
         </div>
@@ -233,7 +235,7 @@ export function CompanyBrandingPage() {
         {/* Right: Live Preview */}
         <div className="lg:col-span-2">
           <div className="sticky top-6">
-            <h2 className="text-lg font-semibold text-[#1E293B] mb-4">Vorschau</h2>
+            <h2 className="text-lg font-semibold text-[#1E293B] mb-4">{t('admin:branding.preview')}</h2>
             <div
               className="rounded-xl border border-[#E2E8F0] overflow-hidden shadow-sm"
               style={{ backgroundColor }}
@@ -253,16 +255,16 @@ export function CompanyBrandingPage() {
 
                 {/* Mock booking card */}
                 <div className="mb-3">
-                  <h3 className="text-base font-bold" style={{ color: textColor }}>Erstgespräch</h3>
-                  <p className="text-xs" style={{ color: textColor, opacity: 0.6 }}>30 Minuten</p>
+                  <h3 className="text-base font-bold" style={{ color: textColor }}>{t('admin:branding.previewTitle')}</h3>
+                  <p className="text-xs" style={{ color: textColor, opacity: 0.6 }}>{t('admin:branding.previewDuration')}</p>
                 </div>
 
                 {/* Mock date button */}
                 <div className="mb-2 rounded-lg px-3 py-2 text-xs font-medium text-white" style={{ backgroundColor: primaryColor }}>
-                  Montag, 17. März 2026
+                  {t('admin:branding.previewDatePrimary')}
                 </div>
                 <div className="mb-4 rounded-lg px-3 py-2 text-xs ring-1 ring-[#E2E8F0] bg-white" style={{ color: textColor }}>
-                  Dienstag, 18. März 2026
+                  {t('admin:branding.previewDateSecondary')}
                 </div>
 
                 {/* Mock submit button */}
@@ -270,7 +272,7 @@ export function CompanyBrandingPage() {
                   className="rounded-lg py-2 text-center text-xs font-semibold text-white"
                   style={{ backgroundImage: `linear-gradient(to right, ${primaryColor}, ${accentColor})` }}
                 >
-                  Termin buchen
+                  {t('admin:branding.previewBookButton')}
                 </div>
 
                 {/* Footer preview */}

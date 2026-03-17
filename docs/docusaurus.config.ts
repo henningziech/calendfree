@@ -64,8 +64,7 @@ const config: Config = {
       logo: { alt: 'Calendfree', src: 'img/logo-mini.png' },
       items: [
         { type: 'docSidebar', sidebarId: 'docs', label: 'Docs', position: 'left' },
-        // TODO: Uncomment after API docs are generated
-        // { type: 'docSidebar', sidebarId: 'api', label: 'API Reference', position: 'left' },
+        { type: 'docSidebar', sidebarId: 'api', label: 'API Reference', position: 'left' },
       ],
     },
     footer: {

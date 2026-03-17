@@ -1,4 +1,5 @@
 import type { SidebarsConfig } from '@docusaurus/plugin-content-docs';
+import apiSidebar from './docs/api/sidebar';
 
 const sidebars: SidebarsConfig = {
   docs: [
@@ -28,15 +29,14 @@ const sidebars: SidebarsConfig = {
       ],
     },
   ],
-  // TODO: Uncomment after gen-api-docs creates the sidebar file
-  // api: [
-  //   {
-  //     type: 'category',
-  //     label: 'API Reference',
-  //     link: { type: 'generated-index', title: 'Calendfree API', description: 'Complete API reference.' },
-  //     items: require('./docs/api/sidebar.js'),
-  //   },
-  // ],
+  api: [
+    {
+      type: 'category',
+      label: 'API Reference',
+      link: { type: 'generated-index', title: 'Calendfree API', description: 'Complete API reference.' },
+      items: apiSidebar as any[],
+    },
+  ],
 };
 
 export default sidebars;

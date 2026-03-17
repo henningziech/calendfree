@@ -3,6 +3,7 @@ import { getAuthUrl, handleCallback } from '../services/google-auth.js';
 import { config } from '../config.js';
 import { logAudit } from '../services/audit-log.js';
 import { prisma } from '../db.js';
+import { SwitchCompanySchema } from '@calendfree/shared';
 
 export async function authRoutes(app: FastifyInstance) {
   /** Redirect to Google OAuth consent screen */
@@ -46,18 +47,55 @@ export async function authRoutes(app: FastifyInstance) {
       return reply.status(401).send({ error: 'Not authenticated' });
     }
 
-    // Refresh membership data from DB (in case roles changed since login)
-    const { prisma } = await import('../db.js');
     const memberships = await prisma.companyMembership.findMany({
       where: { userId: request.session.user.id },
+      include: { company: { select: { id: true, name: true } } },
       orderBy: { createdAt: 'asc' },
     });
 
-    const activeMembership = memberships[0] ?? null;
+    // Preserve activeCompanyId if still valid, otherwise fall back to first
+    const currentCompanyId = request.session.user.activeCompanyId;
+    const currentMembership = currentCompanyId
+      ? memberships.find((m) => m.companyId === currentCompanyId)
+      : null;
+    const activeMembership = currentMembership ?? memberships[0] ?? null;
 
-    // Update session with fresh data
     request.session.user.activeCompanyId = activeMembership?.companyId ?? null;
     request.session.user.activeRole = activeMembership?.role ?? null;
+
+    return {
+      ...request.session.user,
+      companyMemberships: memberships.map((m) => ({
+        companyId: m.companyId,
+        companyName: m.company.name,
+        role: m.role,
+      })),
+    };
+  });
+
+  /** Switch active company context */
+  app.patch('/api/auth/me/company', async (request, reply) => {
+    if (!request.session.user) {
+      return reply.status(401).send({ error: 'Not authenticated' });
+    }
+
+    const { companyId } = SwitchCompanySchema.parse(request.body);
+
+    // Validate membership exists and is in the same organization
+    const membership = await prisma.companyMembership.findFirst({
+      where: {
+        userId: request.session.user.id,
+        companyId,
+        company: { organizationId: request.session.user.organizationId },
+      },
+    });
+
+    if (!membership) {
+      return reply.status(403).send({ error: 'Not a member of this company' });
+    }
+
+    request.session.user.activeCompanyId = companyId;
+    request.session.user.activeRole = membership.role;
 
     return request.session.user;
   });

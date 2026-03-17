@@ -20,6 +20,10 @@ export const BrandingConfigSchema = z.object({
   logoUrl: z.string().url().nullable().optional(),
   primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
   accentColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+  backgroundColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+  textColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
   fontFamily: z.string().max(100).optional(),
+  showPoweredBy: z.boolean().optional(),
+  footerText: z.string().max(200).nullable().optional(),
 });
 export type BrandingConfig = z.infer<typeof BrandingConfigSchema>;

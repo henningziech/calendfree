@@ -224,6 +224,19 @@ export function CompanyDetailPage() {
         )}
       </div>
 
+      {/* Branding link */}
+      <div className="mt-4">
+        <Link
+          to={`/admin/companies/${companyId}/branding`}
+          className="inline-flex items-center gap-2 rounded-xl border border-[#0B8ECA] px-4 py-2 text-sm font-medium text-[#0B8ECA] transition-all hover:bg-[#0B8ECA]/5"
+        >
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+          </svg>
+          Branding bearbeiten
+        </Link>
+      </div>
+
       {/* B) Firmendaten */}
       <div className="mt-6 rounded-xl border border-[#E2E8F0] bg-white p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-[#1E293B] mb-4">Firmendaten</h2>

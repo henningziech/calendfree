@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { getSlots, createBooking, type TimeSlot } from '../../api/booking';
 import { apiRequest } from '../../api/client';
+import { getCompanyBranding, type BrandingConfig } from '../../api/branding';
 import { SlotPicker } from '../../components/calendar/SlotPicker';
 import { BookingForm } from '../../components/forms/BookingForm';
 import { BrandedLayout } from '../../components/layout/BrandedLayout';
@@ -23,6 +24,8 @@ export function BookingPage() {
 
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [eventInfo, setEventInfo] = useState<EventTypeInfo | null>(null);
+  const [branding, setBranding] = useState<BrandingConfig | null>(null);
+  const [companyName, setCompanyName] = useState<string>('');
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,12 +37,15 @@ export function BookingPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const [slotsData, info] = await Promise.all([
+      const [slotsData, info, companyInfo] = await Promise.all([
         getSlots(companySlug, eventTypeSlug, undefined, timezone),
         apiRequest<EventTypeInfo>(`/booking/${companySlug}/${eventTypeSlug}/info`),
+        getCompanyBranding(companySlug),
       ]);
       setSlots(slotsData.slots);
       setEventInfo(info);
+      setBranding(companyInfo.branding);
+      setCompanyName(companyInfo.name);
     } catch (err: any) {
       if (err.status === 404) {
         setError('Buchungsseite nicht gefunden.');
@@ -64,7 +70,7 @@ export function BookingPage() {
         ...formData,
       });
       navigate(`/${companySlug}/${eventTypeSlug}/confirmed`, {
-        state: { booking },
+        state: { booking, branding, companyName },
       });
     } catch (err: any) {
       if (err.status === 409) {
@@ -82,10 +88,10 @@ export function BookingPage() {
   const title = eventInfo?.title ?? eventTypeSlug?.replace(/-/g, ' ') ?? '';
 
   return (
-    <BrandedLayout>
+    <BrandedLayout branding={branding} companyName={companyName}>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#1E293B]">{title}</h1>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--color-text, #1E293B)' }}>{title}</h1>
           {eventInfo?.description && (
             <p className="mt-1 text-sm text-[#64748B]">{eventInfo.description}</p>
           )}
@@ -112,9 +118,10 @@ export function BookingPage() {
           <div className="space-y-4">
             <button
               onClick={() => setSelectedSlot(null)}
-              className="text-sm font-medium text-[#0B8ECA] transition-colors hover:text-[#0874A6]"
+              className="text-sm font-medium transition-colors"
+              style={{ color: 'var(--color-primary, #0B8ECA)' }}
             >
-              ← Anderen Termin wählen
+              &larr; Anderen Termin wählen
             </button>
             <BookingForm
               onSubmit={handleBooking}

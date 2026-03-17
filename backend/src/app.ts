@@ -1,7 +1,11 @@
 import Fastify, { type FastifyInstance } from 'fastify';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
+import multipart from '@fastify/multipart';
+import fastifyStatic from '@fastify/static';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import { config } from './config.js';
@@ -55,6 +59,19 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(rateLimit, {
     max: 100,
     timeWindow: '1 minute',
+  });
+
+  // Multipart file upload (2MB limit)
+  await app.register(multipart, {
+    limits: { fileSize: 2 * 1024 * 1024 },
+  });
+
+  // Serve uploaded files
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  await app.register(fastifyStatic, {
+    root: path.join(__dirname, '..', 'public', 'uploads'),
+    prefix: '/uploads/',
+    decorateReply: false,
   });
 
   // Session management (Redis-backed)

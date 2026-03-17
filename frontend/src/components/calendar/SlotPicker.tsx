@@ -57,7 +57,7 @@ export function SlotPicker({ slots, selectedSlot, onSelectSlot, timezone: _timez
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
       {/* Date selector */}
       <div>
-        <h3 className="mb-3 text-sm font-semibold text-[#1E293B]">Datum wählen</h3>
+        <h3 className="mb-3 text-sm font-semibold" style={{ color: 'var(--color-text, #1E293B)' }}>Datum wählen</h3>
         <div className="space-y-1.5">
           {availableDates.map((date) => (
             <button
@@ -65,9 +65,13 @@ export function SlotPicker({ slots, selectedSlot, onSelectSlot, timezone: _timez
               onClick={() => setSelectedDate(date)}
               className={`w-full rounded-xl px-4 py-3 text-left text-sm transition-all duration-200 ${
                 isSameDay(date, selectedDate)
-                  ? 'bg-[#0B8ECA] text-white shadow-md shadow-[#0B8ECA]/25'
-                  : 'bg-white text-[#1E293B] shadow-sm ring-1 ring-[#E2E8F0] hover:shadow-md hover:ring-[#0B8ECA]/30'
+                  ? 'text-white shadow-md'
+                  : 'bg-white shadow-sm ring-1 ring-[#E2E8F0] hover:shadow-md'
               }`}
+              style={isSameDay(date, selectedDate)
+                ? { backgroundColor: 'var(--color-primary, #0B8ECA)', boxShadow: `0 4px 6px -1px rgba(var(--color-primary-rgb, 11, 142, 202), 0.25)` }
+                : { color: 'var(--color-text, #1E293B)' }
+              }
             >
               <span className="font-medium">{format(date, 'EEEE, d. MMMM', { locale: de })}</span>
               <span className={`ml-2 text-xs ${isSameDay(date, selectedDate) ? 'text-white/70' : 'text-[#64748B]'}`}>
@@ -80,7 +84,7 @@ export function SlotPicker({ slots, selectedSlot, onSelectSlot, timezone: _timez
 
       {/* Time slot selector */}
       <div>
-        <h3 className="mb-3 text-sm font-semibold text-[#1E293B]">
+        <h3 className="mb-3 text-sm font-semibold" style={{ color: 'var(--color-text, #1E293B)' }}>
           Uhrzeit wählen — {format(selectedDate, 'd. MMMM', { locale: de })}
         </h3>
         <div className="grid grid-cols-2 gap-2">
@@ -90,9 +94,13 @@ export function SlotPicker({ slots, selectedSlot, onSelectSlot, timezone: _timez
               onClick={() => onSelectSlot(slot)}
               className={`rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200 ${
                 selectedSlot?.start === slot.start
-                  ? 'bg-[#0B8ECA] text-white shadow-md shadow-[#0B8ECA]/25'
-                  : 'bg-white text-[#1E293B] ring-1 ring-[#E2E8F0] hover:ring-[#0B8ECA] hover:shadow-sm'
+                  ? 'text-white shadow-md'
+                  : 'bg-white ring-1 ring-[#E2E8F0] hover:shadow-sm'
               }`}
+              style={selectedSlot?.start === slot.start
+                ? { backgroundColor: 'var(--color-primary, #0B8ECA)', boxShadow: `0 4px 6px -1px rgba(var(--color-primary-rgb, 11, 142, 202), 0.25)` }
+                : { color: 'var(--color-text, #1E293B)' }
+              }
             >
               {format(parseISO(slot.start), 'HH:mm')}
               {slot.remainingSpots !== undefined && (

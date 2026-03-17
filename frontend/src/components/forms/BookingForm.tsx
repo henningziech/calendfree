@@ -20,13 +20,19 @@ export function BookingForm({ onSubmit, isSubmitting, eventTypeTitle, selectedTi
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      <div className="rounded-xl bg-[#0B8ECA]/5 border border-[#0B8ECA]/10 p-4">
-        <p className="text-sm font-semibold text-[#0B8ECA]">{eventTypeTitle}</p>
-        <p className="mt-0.5 text-sm text-[#0874A6]">{selectedTime}</p>
+      <div
+        className="rounded-xl border p-4"
+        style={{
+          backgroundColor: 'rgba(var(--color-primary-rgb, 11, 142, 202), 0.05)',
+          borderColor: 'rgba(var(--color-primary-rgb, 11, 142, 202), 0.1)',
+        }}
+      >
+        <p className="text-sm font-semibold" style={{ color: 'var(--color-primary, #0B8ECA)' }}>{eventTypeTitle}</p>
+        <p className="mt-0.5 text-sm" style={{ color: 'var(--color-primary, #0B8ECA)', opacity: 0.85 }}>{selectedTime}</p>
       </div>
 
       <div>
-        <label htmlFor="name" className="block text-sm font-medium text-[#1E293B]">
+        <label htmlFor="name" className="block text-sm font-medium" style={{ color: 'var(--color-text, #1E293B)' }}>
           Name *
         </label>
         <input
@@ -35,13 +41,14 @@ export function BookingForm({ onSubmit, isSubmitting, eventTypeTitle, selectedTi
           required
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="mt-1.5 block w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm shadow-sm transition-all focus:border-[#0B8ECA] focus:ring-2 focus:ring-[#0B8ECA]/20 focus:outline-none"
+          className="mt-1.5 block w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm shadow-sm transition-all focus:ring-2 focus:outline-none"
+          style={{ '--tw-ring-color': 'rgba(var(--color-primary-rgb, 11, 142, 202), 0.2)' } as React.CSSProperties}
           placeholder="Max Mustermann"
         />
       </div>
 
       <div>
-        <label htmlFor="email" className="block text-sm font-medium text-[#1E293B]">
+        <label htmlFor="email" className="block text-sm font-medium" style={{ color: 'var(--color-text, #1E293B)' }}>
           E-Mail *
         </label>
         <input
@@ -50,14 +57,15 @@ export function BookingForm({ onSubmit, isSubmitting, eventTypeTitle, selectedTi
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="mt-1.5 block w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm shadow-sm transition-all focus:border-[#0B8ECA] focus:ring-2 focus:ring-[#0B8ECA]/20 focus:outline-none"
+          className="mt-1.5 block w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm shadow-sm transition-all focus:ring-2 focus:outline-none"
+          style={{ '--tw-ring-color': 'rgba(var(--color-primary-rgb, 11, 142, 202), 0.2)' } as React.CSSProperties}
           placeholder="max@example.com"
         />
       </div>
 
       {allowComment && (
         <div>
-          <label htmlFor="comment" className="block text-sm font-medium text-[#1E293B]">
+          <label htmlFor="comment" className="block text-sm font-medium" style={{ color: 'var(--color-text, #1E293B)' }}>
             Nachricht <span className="text-[#64748B] font-normal">(optional)</span>
           </label>
           <textarea
@@ -65,7 +73,8 @@ export function BookingForm({ onSubmit, isSubmitting, eventTypeTitle, selectedTi
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             rows={3}
-            className="mt-1.5 block w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm shadow-sm transition-all focus:border-[#0B8ECA] focus:ring-2 focus:ring-[#0B8ECA]/20 focus:outline-none resize-none"
+            className="mt-1.5 block w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm shadow-sm transition-all focus:ring-2 focus:outline-none resize-none"
+            style={{ '--tw-ring-color': 'rgba(var(--color-primary-rgb, 11, 142, 202), 0.2)' } as React.CSSProperties}
             placeholder="Gibt es etwas, das wir im Vorfeld wissen sollten?"
           />
         </div>
@@ -74,7 +83,11 @@ export function BookingForm({ onSubmit, isSubmitting, eventTypeTitle, selectedTi
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full rounded-xl bg-gradient-to-r from-[#0B8ECA] to-[#14B8A6] px-4 py-3 text-sm font-semibold text-white shadow-md shadow-[#0B8ECA]/20 transition-all hover:shadow-lg hover:shadow-[#0B8ECA]/30 disabled:opacity-50"
+        className="w-full rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:opacity-50"
+        style={{
+          backgroundImage: `linear-gradient(to right, var(--color-primary, #0B8ECA), var(--color-accent, #14B8A6))`,
+          boxShadow: `0 4px 6px -1px rgba(var(--color-primary-rgb, 11, 142, 202), 0.2)`,
+        }}
       >
         {isSubmitting ? 'Wird gebucht...' : 'Termin buchen'}
       </button>

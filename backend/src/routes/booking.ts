@@ -381,6 +381,69 @@ export async function bookingRoutes(app: FastifyInstance) {
   });
 
   /**
+   * GET /api/booking/:bookingToken
+   * Public endpoint — get booking details + company branding via token.
+   */
+  app.get('/api/booking/:bookingToken', async (request, reply) => {
+    const { bookingToken } = request.params as { bookingToken: string };
+
+    const booking = await prisma.booking.findUnique({
+      where: { bookingToken },
+      include: {
+        eventType: {
+          include: {
+            company: {
+              include: {
+                branding: true,
+                organization: { include: { branding: true } },
+              },
+            },
+          },
+        },
+        assignedUser: { select: { name: true, email: true } },
+        formData: { select: { name: true, email: true } },
+      },
+    });
+
+    if (!booking) {
+      return reply.status(404).send({ error: 'Booking not found' });
+    }
+
+    const company = booking.eventType.company;
+    const branding = company?.branding ?? company?.organization?.branding;
+
+    return {
+      id: booking.id,
+      startTime: booking.startTime.toISOString(),
+      endTime: booking.endTime.toISOString(),
+      status: booking.status,
+      eventType: {
+        title: booking.eventType.title,
+        duration: booking.eventType.duration,
+      },
+      assignedUser: booking.assignedUser,
+      customer: booking.formData ? {
+        name: booking.formData.name,
+        email: booking.formData.email,
+      } : null,
+      company: company ? {
+        name: company.name,
+        slug: company.slug,
+      } : null,
+      branding: branding ? {
+        primaryColor: branding.primaryColor,
+        accentColor: branding.accentColor,
+        backgroundColor: branding.backgroundColor,
+        textColor: branding.textColor,
+        logoUrl: branding.logoUrl,
+        fontFamily: branding.fontFamily,
+        showPoweredBy: branding.showPoweredBy,
+        footerText: branding.footerText,
+      } : null,
+    };
+  });
+
+  /**
    * POST /api/booking/:bookingToken/cancel
    * Public endpoint — cancel a booking via token.
    */
@@ -457,8 +520,12 @@ export async function bookingRoutes(app: FastifyInstance) {
       branding: branding ? {
         primaryColor: branding.primaryColor,
         accentColor: branding.accentColor,
+        backgroundColor: branding.backgroundColor,
+        textColor: branding.textColor,
         logoUrl: branding.logoUrl,
         fontFamily: branding.fontFamily,
+        showPoweredBy: branding.showPoweredBy,
+        footerText: branding.footerText,
       } : null,
     };
   });

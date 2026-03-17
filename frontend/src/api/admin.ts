@@ -199,6 +199,33 @@ export async function deleteVacation(id: string) {
   return apiRequest(`/me/vacations/${id}`, { method: 'DELETE' });
 }
 
+// Branding
+export async function updateCompanyBranding(companyId: string, data: Record<string, unknown>) {
+  return apiRequest(`/admin/companies/${companyId}/branding`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function uploadCompanyLogo(companyId: string, file: File) {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await fetch(`/api/admin/companies/${companyId}/branding/logo`, {
+    method: 'POST',
+    credentials: 'include',
+    body: formData,
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Upload failed' }));
+    throw new Error(error.error || 'Upload failed');
+  }
+  return response.json();
+}
+
+export async function deleteCompanyLogo(companyId: string) {
+  return apiRequest(`/admin/companies/${companyId}/branding/logo`, { method: 'DELETE' });
+}
+
 // Team management
 export async function updateTeamName(teamId: string, name: string) {
   return apiRequest(`/admin/teams/${teamId}`, {

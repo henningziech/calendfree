@@ -1,8 +1,14 @@
 // backend/src/routes/admin/company.ts
 import type { FastifyInstance } from 'fastify';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { prisma } from '../../db.js';
 import { requireRole } from '../../middleware/auth.js';
 import { CreateCompanySchema, UpdateCompanySchema, BrandingConfigSchema } from '@calendfree/shared';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const UPLOADS_DIR = path.join(__dirname, '..', '..', '..', 'public', 'uploads', 'logos');
 
 export async function companyRoutes(app: FastifyInstance) {
   /** POST /api/admin/companies — Create company (ORG_ADMIN only) */
@@ -122,7 +128,14 @@ export async function companyRoutes(app: FastifyInstance) {
   /** PUT /api/admin/companies/:id/branding — Update company branding */
   app.put('/api/admin/companies/:id/branding', { preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')] }, async (request, reply) => {
     const { id } = request.params as { id: string };
+    const user = request.session.user!;
     const body = BrandingConfigSchema.parse(request.body);
+
+    // Verify company belongs to user's organization
+    const company = await prisma.company.findFirst({
+      where: { id, organizationId: user.organizationId },
+    });
+    if (!company) return reply.status(404).send({ error: 'Company not found' });
 
     const branding = await prisma.brandingConfig.upsert({
       where: { companyId: id },
@@ -130,5 +143,81 @@ export async function companyRoutes(app: FastifyInstance) {
       create: { ...body, companyId: id },
     });
     return branding;
+  });
+
+  /** POST /api/admin/companies/:id/branding/logo — Upload company logo */
+  app.post('/api/admin/companies/:id/branding/logo', { preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')] }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const user = request.session.user!;
+
+    // Verify company belongs to user's organization
+    const company = await prisma.company.findFirst({
+      where: { id, organizationId: user.organizationId },
+      include: { branding: true },
+    });
+    if (!company) return reply.status(404).send({ error: 'Company not found' });
+
+    const file = await request.file();
+    if (!file) return reply.status(400).send({ error: 'No file uploaded' });
+
+    const buffer = await file.toBuffer();
+
+    // Validate by magic bytes using file-type
+    const { fileTypeFromBuffer } = await import('file-type');
+    const type = await fileTypeFromBuffer(buffer);
+    const allowedMimes = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
+    if (!type || !allowedMimes.includes(type.mime)) {
+      return reply.status(400).send({ error: 'Invalid file type. Allowed: PNG, JPEG, GIF, WebP' });
+    }
+
+    // Create uploads directory
+    await fs.mkdir(UPLOADS_DIR, { recursive: true });
+
+    // Delete previous logo if exists
+    if (company.branding?.logoUrl) {
+      const oldPath = path.join(__dirname, '..', '..', '..', 'public', company.branding.logoUrl);
+      await fs.unlink(oldPath).catch(() => {});
+    }
+
+    // Save file
+    const filename = `${id}-${Date.now()}.${type.ext}`;
+    const filepath = path.join(UPLOADS_DIR, filename);
+    await fs.writeFile(filepath, buffer);
+
+    const logoUrl = `/uploads/logos/${filename}`;
+    const branding = await prisma.brandingConfig.upsert({
+      where: { companyId: id },
+      update: { logoUrl },
+      create: { logoUrl, companyId: id },
+    });
+
+    return branding;
+  });
+
+  /** DELETE /api/admin/companies/:id/branding/logo — Remove company logo */
+  app.delete('/api/admin/companies/:id/branding/logo', { preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')] }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const user = request.session.user!;
+
+    // Verify company belongs to user's organization
+    const company = await prisma.company.findFirst({
+      where: { id, organizationId: user.organizationId },
+      include: { branding: true },
+    });
+    if (!company) return reply.status(404).send({ error: 'Company not found' });
+
+    if (company.branding?.logoUrl) {
+      const oldPath = path.join(__dirname, '..', '..', '..', 'public', company.branding.logoUrl);
+      await fs.unlink(oldPath).catch(() => {});
+    }
+
+    if (company.branding) {
+      await prisma.brandingConfig.update({
+        where: { companyId: id },
+        data: { logoUrl: null },
+      });
+    }
+
+    return { success: true };
   });
 }

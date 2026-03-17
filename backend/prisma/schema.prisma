@@ -99,11 +99,15 @@ model Company {
 }
 
 model BrandingConfig {
-  id             String  @id @default(uuid())
-  logoUrl        String?
-  primaryColor   String? @default("#2563EB")
-  accentColor    String? @default("#7C3AED")
-  fontFamily     String? @default("Inter")
+  id              String  @id @default(uuid())
+  logoUrl         String?
+  primaryColor    String? @default("#0B8ECA")
+  accentColor     String? @default("#14B8A6")
+  backgroundColor String? @default("#F8FAFC")
+  textColor       String? @default("#1E293B")
+  fontFamily      String? @default("Inter")
+  showPoweredBy   Boolean @default(true)
+  footerText      String?
 
   organizationId String? @unique
   organization   Organization? @relation("OrgBranding", fields: [organizationId], references: [id], onDelete: Cascade)

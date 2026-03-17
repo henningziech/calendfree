@@ -2,7 +2,7 @@
 import type { FastifyInstance } from 'fastify';
 import { prisma } from '../../db.js';
 import { requireAuth, requireRole } from '../../middleware/auth.js';
-import { InviteUserSchema, UpdateMembershipRoleSchema, UpdateAvailabilitySchema, UpdateBookingNotesSchema, CreateBookingCommentSchema, UpdateBookingCommentSchema, UpdateBookingStatusSchema, UpdateMyStatusSchema, CreateVacationSchema } from '@calendfree/shared';
+import { InviteUserSchema, UpdateMembershipRoleSchema, UpdateAvailabilitySchema, UpdateBookingNotesSchema, CreateBookingCommentSchema, UpdateBookingCommentSchema, UpdateBookingStatusSchema, UpdateMyStatusSchema, UpdateMyLanguageSchema, CreateVacationSchema } from '@calendfree/shared';
 import { logAudit } from '../../services/audit-log.js';
 import { cancelBookingNotifications } from '../../jobs/notification-jobs.js';
 import { config } from '../../config.js';
@@ -489,5 +489,14 @@ export async function userRoutes(app: FastifyInstance) {
     const user = request.session.user!;
     const { timezone } = request.body as { timezone: string };
     return prisma.user.update({ where: { id: user.id }, data: { timezone } });
+  });
+
+  /** PATCH /api/me/language — Update own language preference */
+  app.patch('/api/me/language', { preHandler: [requireAuth] }, async (request) => {
+    const user = request.session.user!;
+    const { language } = UpdateMyLanguageSchema.parse(request.body);
+    await prisma.user.update({ where: { id: user.id }, data: { language } });
+    request.session.user!.language = language;
+    return { success: true, language };
   });
 }

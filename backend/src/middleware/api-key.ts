@@ -47,5 +47,6 @@ export async function apiKeyAuth(request: FastifyRequest, reply: FastifyReply) {
     organizationId: apiKey.user.organizationId,
     activeCompanyId: membership?.companyId ?? null,
     activeRole: membership?.role ?? null,
+    language: apiKey.user.language,
   };
 }

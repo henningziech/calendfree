@@ -13,6 +13,8 @@ export const SessionUserSchema = z.object({
   activeCompanyId: z.string().uuid().nullable(),
   /** Role in the active company (null if no company selected) */
   activeRole: RoleSchema.nullable(),
+  /** UI language preference */
+  language: z.string().default('en'),
 });
 export type SessionUser = z.infer<typeof SessionUserSchema>;
 

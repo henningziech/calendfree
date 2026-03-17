@@ -133,5 +133,6 @@ export async function handleCallback(code: string) {
     organizationId: user.organizationId,
     activeCompanyId: activeMembership?.companyId ?? null,
     activeRole: activeMembership?.role ?? null,
+    language: user.language,
   };
 }

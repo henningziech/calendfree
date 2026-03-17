@@ -517,6 +517,7 @@ export async function bookingRoutes(app: FastifyInstance) {
     return {
       name: company.name,
       slug: company.slug,
+      language: company.language,
       branding: branding ? {
         primaryColor: branding.primaryColor,
         accentColor: branding.accentColor,

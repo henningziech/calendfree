@@ -14,8 +14,10 @@ export interface BrandingConfig {
 export interface CompanyInfo {
   name: string;
   slug: string;
+  language?: string;
   branding: BrandingConfig | null;
 }
+
 
 export interface BookingInfo {
   id: string;
@@ -25,7 +27,7 @@ export interface BookingInfo {
   eventType: { title: string; duration: number };
   assignedUser: { name: string; email: string };
   customer: { name: string; email: string } | null;
-  company: { name: string; slug: string } | null;
+  company: { name: string; slug: string; language?: string } | null;
   branding: BrandingConfig | null;
 }
 

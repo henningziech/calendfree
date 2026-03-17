@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface BookingFormProps {
   onSubmit: (data: { name: string; email: string; comment?: string }) => void;
@@ -11,6 +12,7 @@ interface BookingFormProps {
 }
 
 export function BookingForm({ onSubmit, isSubmitting, eventTypeTitle, selectedTime, allowComment, initialName, initialEmail }: BookingFormProps) {
+  const { t } = useTranslation('booking');
   const [name, setName] = useState(initialName || '');
   const [email, setEmail] = useState(initialEmail || '');
   const [comment, setComment] = useState('');
@@ -35,7 +37,7 @@ export function BookingForm({ onSubmit, isSubmitting, eventTypeTitle, selectedTi
 
       <div>
         <label htmlFor="name" className="block text-sm font-medium" style={{ color: 'var(--color-text, #1E293B)' }}>
-          Name *
+          {t('form.nameLabel')}
         </label>
         <input
           id="name"
@@ -45,13 +47,13 @@ export function BookingForm({ onSubmit, isSubmitting, eventTypeTitle, selectedTi
           onChange={(e) => setName(e.target.value)}
           className="mt-1.5 block w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm shadow-sm transition-all focus:ring-2 focus:outline-none"
           style={{ '--tw-ring-color': 'rgba(var(--color-primary-rgb, 11, 142, 202), 0.2)' } as React.CSSProperties}
-          placeholder="Max Mustermann"
+          placeholder={t('form.namePlaceholder')}
         />
       </div>
 
       <div>
         <label htmlFor="email" className="block text-sm font-medium" style={{ color: 'var(--color-text, #1E293B)' }}>
-          E-Mail *
+          {t('form.emailLabel')}
         </label>
         <input
           id="email"
@@ -68,7 +70,7 @@ export function BookingForm({ onSubmit, isSubmitting, eventTypeTitle, selectedTi
       {allowComment && (
         <div>
           <label htmlFor="comment" className="block text-sm font-medium" style={{ color: 'var(--color-text, #1E293B)' }}>
-            Nachricht <span className="text-[#64748B] font-normal">(optional)</span>
+            {t('form.messageLabel')} <span className="text-[#64748B] font-normal">{t('form.messageOptional')}</span>
           </label>
           <textarea
             id="comment"
@@ -77,7 +79,7 @@ export function BookingForm({ onSubmit, isSubmitting, eventTypeTitle, selectedTi
             rows={3}
             className="mt-1.5 block w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm shadow-sm transition-all focus:ring-2 focus:outline-none resize-none"
             style={{ '--tw-ring-color': 'rgba(var(--color-primary-rgb, 11, 142, 202), 0.2)' } as React.CSSProperties}
-            placeholder="Gibt es etwas, das wir im Vorfeld wissen sollten?"
+            placeholder={t('form.messagePlaceholder')}
           />
         </div>
       )}
@@ -91,7 +93,7 @@ export function BookingForm({ onSubmit, isSubmitting, eventTypeTitle, selectedTi
           boxShadow: `0 4px 6px -1px rgba(var(--color-primary-rgb, 11, 142, 202), 0.2)`,
         }}
       >
-        {isSubmitting ? 'Wird gebucht...' : 'Termin buchen'}
+        {isSubmitting ? t('form.submitting') : t('form.submit')}
       </button>
     </form>
   );

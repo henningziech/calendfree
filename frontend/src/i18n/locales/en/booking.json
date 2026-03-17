@@ -1,1 +1,63 @@
-{}
+{
+  "booking": {
+    "notFound": "Booking page not found.",
+    "loadError": "Could not load appointments.",
+    "slotUnavailable": "This slot is no longer available. Please choose another one.",
+    "bookingFailed": "Booking failed. Please try again.",
+    "selectAppointment": "Select a suitable appointment",
+    "minutes": "{{count}} minutes",
+    "loadingSlots": "Loading available appointments...",
+    "changeSlot": "\u2190 Choose a different appointment"
+  },
+  "form": {
+    "nameLabel": "Name *",
+    "emailLabel": "E-Mail *",
+    "messageLabel": "Message",
+    "messageOptional": "(optional)",
+    "messagePlaceholder": "Is there anything we should know in advance?",
+    "namePlaceholder": "Jane Doe",
+    "submitting": "Booking...",
+    "submit": "Book Appointment"
+  },
+  "slotPicker": {
+    "noSlots": "No available appointments in the next few days.",
+    "selectDate": "Select date",
+    "selectTime": "Select time — {{date}}",
+    "slotsCount": "{{count}} slot",
+    "slotsCount_plural": "{{count}} slots",
+    "spotsLeft_one": "{{count}} spot left",
+    "spotsLeft_other": "{{count}} spots left"
+  },
+  "confirmation": {
+    "noData": "No booking data found.",
+    "backHome": "Back to home",
+    "title": "Appointment confirmed!",
+    "subtitle": "You will receive a confirmation email shortly.",
+    "when": "When",
+    "with": "With",
+    "meetingLink": "Meeting Link",
+    "joinMeet": "Join Google Meet",
+    "reschedule": "Reschedule appointment",
+    "cancel": "Cancel appointment"
+  },
+  "cancel": {
+    "loading": "Loading...",
+    "title": "Cancel appointment?",
+    "confirm": "Do you really want to cancel this appointment?",
+    "confirmButton": "Yes, cancel",
+    "cancelButton": "Back",
+    "cancelling": "Cancelling...",
+    "doneTitle": "Appointment cancelled",
+    "doneMessage": "Your appointment has been successfully cancelled.",
+    "failedMessage": "Cancellation failed."
+  },
+  "reschedule": {
+    "loading": "Loading...",
+    "title": "Reschedule appointment",
+    "subtitle": "Choose a new appointment. Your existing appointment will be automatically cancelled.",
+    "comingSoon": "This feature will be available in a future update."
+  },
+  "layout": {
+    "poweredBy": "Powered by"
+  }
+}

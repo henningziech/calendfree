@@ -1,4 +1,5 @@
 import { type ReactNode, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { BrandingConfig } from '../../api/branding';
 
 /** Convert hex color to "r, g, b" string for use in rgba(). */
@@ -25,6 +26,7 @@ export function BrandedLayout({
   branding?: BrandingConfig | null;
   companyName?: string;
 }) {
+  const { t } = useTranslation('booking');
   const primary = branding?.primaryColor || DEFAULTS.primaryColor;
   const accent = branding?.accentColor || DEFAULTS.accentColor;
   const bg = branding?.backgroundColor || DEFAULTS.backgroundColor;
@@ -77,7 +79,7 @@ export function BrandedLayout({
         ) : showPoweredBy ? (
           <footer className="mt-12 text-center text-xs text-[#64748B]">
             {companyName && <span>{companyName} — </span>}
-            Powered by <a href="https://calendfree.de" target="_blank" rel="noopener noreferrer" className="font-medium hover:underline" style={{ color: primary }}>Calendfree</a>
+            {t('layout.poweredBy')} <a href="https://calendfree.de" target="_blank" rel="noopener noreferrer" className="font-medium hover:underline" style={{ color: primary }}>Calendfree</a>
           </footer>
         ) : null}
       </div>

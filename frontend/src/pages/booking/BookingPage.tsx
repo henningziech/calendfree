@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { getSlots, createBooking, type TimeSlot } from '../../api/booking';
 import { apiRequest } from '../../api/client';
 import { getCompanyBranding, type BrandingConfig } from '../../api/branding';
@@ -9,7 +10,7 @@ import { BrandedLayout } from '../../components/layout/BrandedLayout';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { ErrorMessage } from '../../components/ui/ErrorMessage';
 import { format, parseISO } from 'date-fns';
-import { de } from 'date-fns/locale';
+import { getDateLocale } from '../../utils/dateLocale';
 
 interface EventTypeInfo {
   title: string;
@@ -21,6 +22,7 @@ interface EventTypeInfo {
 export function BookingPage() {
   const { companySlug, eventTypeSlug } = useParams<{ companySlug: string; eventTypeSlug: string }>();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation('booking');
 
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [eventInfo, setEventInfo] = useState<EventTypeInfo | null>(null);
@@ -50,16 +52,19 @@ export function BookingPage() {
       setEventInfo(info);
       setBranding(companyInfo.branding);
       setCompanyName(companyInfo.name);
+      if (companyInfo.language) {
+        i18n.changeLanguage(companyInfo.language);
+      }
     } catch (err: any) {
       if (err.status === 404) {
-        setError('Buchungsseite nicht gefunden.');
+        setError(t('booking.notFound'));
       } else {
-        setError('Termine konnten nicht geladen werden.');
+        setError(t('booking.loadError'));
       }
     } finally {
       setIsLoading(false);
     }
-  }, [companySlug, eventTypeSlug, timezone]);
+  }, [companySlug, eventTypeSlug, timezone, i18n, t]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -78,11 +83,11 @@ export function BookingPage() {
       });
     } catch (err: any) {
       if (err.status === 409) {
-        setError('Dieser Slot ist leider nicht mehr verfügbar. Bitte wählen Sie einen anderen.');
+        setError(t('booking.slotUnavailable'));
         setSelectedSlot(null);
         loadData();
       } else {
-        setError('Buchung fehlgeschlagen. Bitte versuchen Sie es erneut.');
+        setError(t('booking.bookingFailed'));
       }
     } finally {
       setIsSubmitting(false);
@@ -100,17 +105,17 @@ export function BookingPage() {
             <p className="mt-1 text-sm text-[#64748B]">{eventInfo.description}</p>
           )}
           {!eventInfo?.description && (
-            <p className="mt-1 text-sm text-[#64748B]">Wählen Sie einen passenden Termin</p>
+            <p className="mt-1 text-sm text-[#64748B]">{t('booking.selectAppointment')}</p>
           )}
           {eventInfo && (
-            <p className="mt-1 text-xs text-[#64748B]/70">{eventInfo.duration} Minuten</p>
+            <p className="mt-1 text-xs text-[#64748B]/70">{t('booking.minutes', { count: eventInfo.duration })}</p>
           )}
         </div>
 
-        {error && <ErrorMessage message={error} onRetry={error.includes('geladen') ? loadData : undefined} />}
+        {error && <ErrorMessage message={error} onRetry={error === t('booking.loadError') ? loadData : undefined} />}
 
         {isLoading ? (
-          <LoadingSpinner text="Verfügbare Termine werden geladen..." />
+          <LoadingSpinner text={t('booking.loadingSlots')} />
         ) : !selectedSlot ? (
           <SlotPicker
             slots={slots}
@@ -125,13 +130,13 @@ export function BookingPage() {
               className="text-sm font-medium transition-colors"
               style={{ color: 'var(--color-primary, #0B8ECA)' }}
             >
-              &larr; Anderen Termin wählen
+              {t('booking.changeSlot')}
             </button>
             <BookingForm
               onSubmit={handleBooking}
               isSubmitting={isSubmitting}
               eventTypeTitle={title}
-              selectedTime={format(parseISO(selectedSlot.start), "EEEE, d. MMMM yyyy 'um' HH:mm 'Uhr'", { locale: de })}
+              selectedTime={format(parseISO(selectedSlot.start), "EEEE, d. MMMM yyyy 'um' HH:mm 'Uhr'", { locale: getDateLocale() })}
               allowComment={eventInfo?.allowComment}
               initialName={prefillName}
               initialEmail={prefillEmail}

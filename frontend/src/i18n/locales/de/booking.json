@@ -1,1 +1,63 @@
-{}
+{
+  "booking": {
+    "notFound": "Buchungsseite nicht gefunden.",
+    "loadError": "Termine konnten nicht geladen werden.",
+    "slotUnavailable": "Dieser Slot ist leider nicht mehr verfügbar. Bitte wählen Sie einen anderen.",
+    "bookingFailed": "Buchung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "selectAppointment": "Wählen Sie einen passenden Termin",
+    "minutes": "{{count}} Minuten",
+    "loadingSlots": "Verfügbare Termine werden geladen...",
+    "changeSlot": "\u2190 Anderen Termin wählen"
+  },
+  "form": {
+    "nameLabel": "Name *",
+    "emailLabel": "E-Mail *",
+    "messageLabel": "Nachricht",
+    "messageOptional": "(optional)",
+    "messagePlaceholder": "Gibt es etwas, das wir im Vorfeld wissen sollten?",
+    "namePlaceholder": "Max Mustermann",
+    "submitting": "Wird gebucht...",
+    "submit": "Termin buchen"
+  },
+  "slotPicker": {
+    "noSlots": "Keine verfügbaren Termine in den nächsten Tagen.",
+    "selectDate": "Datum wählen",
+    "selectTime": "Uhrzeit wählen — {{date}}",
+    "slotsCount": "{{count}} Slot",
+    "slotsCount_plural": "{{count}} Slots",
+    "spotsLeft_one": "{{count}} Platz frei",
+    "spotsLeft_other": "{{count}} Plätze frei"
+  },
+  "confirmation": {
+    "noData": "Keine Buchungsdaten gefunden.",
+    "backHome": "Zurück zur Startseite",
+    "title": "Termin bestätigt!",
+    "subtitle": "Sie erhalten in Kürze eine Bestätigungsmail.",
+    "when": "Wann",
+    "with": "Mit",
+    "meetingLink": "Meeting-Link",
+    "joinMeet": "Google Meet beitreten",
+    "reschedule": "Termin verschieben",
+    "cancel": "Termin absagen"
+  },
+  "cancel": {
+    "loading": "Wird geladen...",
+    "title": "Termin absagen?",
+    "confirm": "Möchten Sie diesen Termin wirklich absagen?",
+    "confirmButton": "Ja, absagen",
+    "cancelButton": "Abbrechen",
+    "cancelling": "Wird storniert...",
+    "doneTitle": "Termin abgesagt",
+    "doneMessage": "Ihr Termin wurde erfolgreich storniert.",
+    "failedMessage": "Stornierung fehlgeschlagen."
+  },
+  "reschedule": {
+    "loading": "Wird geladen...",
+    "title": "Termin verschieben",
+    "subtitle": "Wählen Sie einen neuen Termin. Ihr bestehender Termin wird automatisch storniert.",
+    "comingSoon": "Diese Funktion wird in einem zukünftigen Update verfügbar sein."
+  },
+  "layout": {
+    "poweredBy": "Powered by"
+  }
+}

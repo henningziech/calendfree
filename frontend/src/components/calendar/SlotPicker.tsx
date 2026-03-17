@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { format, parseISO, isSameDay, addDays, startOfDay } from 'date-fns';
-import { de } from 'date-fns/locale';
+import { getDateLocale } from '../../utils/dateLocale';
 import type { TimeSlot } from '../../api/booking';
 
 interface SlotPickerProps {
@@ -11,6 +12,7 @@ interface SlotPickerProps {
 }
 
 export function SlotPicker({ slots, selectedSlot, onSelectSlot, timezone: _timezone }: SlotPickerProps) {
+  const { t } = useTranslation('booking');
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
     if (slots.length > 0) return startOfDay(parseISO(slots[0].start));
     return startOfDay(new Date());
@@ -48,7 +50,7 @@ export function SlotPicker({ slots, selectedSlot, onSelectSlot, timezone: _timez
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
         </div>
-        <p className="text-[#64748B]">Keine verfügbaren Termine in den nächsten Tagen.</p>
+        <p className="text-[#64748B]">{t('slotPicker.noSlots')}</p>
       </div>
     );
   }
@@ -57,7 +59,7 @@ export function SlotPicker({ slots, selectedSlot, onSelectSlot, timezone: _timez
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
       {/* Date selector */}
       <div>
-        <h3 className="mb-3 text-sm font-semibold" style={{ color: 'var(--color-text, #1E293B)' }}>Datum wählen</h3>
+        <h3 className="mb-3 text-sm font-semibold" style={{ color: 'var(--color-text, #1E293B)' }}>{t('slotPicker.selectDate')}</h3>
         <div className="space-y-1.5">
           {availableDates.map((date) => (
             <button
@@ -73,9 +75,9 @@ export function SlotPicker({ slots, selectedSlot, onSelectSlot, timezone: _timez
                 : { color: 'var(--color-text, #1E293B)' }
               }
             >
-              <span className="font-medium">{format(date, 'EEEE, d. MMMM', { locale: de })}</span>
+              <span className="font-medium">{format(date, 'EEEE, d. MMMM', { locale: getDateLocale() })}</span>
               <span className={`ml-2 text-xs ${isSameDay(date, selectedDate) ? 'text-white/70' : 'text-[#64748B]'}`}>
-                ({slotsByDate.get(format(date, 'yyyy-MM-dd'))?.length} Slots)
+                ({t('slotPicker.slotsCount', { count: slotsByDate.get(format(date, 'yyyy-MM-dd'))?.length ?? 0 })})
               </span>
             </button>
           ))}
@@ -85,7 +87,7 @@ export function SlotPicker({ slots, selectedSlot, onSelectSlot, timezone: _timez
       {/* Time slot selector */}
       <div>
         <h3 className="mb-3 text-sm font-semibold" style={{ color: 'var(--color-text, #1E293B)' }}>
-          Uhrzeit wählen — {format(selectedDate, 'd. MMMM', { locale: de })}
+          {t('slotPicker.selectTime', { date: format(selectedDate, 'd. MMMM', { locale: getDateLocale() }) })}
         </h3>
         <div className="grid grid-cols-2 gap-2">
           {currentDateSlots.map((slot) => (
@@ -105,7 +107,7 @@ export function SlotPicker({ slots, selectedSlot, onSelectSlot, timezone: _timez
               {format(parseISO(slot.start), 'HH:mm')}
               {slot.remainingSpots !== undefined && (
                 <span className="ml-2 rounded-full bg-[#FEF3C7] px-2 py-0.5 text-xs font-medium text-[#92400E]">
-                  {slot.remainingSpots} {slot.remainingSpots === 1 ? 'Platz' : 'Plätze'} frei
+                  {t('slotPicker.spotsLeft', { count: slot.remainingSpots })}
                 </span>
               )}
             </button>

@@ -1,6 +1,7 @@
 // backend/src/routes/routing.ts
 import type { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
+import { ResolveRoutingFormSchema } from '@calendfree/shared';
 
 export async function routingRoutes(app: FastifyInstance) {
   /** GET /api/routing/:companySlug/:formSlug — Get routing form for display */
@@ -12,56 +13,47 @@ export async function routingRoutes(app: FastifyInstance) {
 
     const form = await prisma.routingForm.findFirst({
       where: { companyId: company.id, slug: formSlug, active: true },
-      include: { rules: { orderBy: { order: 'asc' } } },
+      include: { options: { orderBy: { order: 'asc' } } },
     });
     if (!form) return reply.status(404).send({ error: 'Routing form not found' });
 
-    // Return form with unique field names for the UI to render as questions
-    const fields = [...new Set(form.rules.map((r) => r.field))];
-
     return {
       title: form.title,
-      fields: fields.map((f) => ({
-        name: f,
-        options: form.rules.filter((r) => r.field === f).map((r) => ({
-          value: r.value,
-          label: r.value,
-        })),
-      })),
+      description: form.description,
+      question: form.question,
+      collectName: form.collectName,
+      collectEmail: form.collectEmail,
+      options: form.options.map((o) => ({ id: o.id, label: o.label })),
     };
   });
 
-  /** POST /api/routing/:companySlug/:formSlug/resolve — Evaluate answers and return target */
+  /** POST /api/routing/:companySlug/:formSlug/resolve — Evaluate answer */
   app.post('/api/routing/:companySlug/:formSlug/resolve', async (request, reply) => {
     const { companySlug, formSlug } = request.params as { companySlug: string; formSlug: string };
-    const answers = request.body as Record<string, string>;
+    const body = ResolveRoutingFormSchema.parse(request.body);
 
     const company = await prisma.company.findFirst({ where: { slug: companySlug } });
     if (!company) return reply.status(404).send({ error: 'Company not found' });
 
     const form = await prisma.routingForm.findFirst({
       where: { companyId: company.id, slug: formSlug, active: true },
-      include: { rules: { orderBy: { order: 'asc' } } },
+      include: { options: true },
     });
     if (!form) return reply.status(404).send({ error: 'Routing form not found' });
 
-    // Evaluate rules in order
-    for (const rule of form.rules) {
-      const answer = answers[rule.field];
-      if (!answer) continue;
+    const option = form.options.find((o) => o.id === body.optionId);
 
-      let match = false;
-      switch (rule.operator) {
-        case 'equals': match = answer === rule.value; break;
-        case 'contains': match = answer.toLowerCase().includes(rule.value.toLowerCase()); break;
-        case 'regex': match = new RegExp(rule.value, 'i').test(answer); break;
-      }
+    const targetType = option?.targetType ?? form.fallbackType;
+    const targetValue = option?.targetValue ?? form.fallbackValue;
 
-      if (match) {
-        return { redirect: `/${companySlug}/${rule.targetSlug}` };
-      }
-    }
+    const prefill: Record<string, string> = {};
+    if (body.name) prefill.name = body.name;
+    if (body.email) prefill.email = body.email;
 
-    return reply.status(404).send({ error: 'No matching rule found' });
+    return {
+      type: targetType,
+      value: targetValue,
+      prefill: Object.keys(prefill).length > 0 ? prefill : undefined,
+    };
   });
 }

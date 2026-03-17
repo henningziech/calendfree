@@ -16,6 +16,18 @@ export const SessionUserSchema = z.object({
 });
 export type SessionUser = z.infer<typeof SessionUserSchema>;
 
+export const CompanyMembershipItemSchema = z.object({
+  companyId: z.string().uuid(),
+  companyName: z.string(),
+  role: RoleSchema,
+});
+export type CompanyMembershipItem = z.infer<typeof CompanyMembershipItemSchema>;
+
+export const SwitchCompanySchema = z.object({
+  companyId: z.string().uuid(),
+});
+export type SwitchCompany = z.infer<typeof SwitchCompanySchema>;
+
 export const GoogleTokensSchema = z.object({
   accessToken: z.string(),
   refreshToken: z.string(),

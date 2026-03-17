@@ -240,3 +240,24 @@ export async function updateTeamMemberRole(teamId: string, userId: string, role:
     body: JSON.stringify({ role }),
   });
 }
+
+// Routing Forms
+export async function getRoutingForms() {
+  return apiRequest<any[]>('/admin/routing-forms');
+}
+
+export async function createRoutingForm(data: any) {
+  return apiRequest('/admin/routing-forms', { method: 'POST', body: JSON.stringify(data) });
+}
+
+export async function getRoutingForm(id: string) {
+  return apiRequest(`/admin/routing-forms/${id}`);
+}
+
+export async function updateRoutingForm(id: string, data: any) {
+  return apiRequest(`/admin/routing-forms/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
+}
+
+export async function deleteRoutingForm(id: string) {
+  return apiRequest(`/admin/routing-forms/${id}`, { method: 'DELETE' });
+}

@@ -1,5 +1,5 @@
 // shared/src/schemas/admin.ts
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { SlugSchema, BrandingConfigSchema } from './organization.js';
 import { RoleSchema } from './auth.js';
 
@@ -75,7 +75,7 @@ const CreateEventTypeBaseSchema = z.object({
   teamId: z.string().uuid().nullable().optional(),
   roundRobinMode: z.enum(['SEQUENTIAL', 'LEAST_BUSY', 'WEIGHTED']).default('SEQUENTIAL'),
   /** Bookable hours per weekday. If null, defaults to Mo-Fr 9-17. */
-  bookableHours: z.record(z.array(z.object({
+  bookableHours: z.record(z.string(), z.array(z.object({
     start: z.string().regex(/^\d{2}:\d{2}$/),
     end: z.string().regex(/^\d{2}:\d{2}$/),
   }))).nullable().optional(),
@@ -121,7 +121,7 @@ export type UpdateEventType = z.infer<typeof UpdateEventTypeSchema>;
 
 // Availability
 export const UpdateAvailabilitySchema = z.object({
-  weeklySchedule: z.record(z.array(z.object({
+  weeklySchedule: z.record(z.string(), z.array(z.object({
     start: z.string().regex(/^\d{2}:\d{2}$/),
     end: z.string().regex(/^\d{2}:\d{2}$/),
   }))).optional(),
@@ -129,9 +129,7 @@ export const UpdateAvailabilitySchema = z.object({
   maxPerWeek: z.number().int().min(1).max(200).nullable().optional(),
   blockedHolidays: z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).nullable().optional(),
   holidayCountry: z.string().min(2).max(5).nullable().optional(),
-  dateSpecificHours: z.record(
-    z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-    z.array(z.object({
+  dateSpecificHours: z.record(z.string().regex(/^\d{4}-\d{2}-\d{2}$/), z.array(z.object({
       start: z.string().regex(/^\d{2}:\d{2}$/),
       end: z.string().regex(/^\d{2}:\d{2}$/),
     }))

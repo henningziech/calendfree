@@ -1,5 +1,5 @@
 // shared/src/schemas/booking.ts
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 export const TimeSlotSchema = z.object({
   start: z.string().datetime(),
@@ -19,7 +19,7 @@ export const BookingRequestSchema = z.object({
   timezone: z.string().default('Europe/Berlin'),
   name: z.string().min(1).max(255),
   email: z.string().email(),
-  formData: z.record(z.string()).optional(),
+  formData: z.record(z.string(), z.string()).optional(),
 });
 export type BookingRequest = z.infer<typeof BookingRequestSchema>;
 

@@ -326,12 +326,9 @@ export async function companyRoutes(app: FastifyInstance) {
       params: z.object({
         id: z.string().describe('Company ID'),
       }),
-      body: {
-        type: 'object',
-        properties: {
-          file: { type: 'string', format: 'binary' },
-        },
-      },
+      body: z.object({
+        file: z.any().describe('Binary file upload (PNG, JPEG, GIF, WebP)'),
+      }),
       response: {
         200: BrandingResponse,
         400: ErrorResponse,

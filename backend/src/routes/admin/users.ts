@@ -1,5 +1,6 @@
 // backend/src/routes/admin/users.ts
 import type { FastifyInstance } from 'fastify';
+import { z } from 'zod/v4';
 import { prisma } from '../../db.js';
 import { requireAuth, requireRole } from '../../middleware/auth.js';
 import { InviteUserSchema, UpdateMembershipRoleSchema, UpdateAvailabilitySchema, UpdateBookingNotesSchema, CreateBookingCommentSchema, UpdateBookingCommentSchema, UpdateBookingStatusSchema, UpdateMyStatusSchema, UpdateMyLanguageSchema, CreateVacationSchema } from '@calendfree/shared';
@@ -7,9 +8,38 @@ import { logAudit } from '../../services/audit-log.js';
 import { cancelBookingNotifications } from '../../jobs/notification-jobs.js';
 import { config } from '../../config.js';
 
+const ErrorResponse = z.object({ error: z.string() });
+const SuccessResponse = z.object({ success: z.boolean() });
+
 export async function userRoutes(app: FastifyInstance) {
   /** GET /api/admin/companies/:companyId/users — List company members */
-  app.get('/api/admin/companies/:companyId/users', { preHandler: [requireRole('USER', 'COMPANY_ADMIN', 'ORG_ADMIN')] }, async (request) => {
+  app.get('/api/admin/companies/:companyId/users', {
+    schema: {
+      summary: 'List company members',
+      description: 'Returns all members of a company with their roles, status, and Google connection state.',
+      tags: ['Users'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: z.object({
+        companyId: z.string().describe('Company ID'),
+      }),
+      response: {
+        200: z.array(z.object({
+          id: z.string(),
+          name: z.string().nullable(),
+          email: z.string(),
+          avatarUrl: z.string().nullable(),
+          slug: z.string().nullable(),
+          timezone: z.string().nullable(),
+          role: z.string(),
+          status: z.string(),
+          absentUntil: z.string().nullable(),
+          lastLoginAt: z.string().nullable(),
+          googleConnected: z.boolean(),
+        })),
+      },
+    },
+    preHandler: [requireRole('USER', 'COMPANY_ADMIN', 'ORG_ADMIN')],
+  }, async (request) => {
     const { companyId } = request.params as { companyId: string };
     const memberships = await prisma.companyMembership.findMany({
       where: { companyId },
@@ -35,7 +65,31 @@ export async function userRoutes(app: FastifyInstance) {
   });
 
   /** POST /api/admin/companies/:companyId/users — Invite user to company */
-  app.post('/api/admin/companies/:companyId/users', { preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')] }, async (request, reply) => {
+  app.post('/api/admin/companies/:companyId/users', {
+    schema: {
+      summary: 'Invite user to company',
+      description: 'Invites a user to a company by email. Creates the user if they do not exist yet.',
+      tags: ['Users'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: z.object({
+        companyId: z.string().describe('Company ID'),
+      }),
+      body: z.object({
+        email: z.string().describe('User email address'),
+        name: z.string().describe('User display name'),
+        role: z.string().optional().describe('Role to assign (defaults to USER)'),
+      }),
+      response: {
+        201: z.object({
+          id: z.string(),
+          email: z.string(),
+          name: z.string().nullable(),
+          role: z.string(),
+        }),
+      },
+    },
+    preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')],
+  }, async (request, reply) => {
     const { companyId } = request.params as { companyId: string };
     const user = request.session.user!;
     const body = InviteUserSchema.parse(request.body);
@@ -56,7 +110,29 @@ export async function userRoutes(app: FastifyInstance) {
   });
 
   /** PATCH /api/admin/companies/:companyId/users/:userId/role — Update user role */
-  app.patch('/api/admin/companies/:companyId/users/:userId/role', { preHandler: [requireRole('ORG_ADMIN')] }, async (request) => {
+  app.patch('/api/admin/companies/:companyId/users/:userId/role', {
+    schema: {
+      summary: 'Update user role',
+      description: 'Updates the role of a user within a company. Requires ORG_ADMIN privileges.',
+      tags: ['Users'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: z.object({
+        companyId: z.string().describe('Company ID'),
+        userId: z.string().describe('User ID'),
+      }),
+      body: z.object({
+        role: z.string().describe('New role (USER, COMPANY_ADMIN, or ORG_ADMIN)'),
+      }),
+      response: {
+        200: z.object({
+          userId: z.string(),
+          companyId: z.string(),
+          role: z.string(),
+        }),
+      },
+    },
+    preHandler: [requireRole('ORG_ADMIN')],
+  }, async (request) => {
     const { companyId, userId } = request.params as { companyId: string; userId: string };
     const body = UpdateMembershipRoleSchema.parse(request.body);
     return prisma.companyMembership.update({
@@ -66,7 +142,22 @@ export async function userRoutes(app: FastifyInstance) {
   });
 
   /** DELETE /api/admin/companies/:companyId/users/:userId — Remove user from company */
-  app.delete('/api/admin/companies/:companyId/users/:userId', { preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')] }, async (request) => {
+  app.delete('/api/admin/companies/:companyId/users/:userId', {
+    schema: {
+      summary: 'Remove user from company',
+      description: 'Removes a user\'s membership from a company. Does not delete the user account.',
+      tags: ['Users'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: z.object({
+        companyId: z.string().describe('Company ID'),
+        userId: z.string().describe('User ID'),
+      }),
+      response: {
+        200: SuccessResponse,
+      },
+    },
+    preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')],
+  }, async (request) => {
     const { companyId, userId } = request.params as { companyId: string; userId: string };
     await prisma.companyMembership.delete({
       where: { userId_companyId: { userId, companyId } },
@@ -75,7 +166,21 @@ export async function userRoutes(app: FastifyInstance) {
   });
 
   /** GET /api/admin/users/:id — Full user detail */
-  app.get('/api/admin/users/:id', { preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')] }, async (request, reply) => {
+  app.get('/api/admin/users/:id', {
+    schema: {
+      summary: 'Get user details',
+      description: 'Returns full user details including Google connection status, company memberships, and team memberships.',
+      tags: ['Users'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: z.object({
+        id: z.string().describe('User ID'),
+      }),
+      response: {
+        404: ErrorResponse,
+      },
+    },
+    preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')],
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const user = await prisma.user.findUnique({
       where: { id },
@@ -90,7 +195,30 @@ export async function userRoutes(app: FastifyInstance) {
   });
 
   /** PATCH /api/admin/users/:id/status — Update user absence status */
-  app.patch('/api/admin/users/:id/status', { preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')] }, async (request, reply) => {
+  app.patch('/api/admin/users/:id/status', {
+    schema: {
+      summary: 'Update user absence status',
+      description: 'Sets a user\'s availability status to AVAILABLE or ABSENT with an optional return date.',
+      tags: ['Users'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: z.object({
+        id: z.string().describe('User ID'),
+      }),
+      body: z.object({
+        status: z.enum(['AVAILABLE', 'ABSENT']).describe('New status'),
+        absentUntil: z.string().optional().describe('Return date (ISO 8601) when status is ABSENT'),
+      }),
+      response: {
+        200: z.object({
+          success: z.boolean(),
+          status: z.string(),
+          absentUntil: z.string().nullable(),
+        }),
+        404: ErrorResponse,
+      },
+    },
+    preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')],
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const { status, absentUntil } = request.body as { status: 'AVAILABLE' | 'ABSENT'; absentUntil?: string };
 
@@ -109,7 +237,18 @@ export async function userRoutes(app: FastifyInstance) {
   });
 
   /** GET /api/admin/users/:id/bookings — Upcoming bookings for a user */
-  app.get('/api/admin/users/:id/bookings', { preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')] }, async (request) => {
+  app.get('/api/admin/users/:id/bookings', {
+    schema: {
+      summary: 'Get user bookings',
+      description: 'Returns upcoming confirmed bookings assigned to a specific user, limited to 50 results.',
+      tags: ['Users'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: z.object({
+        id: z.string().describe('User ID'),
+      }),
+    },
+    preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')],
+  }, async (request) => {
     const { id } = request.params as { id: string };
     const bookings = await prisma.booking.findMany({
       where: {
@@ -128,7 +267,23 @@ export async function userRoutes(app: FastifyInstance) {
   });
 
   /** DELETE /api/admin/users/:id — Delete user (ORG_ADMIN only) */
-  app.delete('/api/admin/users/:id', { preHandler: [requireRole('ORG_ADMIN')] }, async (request, reply) => {
+  app.delete('/api/admin/users/:id', {
+    schema: {
+      summary: 'Delete user',
+      description: 'Permanently deletes a user account. Cannot delete yourself. Requires ORG_ADMIN privileges.',
+      tags: ['Users'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: z.object({
+        id: z.string().describe('User ID'),
+      }),
+      response: {
+        200: SuccessResponse,
+        400: ErrorResponse,
+        404: ErrorResponse,
+      },
+    },
+    preHandler: [requireRole('ORG_ADMIN')],
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const requestingUser = request.session.user!;
 
@@ -151,7 +306,15 @@ export async function userRoutes(app: FastifyInstance) {
   });
 
   /** GET /api/me — Get current user profile */
-  app.get('/api/me', { preHandler: [requireAuth] }, async (request) => {
+  app.get('/api/me', {
+    schema: {
+      summary: 'Get current user profile',
+      description: 'Returns the authenticated user\'s full profile including availability, Google connection status, company memberships, and team memberships.',
+      tags: ['My Account'],
+      security: [{ session: [] }, { apiKey: [] }],
+    },
+    preHandler: [requireAuth],
+  }, async (request) => {
     const user = request.session.user!;
     const fullUser = await prisma.user.findUniqueOrThrow({
       where: { id: user.id },
@@ -166,7 +329,29 @@ export async function userRoutes(app: FastifyInstance) {
   });
 
   /** PATCH /api/me/availability — Update own availability */
-  app.patch('/api/me/availability', { preHandler: [requireAuth] }, async (request) => {
+  app.patch('/api/me/availability', {
+    schema: {
+      summary: 'Update own availability',
+      description: 'Updates the authenticated user\'s availability configuration including weekly schedule, booking limits, and holiday settings.',
+      tags: ['My Account'],
+      security: [{ session: [] }, { apiKey: [] }],
+      body: z.object({
+        weeklySchedule: z.record(z.string(), z.array(z.object({
+          start: z.string().describe('Start time (HH:MM)'),
+          end: z.string().describe('End time (HH:MM)'),
+        }))).optional().describe('Bookable hours per weekday'),
+        maxPerDay: z.number().nullable().optional().describe('Maximum bookings per day'),
+        maxPerWeek: z.number().nullable().optional().describe('Maximum bookings per week'),
+        blockedHolidays: z.array(z.string()).nullable().optional().describe('Blocked holiday dates (YYYY-MM-DD)'),
+        holidayCountry: z.string().nullable().optional().describe('Country code for automatic holidays'),
+        dateSpecificHours: z.record(z.string(), z.array(z.object({
+          start: z.string(),
+          end: z.string(),
+        }))).nullable().optional().describe('Date-specific override hours'),
+      }),
+    },
+    preHandler: [requireAuth],
+  }, async (request) => {
     const user = request.session.user!;
     const body = UpdateAvailabilitySchema.parse(request.body);
 
@@ -178,7 +363,25 @@ export async function userRoutes(app: FastifyInstance) {
   });
 
   /** Self-service status update — users can set their own availability status. */
-  app.patch('/api/me/status', { preHandler: [requireAuth] }, async (request) => {
+  app.patch('/api/me/status', {
+    schema: {
+      summary: 'Update own status',
+      description: 'Sets the authenticated user\'s availability status to AVAILABLE or ABSENT with an optional return date.',
+      tags: ['My Account'],
+      security: [{ session: [] }, { apiKey: [] }],
+      body: z.object({
+        status: z.enum(['AVAILABLE', 'ABSENT']).describe('New status'),
+        absentUntil: z.string().nullable().optional().describe('Return date (ISO 8601) when status is ABSENT'),
+      }),
+      response: {
+        200: z.object({
+          status: z.string(),
+          absentUntil: z.string().nullable(),
+        }),
+      },
+    },
+    preHandler: [requireAuth],
+  }, async (request) => {
     const user = request.session.user!;
     const body = UpdateMyStatusSchema.parse(request.body);
 
@@ -197,7 +400,15 @@ export async function userRoutes(app: FastifyInstance) {
   });
 
   /** List my vacations (future + current only). */
-  app.get('/api/me/vacations', { preHandler: [requireAuth] }, async (request) => {
+  app.get('/api/me/vacations', {
+    schema: {
+      summary: 'List my vacations',
+      description: 'Returns all current and future vacation periods for the authenticated user.',
+      tags: ['My Account'],
+      security: [{ session: [] }, { apiKey: [] }],
+    },
+    preHandler: [requireAuth],
+  }, async (request) => {
     const user = request.session.user!;
     return prisma.vacationPeriod.findMany({
       where: { userId: user.id, endDate: { gte: new Date() } },
@@ -206,7 +417,20 @@ export async function userRoutes(app: FastifyInstance) {
   });
 
   /** Create a vacation period. */
-  app.post('/api/me/vacations', { preHandler: [requireAuth] }, async (request) => {
+  app.post('/api/me/vacations', {
+    schema: {
+      summary: 'Create vacation period',
+      description: 'Creates a new vacation period for the authenticated user. The user will be excluded from booking assignment during this period.',
+      tags: ['My Account'],
+      security: [{ session: [] }, { apiKey: [] }],
+      body: z.object({
+        startDate: z.string().describe('Start date (YYYY-MM-DD)'),
+        endDate: z.string().describe('End date (YYYY-MM-DD)'),
+        label: z.string().nullable().optional().describe('Optional label for the vacation'),
+      }),
+    },
+    preHandler: [requireAuth],
+  }, async (request) => {
     const user = request.session.user!;
     const body = CreateVacationSchema.parse(request.body);
 
@@ -221,7 +445,22 @@ export async function userRoutes(app: FastifyInstance) {
   });
 
   /** Delete a vacation period. */
-  app.delete('/api/me/vacations/:id', { preHandler: [requireAuth] }, async (request, reply) => {
+  app.delete('/api/me/vacations/:id', {
+    schema: {
+      summary: 'Delete vacation period',
+      description: 'Deletes a vacation period owned by the authenticated user.',
+      tags: ['My Account'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: z.object({
+        id: z.string().describe('Vacation period ID'),
+      }),
+      response: {
+        200: SuccessResponse,
+        404: ErrorResponse,
+      },
+    },
+    preHandler: [requireAuth],
+  }, async (request, reply) => {
     const user = request.session.user!;
     const { id } = request.params as { id: string };
 
@@ -235,7 +474,15 @@ export async function userRoutes(app: FastifyInstance) {
   });
 
   /** GET /api/me/bookings — Get own bookings */
-  app.get('/api/me/bookings', { preHandler: [requireAuth] }, async (request) => {
+  app.get('/api/me/bookings', {
+    schema: {
+      summary: 'List my bookings',
+      description: 'Returns the authenticated user\'s own bookings, ordered by most recent first, limited to 50 results.',
+      tags: ['My Account'],
+      security: [{ session: [] }, { apiKey: [] }],
+    },
+    preHandler: [requireAuth],
+  }, async (request) => {
     const user = request.session.user!;
     const bookings = await prisma.booking.findMany({
       where: { assignedUserId: user.id },
@@ -250,7 +497,15 @@ export async function userRoutes(app: FastifyInstance) {
   });
 
   /** GET /api/me/bookings/team — Get bookings for all teams the user is in */
-  app.get('/api/me/bookings/team', { preHandler: [requireAuth] }, async (request) => {
+  app.get('/api/me/bookings/team', {
+    schema: {
+      summary: 'List team bookings',
+      description: 'Returns bookings for all teams the authenticated user belongs to (excluding the user\'s own bookings), limited to 100 results.',
+      tags: ['My Account'],
+      security: [{ session: [] }, { apiKey: [] }],
+    },
+    preHandler: [requireAuth],
+  }, async (request) => {
     const user = request.session.user!;
 
     const teamMemberships = await prisma.teamMembership.findMany({
@@ -282,7 +537,29 @@ export async function userRoutes(app: FastifyInstance) {
   });
 
   /** PATCH /api/me/bookings/:id/notes — Update internal notes (own or team booking) */
-  app.patch('/api/me/bookings/:id/notes', { preHandler: [requireAuth] }, async (request, reply) => {
+  app.patch('/api/me/bookings/:id/notes', {
+    schema: {
+      summary: 'Update booking notes',
+      description: 'Updates internal notes on a booking. The user must be the assigned user or a member of the booking\'s team.',
+      tags: ['My Account'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: z.object({
+        id: z.string().describe('Booking ID'),
+      }),
+      body: z.object({
+        notes: z.string().describe('Internal notes content'),
+      }),
+      response: {
+        200: z.object({
+          success: z.boolean(),
+          internalNotes: z.string().nullable(),
+        }),
+        403: ErrorResponse,
+        404: ErrorResponse,
+      },
+    },
+    preHandler: [requireAuth],
+  }, async (request, reply) => {
     const user = request.session.user!;
     const { id } = request.params as { id: string };
     const { notes } = UpdateBookingNotesSchema.parse(request.body);
@@ -317,7 +594,24 @@ export async function userRoutes(app: FastifyInstance) {
   });
 
   /** POST /api/me/bookings/:id/cancel — Cancel booking (own or team) */
-  app.post('/api/me/bookings/:id/cancel', { preHandler: [requireAuth] }, async (request, reply) => {
+  app.post('/api/me/bookings/:id/cancel', {
+    schema: {
+      summary: 'Cancel booking',
+      description: 'Cancels a booking assigned to the authenticated user or their team. Deletes the associated calendar event and sends cancellation notifications.',
+      tags: ['My Account'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: z.object({
+        id: z.string().describe('Booking ID'),
+      }),
+      response: {
+        200: SuccessResponse,
+        400: ErrorResponse,
+        403: ErrorResponse,
+        404: ErrorResponse,
+      },
+    },
+    preHandler: [requireAuth],
+  }, async (request, reply) => {
     const user = request.session.user!;
     const { id } = request.params as { id: string };
 
@@ -392,7 +686,22 @@ export async function userRoutes(app: FastifyInstance) {
   }
 
   /** GET /api/me/bookings/:bookingId — Single booking with comments */
-  app.get('/api/me/bookings/:bookingId', { preHandler: [requireAuth] }, async (request, reply) => {
+  app.get('/api/me/bookings/:bookingId', {
+    schema: {
+      summary: 'Get booking details',
+      description: 'Returns a single booking with full details including event type, form data, assigned user, and comments. The user must be the assigned user or a team member.',
+      tags: ['My Account'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: z.object({
+        bookingId: z.string().describe('Booking ID'),
+      }),
+      response: {
+        403: ErrorResponse,
+        404: ErrorResponse,
+      },
+    },
+    preHandler: [requireAuth],
+  }, async (request, reply) => {
     const user = request.session.user!;
     const { bookingId } = request.params as { bookingId: string };
 
@@ -417,7 +726,29 @@ export async function userRoutes(app: FastifyInstance) {
   });
 
   /** PATCH /api/me/bookings/:bookingId/status — Change booking status */
-  app.patch('/api/me/bookings/:bookingId/status', { preHandler: [requireAuth] }, async (request, reply) => {
+  app.patch('/api/me/bookings/:bookingId/status', {
+    schema: {
+      summary: 'Update booking status',
+      description: 'Changes the status of a booking (e.g. to COMPLETED or NO_SHOW). The user must be the assigned user or a team member.',
+      tags: ['My Account'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: z.object({
+        bookingId: z.string().describe('Booking ID'),
+      }),
+      body: z.object({
+        status: z.enum(['COMPLETED', 'NO_SHOW']).describe('New booking status'),
+      }),
+      response: {
+        200: z.object({
+          success: z.boolean(),
+          status: z.string(),
+        }),
+        403: ErrorResponse,
+        404: ErrorResponse,
+      },
+    },
+    preHandler: [requireAuth],
+  }, async (request, reply) => {
     const user = request.session.user!;
     const { bookingId } = request.params as { bookingId: string };
     const { status } = UpdateBookingStatusSchema.parse(request.body);
@@ -435,7 +766,38 @@ export async function userRoutes(app: FastifyInstance) {
   });
 
   /** POST /api/me/bookings/:bookingId/comments — Create comment */
-  app.post('/api/me/bookings/:bookingId/comments', { preHandler: [requireAuth] }, async (request, reply) => {
+  app.post('/api/me/bookings/:bookingId/comments', {
+    schema: {
+      summary: 'Create booking comment',
+      description: 'Adds an internal comment to a booking. The user must be the assigned user or a team member.',
+      tags: ['My Account'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: z.object({
+        bookingId: z.string().describe('Booking ID'),
+      }),
+      body: z.object({
+        content: z.string().describe('Comment text'),
+      }),
+      response: {
+        201: z.object({
+          id: z.string(),
+          bookingId: z.string(),
+          userId: z.string(),
+          content: z.string(),
+          createdAt: z.string(),
+          user: z.object({
+            id: z.string(),
+            name: z.string().nullable(),
+            email: z.string(),
+            avatarUrl: z.string().nullable(),
+          }),
+        }),
+        403: ErrorResponse,
+        404: ErrorResponse,
+      },
+    },
+    preHandler: [requireAuth],
+  }, async (request, reply) => {
     const user = request.session.user!;
     const { bookingId } = request.params as { bookingId: string };
     const { content } = CreateBookingCommentSchema.parse(request.body);
@@ -453,7 +815,26 @@ export async function userRoutes(app: FastifyInstance) {
   });
 
   /** PATCH /api/me/bookings/:bookingId/comments/:commentId — Edit own comment */
-  app.patch('/api/me/bookings/:bookingId/comments/:commentId', { preHandler: [requireAuth] }, async (request, reply) => {
+  app.patch('/api/me/bookings/:bookingId/comments/:commentId', {
+    schema: {
+      summary: 'Edit booking comment',
+      description: 'Updates a comment on a booking. Only the comment author can edit their own comments.',
+      tags: ['My Account'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: z.object({
+        bookingId: z.string().describe('Booking ID'),
+        commentId: z.string().describe('Comment ID'),
+      }),
+      body: z.object({
+        content: z.string().describe('Updated comment text'),
+      }),
+      response: {
+        403: ErrorResponse,
+        404: ErrorResponse,
+      },
+    },
+    preHandler: [requireAuth],
+  }, async (request, reply) => {
     const user = request.session.user!;
     const { commentId } = request.params as { bookingId: string; commentId: string };
     const { content } = UpdateBookingCommentSchema.parse(request.body);
@@ -472,7 +853,24 @@ export async function userRoutes(app: FastifyInstance) {
   });
 
   /** DELETE /api/me/bookings/:bookingId/comments/:commentId — Delete own comment */
-  app.delete('/api/me/bookings/:bookingId/comments/:commentId', { preHandler: [requireAuth] }, async (request, reply) => {
+  app.delete('/api/me/bookings/:bookingId/comments/:commentId', {
+    schema: {
+      summary: 'Delete booking comment',
+      description: 'Deletes a comment from a booking. Only the comment author can delete their own comments.',
+      tags: ['My Account'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: z.object({
+        bookingId: z.string().describe('Booking ID'),
+        commentId: z.string().describe('Comment ID'),
+      }),
+      response: {
+        200: SuccessResponse,
+        403: ErrorResponse,
+        404: ErrorResponse,
+      },
+    },
+    preHandler: [requireAuth],
+  }, async (request, reply) => {
     const user = request.session.user!;
     const { commentId } = request.params as { bookingId: string; commentId: string };
 
@@ -485,14 +883,42 @@ export async function userRoutes(app: FastifyInstance) {
   });
 
   /** PATCH /api/me/timezone — Update own timezone */
-  app.patch('/api/me/timezone', { preHandler: [requireAuth] }, async (request) => {
+  app.patch('/api/me/timezone', {
+    schema: {
+      summary: 'Update own timezone',
+      description: 'Updates the authenticated user\'s timezone setting.',
+      tags: ['My Account'],
+      security: [{ session: [] }, { apiKey: [] }],
+      body: z.object({
+        timezone: z.string().describe('IANA timezone identifier (e.g. Europe/Berlin)'),
+      }),
+    },
+    preHandler: [requireAuth],
+  }, async (request) => {
     const user = request.session.user!;
     const { timezone } = request.body as { timezone: string };
     return prisma.user.update({ where: { id: user.id }, data: { timezone } });
   });
 
   /** PATCH /api/me/language — Update own language preference */
-  app.patch('/api/me/language', { preHandler: [requireAuth] }, async (request) => {
+  app.patch('/api/me/language', {
+    schema: {
+      summary: 'Update own language',
+      description: 'Updates the authenticated user\'s preferred language for the UI.',
+      tags: ['My Account'],
+      security: [{ session: [] }, { apiKey: [] }],
+      body: z.object({
+        language: z.enum(['en', 'de']).describe('Preferred language'),
+      }),
+      response: {
+        200: z.object({
+          success: z.boolean(),
+          language: z.string(),
+        }),
+      },
+    },
+    preHandler: [requireAuth],
+  }, async (request) => {
     const user = request.session.user!;
     const { language } = UpdateMyLanguageSchema.parse(request.body);
     await prisma.user.update({ where: { id: user.id }, data: { language } });

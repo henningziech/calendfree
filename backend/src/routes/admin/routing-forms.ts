@@ -1,14 +1,27 @@
 // backend/src/routes/admin/routing-forms.ts
 import type { FastifyInstance } from 'fastify';
+import { z } from 'zod/v4';
 import { prisma } from '../../db.js';
 import { requireAuth } from '../../middleware/auth.js';
 import { CreateRoutingFormSchema, UpdateRoutingFormSchema } from '@calendfree/shared';
+
+const ErrorResponse = z.object({ error: z.string() });
 
 export async function routingFormAdminRoutes(app: FastifyInstance) {
   app.addHook('preHandler', requireAuth);
 
   /** GET /api/admin/routing-forms — List all for active company */
-  app.get('/api/admin/routing-forms', async (request, reply) => {
+  app.get('/api/admin/routing-forms', {
+    schema: {
+      summary: 'List routing forms',
+      description: 'Returns all routing forms for the active company, including option counts.',
+      tags: ['Routing Forms'],
+      security: [{ session: [] }, { apiKey: [] }],
+      response: {
+        400: ErrorResponse,
+      },
+    },
+  }, async (request, reply) => {
     const user = request.session.user!;
     if (!user.activeCompanyId) return reply.status(400).send({ error: 'No active company' });
 
@@ -20,7 +33,24 @@ export async function routingFormAdminRoutes(app: FastifyInstance) {
   });
 
   /** POST /api/admin/routing-forms — Create */
-  app.post('/api/admin/routing-forms', async (request, reply) => {
+  app.post('/api/admin/routing-forms', {
+    schema: {
+      summary: 'Create routing form',
+      description: 'Creates a new routing form with options for the active company.',
+      tags: ['Routing Forms'],
+      security: [{ session: [] }, { apiKey: [] }],
+      body: CreateRoutingFormSchema,
+      response: {
+        201: z.object({
+          id: z.string(),
+          title: z.string(),
+          slug: z.string(),
+        }).passthrough(),
+        400: ErrorResponse,
+        409: ErrorResponse,
+      },
+    },
+  }, async (request, reply) => {
     const user = request.session.user!;
     if (!user.activeCompanyId) return reply.status(400).send({ error: 'No active company' });
 
@@ -47,7 +77,21 @@ export async function routingFormAdminRoutes(app: FastifyInstance) {
   });
 
   /** GET /api/admin/routing-forms/:id — Get with options */
-  app.get('/api/admin/routing-forms/:id', async (request, reply) => {
+  app.get('/api/admin/routing-forms/:id', {
+    schema: {
+      summary: 'Get routing form',
+      description: 'Returns a routing form with its options and company slug.',
+      tags: ['Routing Forms'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: z.object({
+        id: z.string().describe('Routing form ID'),
+      }),
+      response: {
+        400: ErrorResponse,
+        404: ErrorResponse,
+      },
+    },
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const user = request.session.user!;
     if (!user.activeCompanyId) return reply.status(400).send({ error: 'No active company' });
@@ -64,7 +108,23 @@ export async function routingFormAdminRoutes(app: FastifyInstance) {
   });
 
   /** PATCH /api/admin/routing-forms/:id — Update */
-  app.patch('/api/admin/routing-forms/:id', async (request, reply) => {
+  app.patch('/api/admin/routing-forms/:id', {
+    schema: {
+      summary: 'Update routing form',
+      description: 'Updates a routing form and optionally replaces its options. Only the creator, COMPANY_ADMIN, or ORG_ADMIN can edit.',
+      tags: ['Routing Forms'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: z.object({
+        id: z.string().describe('Routing form ID'),
+      }),
+      body: UpdateRoutingFormSchema,
+      response: {
+        400: ErrorResponse,
+        403: ErrorResponse,
+        404: ErrorResponse,
+      },
+    },
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const user = request.session.user!;
     if (!user.activeCompanyId) return reply.status(400).send({ error: 'No active company' });
@@ -100,7 +160,23 @@ export async function routingFormAdminRoutes(app: FastifyInstance) {
   });
 
   /** DELETE /api/admin/routing-forms/:id — Delete */
-  app.delete('/api/admin/routing-forms/:id', async (request, reply) => {
+  app.delete('/api/admin/routing-forms/:id', {
+    schema: {
+      summary: 'Delete routing form',
+      description: 'Permanently deletes a routing form and its options. Only the creator, COMPANY_ADMIN, or ORG_ADMIN can delete.',
+      tags: ['Routing Forms'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: z.object({
+        id: z.string().describe('Routing form ID'),
+      }),
+      response: {
+        200: z.object({ success: z.boolean() }),
+        400: ErrorResponse,
+        403: ErrorResponse,
+        404: ErrorResponse,
+      },
+    },
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const user = request.session.user!;
     if (!user.activeCompanyId) return reply.status(400).send({ error: 'No active company' });

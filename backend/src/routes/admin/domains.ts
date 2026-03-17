@@ -1,14 +1,33 @@
 // backend/src/routes/admin/domains.ts
 import type { FastifyInstance } from 'fastify';
+import { z } from 'zod/v4';
 import { prisma } from '../../db.js';
 import { requireRole } from '../../middleware/auth.js';
 import dns from 'node:dns/promises';
+
+const ErrorResponse = z.object({ error: z.string() });
 
 export async function domainRoutes(app: FastifyInstance) {
   app.addHook('preHandler', requireRole('COMPANY_ADMIN', 'ORG_ADMIN'));
 
   /** GET /api/admin/companies/:id/domain — Get custom domain config */
-  app.get('/api/admin/companies/:id/domain', async (request, reply) => {
+  app.get('/api/admin/companies/:id/domain', {
+    schema: {
+      summary: 'Get custom domain',
+      description: 'Returns the custom domain configuration for a company.',
+      tags: ['Companies'],
+      security: [{ session: [] }],
+      params: z.object({
+        id: z.string().describe('Company ID'),
+      }),
+      response: {
+        200: z.object({
+          customDomain: z.string().nullable().describe('Custom domain if configured'),
+        }),
+        404: ErrorResponse,
+      },
+    },
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const company = await prisma.company.findUnique({ where: { id }, select: { customDomain: true } });
     if (!company) return reply.status(404).send({ error: 'Company not found' });
@@ -16,7 +35,27 @@ export async function domainRoutes(app: FastifyInstance) {
   });
 
   /** PUT /api/admin/companies/:id/domain — Set custom domain */
-  app.put('/api/admin/companies/:id/domain', async (request, reply) => {
+  app.put('/api/admin/companies/:id/domain', {
+    schema: {
+      summary: 'Set custom domain',
+      description: 'Sets or removes the custom domain for a company. Verifies DNS CNAME before accepting.',
+      tags: ['Companies'],
+      security: [{ session: [] }],
+      params: z.object({
+        id: z.string().describe('Company ID'),
+      }),
+      body: z.object({
+        domain: z.string().nullable().describe('Custom domain to set, or null to remove'),
+      }),
+      response: {
+        200: z.object({
+          success: z.boolean(),
+          customDomain: z.string().nullable(),
+        }),
+        400: ErrorResponse,
+      },
+    },
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const { domain } = request.body as { domain: string | null };
 

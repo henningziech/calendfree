@@ -16,7 +16,14 @@ export async function embedRoutes(app: FastifyInstance) {
   }
 
   /** GET /embed.js — Serve the embed widget script */
-  app.get('/embed.js', async (request, reply) => {
+  app.get('/embed.js', {
+    schema: {
+      summary: 'Get embed widget script',
+      description: 'Serves the JavaScript embed widget for integrating Calendfree booking into third-party websites.',
+      tags: ['System'],
+      security: [],
+    },
+  }, async (request, reply) => {
     reply
       .header('Content-Type', 'application/javascript')
       .header('Cache-Control', 'public, max-age=3600')

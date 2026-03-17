@@ -1,8 +1,11 @@
 // backend/src/routes/holidays.ts
 import type { FastifyInstance } from 'fastify';
+import { z } from 'zod/v4';
 import { getAccessToken } from '../services/calendar.js';
 import { redis } from '../redis.js';
 import { requireAuth } from '../middleware/auth.js';
+
+const ErrorResponse = z.object({ error: z.string() });
 
 interface HolidayEvent {
   name: string;
@@ -22,7 +25,29 @@ const COUNTRY_CALENDAR_MAP: Record<string, string> = {
  * Fetch public holidays from Google Calendar for a given country and year.
  */
 export async function holidayRoutes(app: FastifyInstance) {
-  app.get('/api/holidays', { preHandler: [requireAuth] }, async (request, reply) => {
+  app.get('/api/holidays', {
+    preHandler: [requireAuth],
+    schema: {
+      summary: 'Get public holidays',
+      description: 'Fetches public holidays from Google Calendar for a given country and year. Results are cached for 30 days.',
+      tags: ['System'],
+      security: [{ session: [] }, { apiKey: [] }],
+      querystring: z.object({
+        country: z.string().optional().describe('Country code (de, at, ch, us, gb). Defaults to de.'),
+        year: z.string().optional().describe('Year (2020-2100). Defaults to current year.'),
+      }),
+      response: {
+        200: z.array(z.object({
+          name: z.string().describe('Holiday name'),
+          date: z.string().describe('Date in YYYY-MM-DD format'),
+          countryCode: z.string().describe('Country code'),
+        })),
+        400: ErrorResponse,
+        500: ErrorResponse,
+        502: ErrorResponse,
+      },
+    },
+  }, async (request, reply) => {
     const { id: userId } = request.session.user!;
 
     const { country = 'de', year } = request.query as { country?: string; year?: string };

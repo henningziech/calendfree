@@ -190,3 +190,18 @@ export async function createVacation(data: { startDate: string; endDate: string;
 export async function deleteVacation(id: string) {
   return apiRequest(`/me/vacations/${id}`, { method: 'DELETE' });
 }
+
+// Team management
+export async function updateTeamName(teamId: string, name: string) {
+  return apiRequest(`/admin/teams/${teamId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ name }),
+  });
+}
+
+export async function updateTeamMemberRole(teamId: string, userId: string, role: 'MEMBER' | 'OWNER') {
+  return apiRequest(`/admin/teams/${teamId}/members/${userId}/role`, {
+    method: 'PATCH',
+    body: JSON.stringify({ role }),
+  });
+}

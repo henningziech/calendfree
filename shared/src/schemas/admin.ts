@@ -14,7 +14,6 @@ export type UpdateCompany = z.infer<typeof UpdateCompanySchema>;
 // Team management
 export const CreateTeamSchema = z.object({
   name: z.string().min(1).max(255),
-  roundRobinMode: z.enum(['SEQUENTIAL', 'LEAST_BUSY', 'WEIGHTED']).default('SEQUENTIAL'),
 });
 export type CreateTeam = z.infer<typeof CreateTeamSchema>;
 
@@ -33,6 +32,11 @@ export const UpdateTeamMemberSchema = z.object({
   weight: z.number().int().min(1).max(100),
 });
 export type UpdateTeamMember = z.infer<typeof UpdateTeamMemberSchema>;
+
+export const UpdateTeamMemberRoleSchema = z.object({
+  role: z.enum(['MEMBER', 'OWNER']),
+});
+export type UpdateTeamMemberRole = z.infer<typeof UpdateTeamMemberRoleSchema>;
 
 export const UpdateRoundRobinSchema = z.object({
   mode: z.enum(['SEQUENTIAL', 'LEAST_BUSY', 'WEIGHTED']),

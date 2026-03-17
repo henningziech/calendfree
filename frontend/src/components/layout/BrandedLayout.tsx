@@ -77,7 +77,7 @@ export function BrandedLayout({
         ) : showPoweredBy ? (
           <footer className="mt-12 text-center text-xs text-[#64748B]">
             {companyName && <span>{companyName} — </span>}
-            Powered by <span className="font-medium" style={{ color: primary }}>Calendfree</span>
+            Powered by <a href="https://calendfree.de" target="_blank" rel="noopener noreferrer" className="font-medium hover:underline" style={{ color: primary }}>Calendfree</a>
           </footer>
         ) : null}
       </div>

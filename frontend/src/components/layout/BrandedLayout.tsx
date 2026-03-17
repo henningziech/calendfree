@@ -61,7 +61,7 @@ export function BrandedLayout({
       <div className="mx-auto max-w-2xl px-4 py-8">
         {branding?.logoUrl ? (
           <div className="mb-6 flex justify-center">
-            <img src={branding.logoUrl} alt={companyName} className="h-10" />
+            <img src={branding.logoUrl} alt={companyName} className="h-20" />
           </div>
         ) : (
           <div className="mb-6 flex items-center justify-center gap-2.5">

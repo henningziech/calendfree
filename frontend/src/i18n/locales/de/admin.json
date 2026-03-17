@@ -82,7 +82,7 @@
     "footerTextLabel": "Footer-Text",
     "footerPlaceholder": "Powered by Calendfree (Standard)",
     "footerCharCount": "{{count}}/200 Zeichen — leer lassen für Standard-Footer",
-    "showPoweredBy": "„Powered by Calendfree" anzeigen",
+    "showPoweredBy": "„Powered by Calendfree\u201d anzeigen",
     "showPoweredByHint": "Wird angezeigt wenn kein eigener Text gesetzt ist",
     "saving": "Wird gespeichert...",
     "saveBranding": "Branding speichern",

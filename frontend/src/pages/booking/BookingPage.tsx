@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router';
+import { useParams, useNavigate, useSearchParams } from 'react-router';
 import { getSlots, createBooking, type TimeSlot } from '../../api/booking';
 import { apiRequest } from '../../api/client';
 import { getCompanyBranding, type BrandingConfig } from '../../api/branding';
@@ -31,6 +31,10 @@ export function BookingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  const [searchParams] = useSearchParams();
+  const prefillName = searchParams.get('name') || '';
+  const prefillEmail = searchParams.get('email') || '';
 
   const loadData = useCallback(async () => {
     if (!companySlug || !eventTypeSlug) return;
@@ -129,6 +133,8 @@ export function BookingPage() {
               eventTypeTitle={title}
               selectedTime={format(parseISO(selectedSlot.start), "EEEE, d. MMMM yyyy 'um' HH:mm 'Uhr'", { locale: de })}
               allowComment={eventInfo?.allowComment}
+              initialName={prefillName}
+              initialEmail={prefillEmail}
             />
           </div>
         )}

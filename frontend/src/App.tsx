@@ -28,6 +28,7 @@ import { MyEventTypesPage } from './pages/dashboard/MyEventTypesPage';
 import { MyTeamsPage } from './pages/dashboard/MyTeamsPage';
 import { TeamDetailPage } from './pages/dashboard/TeamDetailPage';
 import { BookingDetailPage } from './pages/dashboard/BookingDetailPage';
+import { RoutingPage } from './pages/booking/RoutingPage';
 
 export default function App() {
   return (
@@ -67,6 +68,9 @@ export default function App() {
             <Route path="routing-forms" element={<RoutingFormsPage />} />
             <Route path="routing-forms/:id" element={<RoutingFormDetailPage />} />
           </Route>
+
+          {/* Routing forms (public) */}
+          <Route path="/:companySlug/routing/:formSlug" element={<RoutingPage />} />
 
           {/* Booking (public, must be last due to catch-all slug pattern) */}
           <Route path="/:companySlug/:eventTypeSlug" element={<BookingPage />} />

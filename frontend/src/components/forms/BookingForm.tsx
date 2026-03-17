@@ -6,11 +6,13 @@ interface BookingFormProps {
   eventTypeTitle: string;
   selectedTime: string;
   allowComment?: boolean;
+  initialName?: string;
+  initialEmail?: string;
 }
 
-export function BookingForm({ onSubmit, isSubmitting, eventTypeTitle, selectedTime, allowComment }: BookingFormProps) {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+export function BookingForm({ onSubmit, isSubmitting, eventTypeTitle, selectedTime, allowComment, initialName, initialEmail }: BookingFormProps) {
+  const [name, setName] = useState(initialName || '');
+  const [email, setEmail] = useState(initialEmail || '');
   const [comment, setComment] = useState('');
 
   const handleSubmit = (e: FormEvent) => {

@@ -34,6 +34,7 @@ const MAIN_NAV: NavItem[] = [
   { to: '/dashboard', label: 'Termine', end: true },
   { to: '/dashboard/availability', label: 'Verfügbarkeit' },
   { to: '/dashboard/teams', label: 'Teams' },
+  { to: '/dashboard/routing-forms', label: 'Routing' },
 ];
 
 const ADMIN_NAV: NavItem[] = [

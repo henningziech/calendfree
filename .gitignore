@@ -4,4 +4,8 @@ dist/
 *.log
 .prisma/
 generated/
-docs/
+docs/build/
+docs/node_modules/
+docs/.docusaurus/
+docs/openapi/calendfree.json
+docs/docs/api/

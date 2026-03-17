@@ -1,4 +1,5 @@
 import Fastify, { type FastifyInstance } from 'fastify';
+import { z } from 'zod/v4';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import cors from '@fastify/cors';
@@ -146,7 +147,23 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(holidayRoutes);
 
   // Health check
-  app.get('/api/health', async () => {
+  app.get('/api/health', {
+    schema: {
+      tags: ['System'],
+      summary: 'Health check',
+      operationId: 'getHealth',
+      response: {
+        200: z.object({
+          status: z.enum(['ok', 'degraded']),
+          timestamp: z.string(),
+          services: z.object({
+            database: z.boolean(),
+            redis: z.boolean(),
+          }),
+        }),
+      },
+    },
+  }, async () => {
     const dbOk = await prisma.$queryRaw`SELECT 1`.then(() => true).catch(() => false);
     const redisOk = await redis.ping().then(() => true).catch(() => false);
     return {

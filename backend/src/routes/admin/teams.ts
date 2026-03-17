@@ -1,8 +1,17 @@
 // backend/src/routes/admin/teams.ts
 import type { FastifyInstance } from 'fastify';
 import { prisma } from '../../db.js';
-import { requireRole } from '../../middleware/auth.js';
-import { CreateTeamSchema, UpdateTeamSchema, AddTeamMemberSchema, UpdateTeamMemberSchema, UpdateRoundRobinSchema } from '@calendfree/shared';
+import { requireAuth, requireRole } from '../../middleware/auth.js';
+import { CreateTeamSchema, UpdateTeamSchema, AddTeamMemberSchema, UpdateTeamMemberSchema, UpdateTeamMemberRoleSchema, UpdateRoundRobinSchema } from '@calendfree/shared';
+
+/** Check if user can manage a team (is Owner or Company/Org Admin). */
+async function canManageTeam(userId: string, userRole: string, teamId: string): Promise<boolean> {
+  if (userRole === 'ORG_ADMIN' || userRole === 'COMPANY_ADMIN') return true;
+  const membership = await prisma.teamMembership.findUnique({
+    where: { userId_teamId: { userId, teamId } },
+  });
+  return membership?.role === 'OWNER';
+}
 
 export async function teamRoutes(app: FastifyInstance) {
   // All authenticated users can view and create teams
@@ -12,6 +21,7 @@ export async function teamRoutes(app: FastifyInstance) {
   /** POST /api/admin/companies/:companyId/teams — Create team */
   app.post('/api/admin/companies/:companyId/teams', async (request, reply) => {
     const { companyId } = request.params as { companyId: string };
+    const user = request.session.user!;
     const body = CreateTeamSchema.parse(request.body);
 
     const team = await prisma.team.create({
@@ -19,7 +29,10 @@ export async function teamRoutes(app: FastifyInstance) {
         name: body.name,
         companyId,
         rrConfig: {
-          create: { mode: body.roundRobinMode },
+          create: { mode: 'SEQUENTIAL' },
+        },
+        memberships: {
+          create: { userId: user.id, weight: 100, role: 'OWNER' },
         },
       },
       include: { rrConfig: true },
@@ -118,6 +131,10 @@ export async function teamRoutes(app: FastifyInstance) {
   /** PATCH /api/admin/teams/:id — Update team */
   app.patch('/api/admin/teams/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
+    const user = request.session.user!;
+    if (!(await canManageTeam(user.id, user.activeRole ?? 'USER', id))) {
+      return reply.status(403).send({ error: 'Not authorized' });
+    }
     const body = UpdateTeamSchema.parse(request.body);
     const team = await prisma.team.update({ where: { id }, data: body });
     return team;
@@ -125,7 +142,12 @@ export async function teamRoutes(app: FastifyInstance) {
 
   /** DELETE /api/admin/teams/:id — Delete team */
   app.delete('/api/admin/teams/:id', async (request, reply) => {
-    await prisma.team.delete({ where: { id: (request.params as { id: string }).id } });
+    const { id } = (request.params as { id: string });
+    const user = request.session.user!;
+    if (!(await canManageTeam(user.id, user.activeRole ?? 'USER', id))) {
+      return reply.status(403).send({ error: 'Not authorized' });
+    }
+    await prisma.team.delete({ where: { id } });
     return { success: true };
   });
 
@@ -160,9 +182,52 @@ export async function teamRoutes(app: FastifyInstance) {
     });
   });
 
+  /** PATCH /api/admin/teams/:teamId/members/:userId/role — Update team member role (MEMBER/OWNER). Owner/Admin only. */
+  app.patch('/api/admin/teams/:teamId/members/:userId/role', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { teamId, userId: targetUserId } = request.params as { teamId: string; userId: string };
+    const user = request.session.user!;
+
+    if (!(await canManageTeam(user.id, user.activeRole ?? 'USER', teamId))) {
+      return reply.status(403).send({ error: 'Not authorized' });
+    }
+
+    const body = UpdateTeamMemberRoleSchema.parse(request.body);
+
+    // Last-owner protection
+    if (body.role === 'MEMBER') {
+      const ownerCount = await prisma.teamMembership.count({ where: { teamId, role: 'OWNER' } });
+      const target = await prisma.teamMembership.findUnique({
+        where: { userId_teamId: { userId: targetUserId, teamId } },
+      });
+      if (target?.role === 'OWNER' && ownerCount <= 1) {
+        return reply.status(400).send({ error: 'Cannot demote the last owner' });
+      }
+    }
+
+    return prisma.teamMembership.update({
+      where: { userId_teamId: { userId: targetUserId, teamId } },
+      data: { role: body.role },
+    });
+  });
+
   /** DELETE /api/admin/teams/:teamId/members/:userId — Remove team member */
-  app.delete('/api/admin/teams/:teamId/members/:userId', async (request) => {
+  app.delete('/api/admin/teams/:teamId/members/:userId', async (request, reply) => {
     const { teamId, userId } = request.params as { teamId: string; userId: string };
+    const user = request.session.user!;
+    if (!(await canManageTeam(user.id, user.activeRole ?? 'USER', teamId))) {
+      return reply.status(403).send({ error: 'Not authorized' });
+    }
+
+    const target = await prisma.teamMembership.findUnique({
+      where: { userId_teamId: { userId, teamId } },
+    });
+    if (target?.role === 'OWNER') {
+      const ownerCount = await prisma.teamMembership.count({ where: { teamId, role: 'OWNER' } });
+      if (ownerCount <= 1) {
+        return reply.status(400).send({ error: 'Cannot remove the last owner' });
+      }
+    }
+
     await prisma.teamMembership.delete({
       where: { userId_teamId: { userId, teamId } },
     });
@@ -185,9 +250,21 @@ export async function teamRoutes(app: FastifyInstance) {
   });
 
   /** POST /api/admin/teams/:id/leave — Leave team (self) */
-  app.post('/api/admin/teams/:id/leave', async (request) => {
+  app.post('/api/admin/teams/:id/leave', async (request, reply) => {
     const { id } = request.params as { id: string };
     const user = request.session.user!;
+
+    // Last-owner protection
+    const membership = await prisma.teamMembership.findUnique({
+      where: { userId_teamId: { userId: user.id, teamId: id } },
+    });
+    if (membership?.role === 'OWNER') {
+      const ownerCount = await prisma.teamMembership.count({ where: { teamId: id, role: 'OWNER' } });
+      if (ownerCount <= 1) {
+        return reply.status(400).send({ error: 'Cannot leave as the last owner. Transfer ownership first.' });
+      }
+    }
+
     await prisma.teamMembership.delete({
       where: { userId_teamId: { userId: user.id, teamId: id } },
     });

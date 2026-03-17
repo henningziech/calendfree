@@ -258,7 +258,8 @@
     "labelPlaceholder": "e.g. Summer vacation",
     "noVacations": "No vacations registered.",
     "profileError": "Profile could not be loaded.",
-    "absentUntil": "until"
+    "absentUntil": "until",
+    "language": "Language"
   },
   "apiKeys": {
     "description": "Create API keys for programmatic access to your appointments.",

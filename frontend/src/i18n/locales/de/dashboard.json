@@ -258,7 +258,8 @@
     "labelPlaceholder": "z.B. Sommerurlaub",
     "noVacations": "Keine Urlaube eingetragen.",
     "profileError": "Profil konnte nicht geladen werden.",
-    "absentUntil": "bis"
+    "absentUntil": "bis",
+    "language": "Sprache"
   },
   "apiKeys": {
     "description": "Erstellen Sie API Keys f\u00fcr programmatischen Zugriff auf Ihre Termine.",

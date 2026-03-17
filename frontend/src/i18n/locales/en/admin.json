@@ -35,6 +35,8 @@
     "slugLabel": "Slug",
     "customDomainLabel": "Custom Domain",
     "customDomainPlaceholder": "e.g. booking.example.com",
+    "languageLabel": "Language",
+    "languageHelp": "Language for public booking and routing pages",
     "saving": "Saving...",
     "saved": "Saved!",
     "members": "Members",

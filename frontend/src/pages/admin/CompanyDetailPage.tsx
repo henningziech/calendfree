@@ -37,6 +37,7 @@ export function CompanyDetailPage() {
   const [editName, setEditName] = useState('');
   const [editSlug, setEditSlug] = useState('');
   const [editDomain, setEditDomain] = useState('');
+  const [editLanguage, setEditLanguage] = useState('de');
   const [isSavingInfo, setIsSavingInfo] = useState(false);
   const [infoSuccess, setInfoSuccess] = useState(false);
 
@@ -65,6 +66,7 @@ export function CompanyDetailPage() {
       setEditName(detail.name ?? '');
       setEditSlug(detail.slug ?? '');
       setEditDomain(detail.customDomain ?? '');
+      setEditLanguage(detail.language ?? 'de');
       setHeaderName(detail.name ?? '');
     } catch (err: any) {
       setError(err.status === 404 ? t('admin:companyDetail.notFound') : t('admin:companyDetail.loadError'));
@@ -85,8 +87,9 @@ export function CompanyDetailPage() {
         name: editName,
         slug: editSlug,
         customDomain: editDomain || null,
+        language: editLanguage,
       });
-      setCompany((prev: any) => ({ ...prev, name: editName, slug: editSlug, customDomain: editDomain || null }));
+      setCompany((prev: any) => ({ ...prev, name: editName, slug: editSlug, customDomain: editDomain || null, language: editLanguage }));
       setHeaderName(editName);
       setInfoSuccess(true);
       setTimeout(() => setInfoSuccess(false), 3000);
@@ -267,6 +270,18 @@ export function CompanyDetailPage() {
               placeholder={t('admin:companyDetail.customDomainPlaceholder')}
               className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none"
             />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-[#1E293B] mb-1">{t('admin:companyDetail.languageLabel')}</label>
+            <select
+              value={editLanguage}
+              onChange={(e) => setEditLanguage(e.target.value)}
+              className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none"
+            >
+              <option value="en">English</option>
+              <option value="de">Deutsch</option>
+            </select>
+            <p className="mt-1 text-xs text-[#64748B]">{t('admin:companyDetail.languageHelp')}</p>
           </div>
           <div className="flex items-center gap-3">
             <button

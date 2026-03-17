@@ -199,6 +199,13 @@ export async function deleteVacation(id: string) {
   return apiRequest(`/me/vacations/${id}`, { method: 'DELETE' });
 }
 
+export async function updateMyLanguage(language: string): Promise<void> {
+  await apiRequest('/me/language', {
+    method: 'PATCH',
+    body: JSON.stringify({ language }),
+  });
+}
+
 // Branding
 export async function updateCompanyBranding(companyId: string, data: Record<string, unknown>) {
   return apiRequest(`/admin/companies/${companyId}/branding`, {

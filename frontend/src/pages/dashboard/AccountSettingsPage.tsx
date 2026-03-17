@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { getMyProfile, updateMyStatus, getMyVacations, createVacation, deleteVacation } from '../../api/admin';
+import { getMyProfile, updateMyStatus, getMyVacations, createVacation, deleteVacation, updateMyLanguage } from '../../api/admin';
+import { useAuth } from '../../context/AuthContext';
 import { ApiKeysTab } from './ApiKeysPage';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { formatDateLocalized } from '../../utils/dateLocale';
@@ -45,7 +46,8 @@ export function AccountSettingsPage() {
 
 /** Profile tab with status toggle and vacation management */
 function ProfileTab() {
-  const { t } = useTranslation(['dashboard', 'common']);
+  const { t, i18n } = useTranslation(['dashboard', 'common']);
+  const { refresh } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [vacations, setVacations] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -99,6 +101,13 @@ function ProfileTab() {
     setVacations((prev) => prev.filter((v) => v.id !== id));
   };
 
+  const handleLanguageChange = async (language: string) => {
+    await updateMyLanguage(language);
+    setProfile((p: any) => ({ ...p, language }));
+    i18n.changeLanguage(language);
+    await refresh();
+  };
+
   if (isLoading) return <LoadingSpinner />;
   if (!profile) return <p className="text-[#64748B]">{t('dashboard:settings.profileError')}</p>;
 
@@ -125,6 +134,17 @@ function ProfileTab() {
           <div>
             <label className="block text-xs font-medium text-[#64748B]">{t('dashboard:settings.timezone')}</label>
             <p className="text-sm text-[#1E293B]">{profile.timezone ?? 'Europe/Berlin'}</p>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-[#64748B]">{t('dashboard:settings.language')}</label>
+            <select
+              value={profile.language ?? 'de'}
+              onChange={(e) => handleLanguageChange(e.target.value)}
+              className="mt-1 rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none"
+            >
+              <option value="en">English</option>
+              <option value="de">Deutsch</option>
+            </select>
           </div>
         </div>
       </div>

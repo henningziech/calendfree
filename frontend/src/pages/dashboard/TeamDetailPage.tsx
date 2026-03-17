@@ -298,7 +298,7 @@ export function TeamDetailPage() {
                   </span>
                 </div>
                 {/* Actions */}
-                {canManage() && memberUser?.id !== user?.id && (
+                {canManage() && (
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleToggleRole(memberUser.id, m.role)}
@@ -306,12 +306,14 @@ export function TeamDetailPage() {
                     >
                       {m.role === 'OWNER' ? 'Owner entfernen' : 'Zum Owner machen'}
                     </button>
-                    <button
-                      onClick={() => handleRemoveMember(memberUser.id, memberUser.name || memberUser.email)}
-                      className="text-xs font-medium text-[#EF4444] hover:text-[#DC2626] transition-colors"
-                    >
-                      Entfernen
-                    </button>
+                    {memberUser?.id !== user?.id && (
+                      <button
+                        onClick={() => handleRemoveMember(memberUser.id, memberUser.name || memberUser.email)}
+                        className="text-xs font-medium text-[#EF4444] hover:text-[#DC2626] transition-colors"
+                      >
+                        Entfernen
+                      </button>
+                    )}
                   </div>
                 )}
               </div>

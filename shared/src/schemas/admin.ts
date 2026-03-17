@@ -159,3 +159,49 @@ export const CreateVacationSchema = z.object({
   path: ['endDate'],
 });
 export type CreateVacation = z.infer<typeof CreateVacationSchema>;
+
+// Routing Forms
+export const RoutingTargetType = z.enum(['EVENT_TYPE', 'MESSAGE', 'URL']);
+export type RoutingTargetType = z.infer<typeof RoutingTargetType>;
+
+export const RoutingOptionSchema = z.object({
+  label: z.string().min(1).max(200),
+  targetType: RoutingTargetType,
+  targetValue: z.string().min(1).max(2000),
+  order: z.number().int().min(0),
+});
+export type RoutingOption = z.infer<typeof RoutingOptionSchema>;
+
+export const CreateRoutingFormSchema = z.object({
+  title: z.string().min(1).max(200),
+  slug: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/, 'Slug must be lowercase alphanumeric with hyphens'),
+  description: z.string().max(1000).optional(),
+  question: z.string().min(1).max(500).default('Wofür interessieren Sie sich?'),
+  collectName: z.boolean().default(false),
+  collectEmail: z.boolean().default(false),
+  fallbackType: RoutingTargetType.default('MESSAGE'),
+  fallbackValue: z.string().max(2000).default('Bitte kontaktieren Sie uns direkt.'),
+  options: z.array(RoutingOptionSchema).min(1, 'At least one option is required'),
+});
+export type CreateRoutingForm = z.infer<typeof CreateRoutingFormSchema>;
+
+export const UpdateRoutingFormSchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  slug: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/).optional(),
+  description: z.string().max(1000).nullable().optional(),
+  question: z.string().min(1).max(500).optional(),
+  collectName: z.boolean().optional(),
+  collectEmail: z.boolean().optional(),
+  active: z.boolean().optional(),
+  fallbackType: RoutingTargetType.optional(),
+  fallbackValue: z.string().max(2000).optional(),
+  options: z.array(RoutingOptionSchema).min(1).optional(),
+});
+export type UpdateRoutingForm = z.infer<typeof UpdateRoutingFormSchema>;
+
+export const ResolveRoutingFormSchema = z.object({
+  optionId: z.string().uuid(),
+  name: z.string().optional(),
+  email: z.string().email().optional(),
+});
+export type ResolveRoutingForm = z.infer<typeof ResolveRoutingFormSchema>;

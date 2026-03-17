@@ -24,6 +24,11 @@ enum RoundRobinMode {
   WEIGHTED
 }
 
+enum TeamRole {
+  MEMBER
+  OWNER
+}
+
 enum EventCategory {
   PERSONAL
   TEAM
@@ -192,7 +197,8 @@ model TeamMembership {
   userId String
   teamId String
   /// Weight for weighted round-robin (percentage, e.g. 40)
-  weight Int    @default(100)
+  weight Int      @default(100)
+  role   TeamRole @default(MEMBER)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)

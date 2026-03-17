@@ -63,11 +63,13 @@ export async function buildApp(): Promise<FastifyInstance> {
     credentials: true,
   });
 
-  // Rate limiting
-  await app.register(rateLimit, {
-    max: 100,
-    timeWindow: '1 minute',
-  });
+  // Rate limiting (disabled in development)
+  if (config.NODE_ENV !== 'development') {
+    await app.register(rateLimit, {
+      max: 100,
+      timeWindow: '1 minute',
+    });
+  }
 
   // Multipart file upload (2MB limit)
   await app.register(multipart, {

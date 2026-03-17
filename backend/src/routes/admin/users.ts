@@ -22,21 +22,6 @@ export async function userRoutes(app: FastifyInstance) {
       params: z.object({
         companyId: z.string().describe('Company ID'),
       }),
-      response: {
-        200: z.array(z.object({
-          id: z.string(),
-          name: z.string().nullable(),
-          email: z.string(),
-          avatarUrl: z.string().nullable(),
-          slug: z.string().nullable(),
-          timezone: z.string().nullable(),
-          role: z.string(),
-          status: z.string(),
-          absentUntil: z.string().nullable(),
-          lastLoginAt: z.string().nullable(),
-          googleConnected: z.boolean(),
-        })),
-      },
     },
     preHandler: [requireRole('USER', 'COMPANY_ADMIN', 'ORG_ADMIN')],
   }, async (request) => {
@@ -79,14 +64,6 @@ export async function userRoutes(app: FastifyInstance) {
         name: z.string().describe('User display name'),
         role: z.string().optional().describe('Role to assign (defaults to USER)'),
       }),
-      response: {
-        201: z.object({
-          id: z.string(),
-          email: z.string(),
-          name: z.string().nullable(),
-          role: z.string(),
-        }),
-      },
     },
     preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')],
   }, async (request, reply) => {
@@ -123,13 +100,6 @@ export async function userRoutes(app: FastifyInstance) {
       body: z.object({
         role: z.string().describe('New role (USER, COMPANY_ADMIN, or ORG_ADMIN)'),
       }),
-      response: {
-        200: z.object({
-          userId: z.string(),
-          companyId: z.string(),
-          role: z.string(),
-        }),
-      },
     },
     preHandler: [requireRole('ORG_ADMIN')],
   }, async (request) => {
@@ -152,9 +122,6 @@ export async function userRoutes(app: FastifyInstance) {
         companyId: z.string().describe('Company ID'),
         userId: z.string().describe('User ID'),
       }),
-      response: {
-        200: SuccessResponse,
-      },
     },
     preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')],
   }, async (request) => {
@@ -175,9 +142,6 @@ export async function userRoutes(app: FastifyInstance) {
       params: z.object({
         id: z.string().describe('User ID'),
       }),
-      response: {
-        404: ErrorResponse,
-      },
     },
     preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')],
   }, async (request, reply) => {
@@ -208,14 +172,6 @@ export async function userRoutes(app: FastifyInstance) {
         status: z.enum(['AVAILABLE', 'ABSENT']).describe('New status'),
         absentUntil: z.string().optional().describe('Return date (ISO 8601) when status is ABSENT'),
       }),
-      response: {
-        200: z.object({
-          success: z.boolean(),
-          status: z.string(),
-          absentUntil: z.string().nullable(),
-        }),
-        404: ErrorResponse,
-      },
     },
     preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')],
   }, async (request, reply) => {
@@ -276,11 +232,6 @@ export async function userRoutes(app: FastifyInstance) {
       params: z.object({
         id: z.string().describe('User ID'),
       }),
-      response: {
-        200: SuccessResponse,
-        400: ErrorResponse,
-        404: ErrorResponse,
-      },
     },
     preHandler: [requireRole('ORG_ADMIN')],
   }, async (request, reply) => {
@@ -373,12 +324,6 @@ export async function userRoutes(app: FastifyInstance) {
         status: z.enum(['AVAILABLE', 'ABSENT']).describe('New status'),
         absentUntil: z.string().nullable().optional().describe('Return date (ISO 8601) when status is ABSENT'),
       }),
-      response: {
-        200: z.object({
-          status: z.string(),
-          absentUntil: z.string().nullable(),
-        }),
-      },
     },
     preHandler: [requireAuth],
   }, async (request) => {
@@ -454,10 +399,6 @@ export async function userRoutes(app: FastifyInstance) {
       params: z.object({
         id: z.string().describe('Vacation period ID'),
       }),
-      response: {
-        200: SuccessResponse,
-        404: ErrorResponse,
-      },
     },
     preHandler: [requireAuth],
   }, async (request, reply) => {
@@ -549,14 +490,6 @@ export async function userRoutes(app: FastifyInstance) {
       body: z.object({
         notes: z.string().describe('Internal notes content'),
       }),
-      response: {
-        200: z.object({
-          success: z.boolean(),
-          internalNotes: z.string().nullable(),
-        }),
-        403: ErrorResponse,
-        404: ErrorResponse,
-      },
     },
     preHandler: [requireAuth],
   }, async (request, reply) => {
@@ -603,12 +536,6 @@ export async function userRoutes(app: FastifyInstance) {
       params: z.object({
         id: z.string().describe('Booking ID'),
       }),
-      response: {
-        200: SuccessResponse,
-        400: ErrorResponse,
-        403: ErrorResponse,
-        404: ErrorResponse,
-      },
     },
     preHandler: [requireAuth],
   }, async (request, reply) => {
@@ -695,10 +622,6 @@ export async function userRoutes(app: FastifyInstance) {
       params: z.object({
         bookingId: z.string().describe('Booking ID'),
       }),
-      response: {
-        403: ErrorResponse,
-        404: ErrorResponse,
-      },
     },
     preHandler: [requireAuth],
   }, async (request, reply) => {
@@ -738,14 +661,6 @@ export async function userRoutes(app: FastifyInstance) {
       body: z.object({
         status: z.enum(['COMPLETED', 'NO_SHOW']).describe('New booking status'),
       }),
-      response: {
-        200: z.object({
-          success: z.boolean(),
-          status: z.string(),
-        }),
-        403: ErrorResponse,
-        404: ErrorResponse,
-      },
     },
     preHandler: [requireAuth],
   }, async (request, reply) => {
@@ -778,23 +693,6 @@ export async function userRoutes(app: FastifyInstance) {
       body: z.object({
         content: z.string().describe('Comment text'),
       }),
-      response: {
-        201: z.object({
-          id: z.string(),
-          bookingId: z.string(),
-          userId: z.string(),
-          content: z.string(),
-          createdAt: z.string(),
-          user: z.object({
-            id: z.string(),
-            name: z.string().nullable(),
-            email: z.string(),
-            avatarUrl: z.string().nullable(),
-          }),
-        }),
-        403: ErrorResponse,
-        404: ErrorResponse,
-      },
     },
     preHandler: [requireAuth],
   }, async (request, reply) => {
@@ -828,10 +726,6 @@ export async function userRoutes(app: FastifyInstance) {
       body: z.object({
         content: z.string().describe('Updated comment text'),
       }),
-      response: {
-        403: ErrorResponse,
-        404: ErrorResponse,
-      },
     },
     preHandler: [requireAuth],
   }, async (request, reply) => {
@@ -863,11 +757,6 @@ export async function userRoutes(app: FastifyInstance) {
         bookingId: z.string().describe('Booking ID'),
         commentId: z.string().describe('Comment ID'),
       }),
-      response: {
-        200: SuccessResponse,
-        403: ErrorResponse,
-        404: ErrorResponse,
-      },
     },
     preHandler: [requireAuth],
   }, async (request, reply) => {
@@ -910,12 +799,6 @@ export async function userRoutes(app: FastifyInstance) {
       body: z.object({
         language: z.enum(['en', 'de']).describe('Preferred language'),
       }),
-      response: {
-        200: z.object({
-          success: z.boolean(),
-          language: z.string(),
-        }),
-      },
     },
     preHandler: [requireAuth],
   }, async (request) => {

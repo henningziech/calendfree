@@ -37,9 +37,6 @@ export async function authRoutes(app: FastifyInstance) {
       description: 'Redirects the user to the Google OAuth consent screen to begin authentication.',
       tags: ['Auth'],
       security: [],
-      response: {
-        302: z.object({}).describe('Redirect to Google OAuth consent screen'),
-      },
     },
   }, async (request, reply) => {
     const url = getAuthUrl();
@@ -57,9 +54,6 @@ export async function authRoutes(app: FastifyInstance) {
         code: z.string().optional().describe('Authorization code from Google'),
         error: z.string().optional().describe('Error code if OAuth was denied'),
       }),
-      response: {
-        302: z.object({}).describe('Redirect to dashboard on success or login page on failure'),
-      },
     },
   }, async (request, reply) => {
     const { code, error } = request.query as { code?: string; error?: string };
@@ -96,10 +90,6 @@ export async function authRoutes(app: FastifyInstance) {
       description: 'Returns the authenticated user profile including active company context and all company memberships. Refreshes role and company data from the database.',
       tags: ['Auth'],
       security: [{ session: [] }, { apiKey: [] }],
-      response: {
-        200: MeResponse,
-        401: ErrorResponse,
-      },
     },
   }, async (request, reply) => {
     if (!request.session.user) {
@@ -142,11 +132,6 @@ export async function authRoutes(app: FastifyInstance) {
       body: z.object({
         companyId: z.string().uuid().describe('ID of the company to switch to'),
       }),
-      response: {
-        200: SessionUserResponse,
-        401: ErrorResponse,
-        403: ErrorResponse,
-      },
     },
   }, async (request, reply) => {
     if (!request.session.user) {
@@ -181,11 +166,6 @@ export async function authRoutes(app: FastifyInstance) {
       description: 'Destroys the current session and logs the user out. Records an audit log entry.',
       tags: ['Auth'],
       security: [{ session: [] }],
-      response: {
-        200: z.object({
-          success: z.boolean().describe('Whether logout was successful'),
-        }),
-      },
     },
   }, async (request, reply) => {
     logAudit({

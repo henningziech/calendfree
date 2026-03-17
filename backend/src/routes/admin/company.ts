@@ -46,10 +46,6 @@ export async function companyRoutes(app: FastifyInstance) {
       tags: ['Companies'],
       security: [{ session: [] }, { apiKey: [] }],
       body: CreateCompanySchema,
-      response: {
-        201: CompanyResponse,
-        400: ErrorResponse,
-      },
     },
     preHandler: [requireRole('ORG_ADMIN')],
   }, async (request, reply) => {
@@ -69,11 +65,6 @@ export async function companyRoutes(app: FastifyInstance) {
       description: 'Lists companies accessible to the current user. ORG_ADMIN sees all companies in the organization; COMPANY_ADMIN sees only their own.',
       tags: ['Companies'],
       security: [{ session: [] }, { apiKey: [] }],
-      response: {
-        200: z.array(CompanyResponse.extend({
-          branding: BrandingResponse.nullable().describe('Company branding configuration'),
-        })),
-      },
     },
     preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')],
   }, async (request) => {
@@ -104,23 +95,6 @@ export async function companyRoutes(app: FastifyInstance) {
       params: z.object({
         id: z.string().describe('Company ID'),
       }),
-      response: {
-        200: CompanyResponse.extend({
-          branding: BrandingResponse.nullable().describe('Company branding configuration'),
-          teams: z.array(z.object({
-            id: z.string().describe('Team ID'),
-            name: z.string().describe('Team name'),
-            companyId: z.string().describe('Parent company ID'),
-            createdAt: z.string().describe('Creation timestamp (ISO 8601)'),
-            updatedAt: z.string().describe('Last update timestamp (ISO 8601)'),
-            _count: z.object({
-              memberships: z.number().describe('Number of team members'),
-            }),
-          })).describe('Teams within the company'),
-        }),
-        403: ErrorResponse,
-        404: ErrorResponse,
-      },
     },
     preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')],
   }, async (request, reply) => {
@@ -161,10 +135,6 @@ export async function companyRoutes(app: FastifyInstance) {
         id: z.string().describe('Company ID'),
       }),
       body: UpdateCompanySchema,
-      response: {
-        200: CompanyResponse,
-        404: ErrorResponse,
-      },
     },
     preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')],
   }, async (request, reply) => {
@@ -191,37 +161,6 @@ export async function companyRoutes(app: FastifyInstance) {
       params: z.object({
         companyId: z.string().describe('Company ID'),
       }),
-      response: {
-        200: z.array(z.object({
-          id: z.string().describe('Booking ID'),
-          startTime: z.string().describe('Start time (ISO 8601)'),
-          endTime: z.string().describe('End time (ISO 8601)'),
-          status: z.string().describe('Booking status'),
-          eventType: z.object({
-            title: z.string().describe('Event type title'),
-            slug: z.string().describe('Event type slug'),
-            duration: z.number().describe('Duration in minutes'),
-            teamId: z.string().nullable().describe('Associated team ID'),
-            team: z.object({
-              name: z.string().describe('Team name'),
-            }).nullable(),
-            company: z.object({
-              slug: z.string().describe('Company slug'),
-            }).nullable(),
-          }),
-          formData: z.object({
-            name: z.string().describe('Customer name'),
-            email: z.string().describe('Customer email'),
-            data: z.any().describe('Additional form data'),
-          }).nullable(),
-          assignedUser: z.object({
-            name: z.string().nullable().describe('Assigned user name'),
-            email: z.string().describe('Assigned user email'),
-          }),
-        })),
-        403: ErrorResponse,
-        404: ErrorResponse,
-      },
     },
     preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')],
   }, async (request, reply) => {
@@ -262,10 +201,6 @@ export async function companyRoutes(app: FastifyInstance) {
       params: z.object({
         id: z.string().describe('Company ID'),
       }),
-      response: {
-        200: z.object({ success: z.boolean() }),
-        404: ErrorResponse,
-      },
     },
     preHandler: [requireRole('ORG_ADMIN')],
   }, async (request, reply) => {
@@ -290,10 +225,6 @@ export async function companyRoutes(app: FastifyInstance) {
         id: z.string().describe('Company ID'),
       }),
       body: BrandingConfigSchema,
-      response: {
-        200: BrandingResponse,
-        404: ErrorResponse,
-      },
     },
     preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')],
   }, async (request, reply) => {
@@ -329,11 +260,6 @@ export async function companyRoutes(app: FastifyInstance) {
       body: z.object({
         file: z.any().describe('Binary file upload (PNG, JPEG, GIF, WebP)'),
       }),
-      response: {
-        200: BrandingResponse,
-        400: ErrorResponse,
-        404: ErrorResponse,
-      },
     },
     preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')],
   }, async (request, reply) => {
@@ -394,10 +320,6 @@ export async function companyRoutes(app: FastifyInstance) {
       params: z.object({
         id: z.string().describe('Company ID'),
       }),
-      response: {
-        200: z.object({ success: z.boolean() }),
-        404: ErrorResponse,
-      },
     },
     preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')],
   }, async (request, reply) => {

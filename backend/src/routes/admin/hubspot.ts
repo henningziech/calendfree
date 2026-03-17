@@ -13,12 +13,6 @@ export async function hubspotRoutes(app: FastifyInstance) {
       description: 'Checks whether the HubSpot API key is configured for the environment.',
       tags: ['Integrations'],
       security: [{ session: [] }],
-      response: {
-        200: z.object({
-          configured: z.boolean().describe('Whether HubSpot API key is set'),
-          message: z.string().describe('Human-readable status message'),
-        }),
-      },
     },
   }, async () => {
     const configured = !!process.env.HUBSPOT_API_KEY;

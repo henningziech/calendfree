@@ -14,29 +14,6 @@ export async function analyticsRoutes(app: FastifyInstance) {
       description: 'Returns booking statistics for the active company including totals, cancellation rates, per-user breakdown, and daily counts for the last 30 days.',
       tags: ['Analytics'],
       security: [{ session: [] }, { apiKey: [] }],
-      response: {
-        200: z.object({
-          summary: z.object({
-            total30d: z.number().describe('Total bookings in last 30 days'),
-            totalWeek: z.number().describe('Total bookings in last 7 days'),
-            cancelled30d: z.number().describe('Cancelled bookings in last 30 days'),
-            cancelRate: z.number().describe('Cancellation rate percentage'),
-          }),
-          byStatus: z.array(z.object({
-            status: z.string(),
-            count: z.number(),
-          })),
-          byUser: z.array(z.object({
-            userId: z.string(),
-            name: z.string(),
-            count: z.number(),
-          })),
-          daily: z.array(z.object({
-            date: z.string(),
-            count: z.number(),
-          })),
-        }),
-      },
     },
   }, async (request) => {
     const user = request.session.user!;

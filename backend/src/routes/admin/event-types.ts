@@ -22,16 +22,6 @@ export async function eventTypeRoutes(app: FastifyInstance) {
         companyId: z.string().describe('Company ID'),
       }),
       body: CreateEventTypeSchema,
-      response: {
-        201: z.object({
-          id: z.string(),
-          title: z.string(),
-          slug: z.string(),
-          duration: z.number(),
-          active: z.boolean(),
-        }).passthrough(),
-        400: ErrorResponse,
-      },
     },
   }, async (request, reply) => {
     const { companyId } = request.params as { companyId: string };
@@ -90,9 +80,6 @@ export async function eventTypeRoutes(app: FastifyInstance) {
       params: z.object({
         id: z.string().describe('Event type ID'),
       }),
-      response: {
-        404: ErrorResponse,
-      },
     },
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
@@ -136,9 +123,6 @@ export async function eventTypeRoutes(app: FastifyInstance) {
       params: z.object({
         id: z.string().describe('Event type ID'),
       }),
-      response: {
-        200: z.object({ success: z.boolean() }),
-      },
     },
   }, async (request) => {
     const { id } = request.params as { id: string };

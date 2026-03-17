@@ -42,14 +42,6 @@ export async function teamRoutes(app: FastifyInstance) {
         companyId: z.string().describe('Company ID'),
       }),
       body: CreateTeamSchema,
-      response: {
-        201: z.object({
-          id: z.string().describe('Team ID'),
-          name: z.string().describe('Team name'),
-          companyId: z.string().describe('Company ID'),
-        }).passthrough(),
-        400: ErrorResponse,
-      },
     },
   }, async (request, reply) => {
     const { companyId } = request.params as { companyId: string };
@@ -82,13 +74,6 @@ export async function teamRoutes(app: FastifyInstance) {
       params: z.object({
         companyId: z.string().describe('Company ID'),
       }),
-      response: {
-        200: z.array(z.object({
-          id: z.string().describe('Team ID'),
-          name: z.string().describe('Team name'),
-          companyId: z.string().describe('Company ID'),
-        }).passthrough()),
-      },
     },
   }, async (request) => {
     const { companyId } = request.params as { companyId: string };
@@ -110,14 +95,6 @@ export async function teamRoutes(app: FastifyInstance) {
       tags: ['Teams'],
       security: [{ session: [] }, { apiKey: [] }],
       params: TeamIdParam,
-      response: {
-        200: z.object({
-          id: z.string().describe('Team ID'),
-          name: z.string().describe('Team name'),
-          companyId: z.string().describe('Company ID'),
-        }).passthrough(),
-        404: ErrorResponse,
-      },
     },
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
@@ -148,20 +125,6 @@ export async function teamRoutes(app: FastifyInstance) {
         status: z.string().optional().describe('Filter by status: "upcoming" (default) or "all"'),
         userId: z.string().optional().describe('Filter by assigned user ID'),
       }),
-      response: {
-        200: z.object({
-          bookings: z.array(z.object({
-            id: z.string().describe('Booking ID'),
-            startTime: z.string().describe('Start time (ISO 8601)'),
-            endTime: z.string().describe('End time (ISO 8601)'),
-            status: z.string().describe('Booking status'),
-          }).passthrough()),
-          total: z.number().describe('Total number of matching bookings'),
-          page: z.number().describe('Current page number'),
-          totalPages: z.number().describe('Total number of pages'),
-        }),
-        403: ErrorResponse,
-      },
     },
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
@@ -230,14 +193,6 @@ export async function teamRoutes(app: FastifyInstance) {
       security: [{ session: [] }, { apiKey: [] }],
       params: TeamIdParam,
       body: UpdateTeamSchema,
-      response: {
-        200: z.object({
-          id: z.string().describe('Team ID'),
-          name: z.string().describe('Team name'),
-          companyId: z.string().describe('Company ID'),
-        }).passthrough(),
-        403: ErrorResponse,
-      },
     },
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
@@ -258,10 +213,6 @@ export async function teamRoutes(app: FastifyInstance) {
       tags: ['Teams'],
       security: [{ session: [] }, { apiKey: [] }],
       params: TeamIdParam,
-      response: {
-        200: SuccessResponse,
-        403: ErrorResponse,
-      },
     },
   }, async (request, reply) => {
     const { id } = (request.params as { id: string });
@@ -282,13 +233,6 @@ export async function teamRoutes(app: FastifyInstance) {
       security: [{ session: [] }, { apiKey: [] }],
       params: TeamIdParam,
       body: UpdateRoundRobinSchema,
-      response: {
-        200: z.object({
-          teamId: z.string().describe('Team ID'),
-          mode: z.string().describe('Round-robin mode (SEQUENTIAL, LEAST_BUSY, WEIGHTED)'),
-          lastAssignedIndex: z.number().describe('Last assigned member index'),
-        }).passthrough(),
-      },
     },
   }, async (request) => {
     const { id } = request.params as { id: string };
@@ -308,15 +252,6 @@ export async function teamRoutes(app: FastifyInstance) {
       security: [{ session: [] }, { apiKey: [] }],
       params: TeamIdParam,
       body: AddTeamMemberSchema,
-      response: {
-        201: z.object({
-          userId: z.string().describe('User ID'),
-          teamId: z.string().describe('Team ID'),
-          weight: z.number().describe('Round-robin weight'),
-          role: z.string().describe('Member role (MEMBER or OWNER)'),
-        }).passthrough(),
-        409: ErrorResponse,
-      },
     },
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
@@ -337,14 +272,6 @@ export async function teamRoutes(app: FastifyInstance) {
       security: [{ session: [] }, { apiKey: [] }],
       params: TeamMemberParams,
       body: UpdateTeamMemberSchema,
-      response: {
-        200: z.object({
-          userId: z.string().describe('User ID'),
-          teamId: z.string().describe('Team ID'),
-          weight: z.number().describe('Updated round-robin weight'),
-          role: z.string().describe('Member role'),
-        }).passthrough(),
-      },
     },
   }, async (request) => {
     const { teamId, userId } = request.params as { teamId: string; userId: string };
@@ -364,16 +291,6 @@ export async function teamRoutes(app: FastifyInstance) {
       security: [{ session: [] }, { apiKey: [] }],
       params: TeamMemberParams,
       body: UpdateTeamMemberRoleSchema,
-      response: {
-        200: z.object({
-          userId: z.string().describe('User ID'),
-          teamId: z.string().describe('Team ID'),
-          role: z.string().describe('Updated member role (MEMBER or OWNER)'),
-          weight: z.number().describe('Round-robin weight'),
-        }).passthrough(),
-        400: ErrorResponse,
-        403: ErrorResponse,
-      },
     },
     preHandler: [requireAuth],
   }, async (request, reply) => {
@@ -411,11 +328,6 @@ export async function teamRoutes(app: FastifyInstance) {
       tags: ['Teams'],
       security: [{ session: [] }, { apiKey: [] }],
       params: TeamMemberParams,
-      response: {
-        200: SuccessResponse,
-        400: ErrorResponse,
-        403: ErrorResponse,
-      },
     },
   }, async (request, reply) => {
     const { teamId, userId } = request.params as { teamId: string; userId: string };
@@ -448,15 +360,6 @@ export async function teamRoutes(app: FastifyInstance) {
       tags: ['Teams'],
       security: [{ session: [] }, { apiKey: [] }],
       params: TeamIdParam,
-      response: {
-        201: z.object({
-          userId: z.string().describe('User ID'),
-          teamId: z.string().describe('Team ID'),
-          weight: z.number().describe('Round-robin weight'),
-          role: z.string().describe('Member role'),
-        }).passthrough(),
-        409: ErrorResponse,
-      },
     },
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
@@ -480,10 +383,6 @@ export async function teamRoutes(app: FastifyInstance) {
       tags: ['Teams'],
       security: [{ session: [] }, { apiKey: [] }],
       params: TeamIdParam,
-      response: {
-        200: SuccessResponse,
-        400: ErrorResponse,
-      },
     },
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
@@ -518,16 +417,6 @@ export async function teamRoutes(app: FastifyInstance) {
         email: z.string().describe('Email address of the user to invite'),
         weight: z.number().optional().describe('Round-robin weight (default: 100)'),
       }),
-      response: {
-        201: z.object({
-          userId: z.string().describe('User ID'),
-          teamId: z.string().describe('Team ID'),
-          weight: z.number().describe('Round-robin weight'),
-          role: z.string().describe('Member role'),
-        }).passthrough(),
-        404: ErrorResponse,
-        409: ErrorResponse,
-      },
     },
   }, async (request, reply) => {
     const { id } = request.params as { id: string };

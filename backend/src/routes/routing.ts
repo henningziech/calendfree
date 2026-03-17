@@ -18,20 +18,6 @@ export async function routingRoutes(app: FastifyInstance) {
         companySlug: z.string().describe('Company URL slug'),
         formSlug: z.string().describe('Routing form URL slug'),
       }),
-      response: {
-        200: z.object({
-          title: z.string(),
-          description: z.string().nullable(),
-          question: z.string(),
-          collectName: z.boolean(),
-          collectEmail: z.boolean(),
-          options: z.array(z.object({
-            id: z.string(),
-            label: z.string(),
-          })),
-        }),
-        404: ErrorResponse,
-      },
     },
   }, async (request, reply) => {
     const { companySlug, formSlug } = request.params as { companySlug: string; formSlug: string };
@@ -67,14 +53,6 @@ export async function routingRoutes(app: FastifyInstance) {
         formSlug: z.string().describe('Routing form URL slug'),
       }),
       body: ResolveRoutingFormSchema,
-      response: {
-        200: z.object({
-          type: z.string().describe('Target type (EVENT_TYPE or URL)'),
-          value: z.string().describe('Target value (event type slug or URL)'),
-          prefill: z.record(z.string(), z.string()).optional().describe('Pre-filled form data'),
-        }),
-        404: ErrorResponse,
-      },
     },
   }, async (request, reply) => {
     const { companySlug, formSlug } = request.params as { companySlug: string; formSlug: string };

@@ -17,9 +17,6 @@ export async function routingFormAdminRoutes(app: FastifyInstance) {
       description: 'Returns all routing forms for the active company, including option counts.',
       tags: ['Routing Forms'],
       security: [{ session: [] }, { apiKey: [] }],
-      response: {
-        400: ErrorResponse,
-      },
     },
   }, async (request, reply) => {
     const user = request.session.user!;
@@ -40,15 +37,6 @@ export async function routingFormAdminRoutes(app: FastifyInstance) {
       tags: ['Routing Forms'],
       security: [{ session: [] }, { apiKey: [] }],
       body: CreateRoutingFormSchema,
-      response: {
-        201: z.object({
-          id: z.string(),
-          title: z.string(),
-          slug: z.string(),
-        }).passthrough(),
-        400: ErrorResponse,
-        409: ErrorResponse,
-      },
     },
   }, async (request, reply) => {
     const user = request.session.user!;
@@ -86,10 +74,6 @@ export async function routingFormAdminRoutes(app: FastifyInstance) {
       params: z.object({
         id: z.string().describe('Routing form ID'),
       }),
-      response: {
-        400: ErrorResponse,
-        404: ErrorResponse,
-      },
     },
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
@@ -118,11 +102,6 @@ export async function routingFormAdminRoutes(app: FastifyInstance) {
         id: z.string().describe('Routing form ID'),
       }),
       body: UpdateRoutingFormSchema,
-      response: {
-        400: ErrorResponse,
-        403: ErrorResponse,
-        404: ErrorResponse,
-      },
     },
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
@@ -169,12 +148,6 @@ export async function routingFormAdminRoutes(app: FastifyInstance) {
       params: z.object({
         id: z.string().describe('Routing form ID'),
       }),
-      response: {
-        200: z.object({ success: z.boolean() }),
-        400: ErrorResponse,
-        403: ErrorResponse,
-        404: ErrorResponse,
-      },
     },
   }, async (request, reply) => {
     const { id } = request.params as { id: string };

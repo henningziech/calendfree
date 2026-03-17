@@ -20,12 +20,6 @@ export async function domainRoutes(app: FastifyInstance) {
       params: z.object({
         id: z.string().describe('Company ID'),
       }),
-      response: {
-        200: z.object({
-          customDomain: z.string().nullable().describe('Custom domain if configured'),
-        }),
-        404: ErrorResponse,
-      },
     },
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
@@ -47,13 +41,6 @@ export async function domainRoutes(app: FastifyInstance) {
       body: z.object({
         domain: z.string().nullable().describe('Custom domain to set, or null to remove'),
       }),
-      response: {
-        200: z.object({
-          success: z.boolean(),
-          customDomain: z.string().nullable(),
-        }),
-        400: ErrorResponse,
-      },
     },
   }, async (request, reply) => {
     const { id } = request.params as { id: string };

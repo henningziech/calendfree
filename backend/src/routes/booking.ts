@@ -33,18 +33,6 @@ export async function bookingRoutes(app: FastifyInstance) {
         date: z.string().optional().describe('Date in YYYY-MM-DD format'),
         timezone: z.string().optional().describe('IANA timezone (defaults to Europe/Berlin)'),
       }),
-      response: {
-        200: z.object({
-          slots: z.array(z.object({
-            start: z.string().describe('Slot start time (ISO 8601)'),
-            end: z.string().describe('Slot end time (ISO 8601)'),
-            remainingSpots: z.number().optional().describe('Remaining spots for group events'),
-          })),
-        }),
-        400: ErrorResponse,
-        404: ErrorResponse,
-        503: ErrorResponse,
-      },
     },
   }, async (request, reply) => {
     const { companySlug, eventTypeSlug } = request.params as {
@@ -148,23 +136,6 @@ export async function bookingRoutes(app: FastifyInstance) {
         comment: z.string().optional().describe('Optional comment from the customer'),
         formData: z.record(z.string(), z.string()).optional().describe('Additional form field values'),
       }),
-      response: {
-        201: z.object({
-          id: z.string().describe('Booking ID'),
-          startTime: z.string().describe('Confirmed start time (ISO 8601)'),
-          endTime: z.string().describe('Confirmed end time (ISO 8601)'),
-          assignedUser: z.object({
-            name: z.string().nullable(),
-            email: z.string(),
-          }).describe('Assigned consultant'),
-          meetLink: z.string().nullable().describe('Google Meet link if auto-generated'),
-          cancelUrl: z.string().describe('URL to cancel the booking'),
-          rescheduleUrl: z.string().describe('URL to reschedule the booking'),
-        }),
-        400: ErrorResponse,
-        404: ErrorResponse,
-        409: ErrorResponse,
-      },
     },
   }, async (request, reply) => {
     const { companySlug, eventTypeSlug } = request.params as {
@@ -459,41 +430,6 @@ export async function bookingRoutes(app: FastifyInstance) {
       params: z.object({
         bookingToken: z.string().describe('Unique booking token'),
       }),
-      response: {
-        200: z.object({
-          id: z.string().describe('Booking ID'),
-          startTime: z.string().describe('Start time (ISO 8601)'),
-          endTime: z.string().describe('End time (ISO 8601)'),
-          status: z.string().describe('Booking status'),
-          eventType: z.object({
-            title: z.string(),
-            duration: z.number(),
-          }),
-          assignedUser: z.object({
-            name: z.string().nullable(),
-            email: z.string(),
-          }),
-          customer: z.object({
-            name: z.string(),
-            email: z.string(),
-          }).nullable(),
-          company: z.object({
-            name: z.string(),
-            slug: z.string(),
-          }).nullable(),
-          branding: z.object({
-            primaryColor: z.string().nullable(),
-            accentColor: z.string().nullable(),
-            backgroundColor: z.string().nullable(),
-            textColor: z.string().nullable(),
-            logoUrl: z.string().nullable(),
-            fontFamily: z.string().nullable(),
-            showPoweredBy: z.boolean(),
-            footerText: z.string().nullable(),
-          }).nullable(),
-        }),
-        404: ErrorResponse,
-      },
     },
   }, async (request, reply) => {
     const { bookingToken } = request.params as { bookingToken: string };
@@ -567,15 +503,6 @@ export async function bookingRoutes(app: FastifyInstance) {
       params: z.object({
         bookingToken: z.string().describe('Unique booking token'),
       }),
-      response: {
-        200: z.object({
-          success: z.boolean(),
-          message: z.string(),
-        }),
-        400: ErrorResponse,
-        404: ErrorResponse,
-        410: ErrorResponse,
-      },
     },
   }, async (request, reply) => {
     const { bookingToken } = request.params as { bookingToken: string };
@@ -639,24 +566,6 @@ export async function bookingRoutes(app: FastifyInstance) {
       params: z.object({
         companySlug: z.string().describe('Company URL slug'),
       }),
-      response: {
-        200: z.object({
-          name: z.string().describe('Company display name'),
-          slug: z.string().describe('Company URL slug'),
-          language: z.string().nullable().describe('Preferred language code'),
-          branding: z.object({
-            primaryColor: z.string().nullable(),
-            accentColor: z.string().nullable(),
-            backgroundColor: z.string().nullable(),
-            textColor: z.string().nullable(),
-            logoUrl: z.string().nullable(),
-            fontFamily: z.string().nullable(),
-            showPoweredBy: z.boolean(),
-            footerText: z.string().nullable(),
-          }).nullable(),
-        }),
-        404: ErrorResponse,
-      },
     },
   }, async (request, reply) => {
     const { companySlug } = request.params as { companySlug: string };
@@ -700,27 +609,6 @@ export async function bookingRoutes(app: FastifyInstance) {
         companySlug: z.string().describe('Company URL slug'),
         eventTypeSlug: z.string().describe('Event type URL slug'),
       }),
-      response: {
-        200: z.object({
-          title: z.string().describe('Event type display title'),
-          slug: z.string().describe('Event type URL slug'),
-          description: z.string().nullable().describe('Event type description'),
-          duration: z.number().describe('Duration in minutes'),
-          color: z.string().nullable().describe('Display color'),
-          teamName: z.string().nullable().describe('Associated team name'),
-          formFields: z.array(z.object({
-            id: z.string(),
-            label: z.string(),
-            type: z.string(),
-            required: z.boolean(),
-            placeholder: z.string().nullable(),
-            options: z.array(z.string()).nullable(),
-            order: z.number(),
-          })).describe('Custom form fields for the booking form'),
-          allowComment: z.boolean().describe('Whether a free-text comment field is shown'),
-        }),
-        404: ErrorResponse,
-      },
     },
   }, async (request, reply) => {
     const { companySlug, eventTypeSlug } = request.params as { companySlug: string; eventTypeSlug: string };

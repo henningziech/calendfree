@@ -28,17 +28,6 @@ export async function apiKeyRoutes(app: FastifyInstance) {
       description: 'Returns all API keys for the authenticated user, excluding the key hash.',
       tags: ['API Keys'],
       security: [{ session: [] }, { apiKey: [] }],
-      response: {
-        200: z.array(z.object({
-          id: z.string(),
-          name: z.string(),
-          keyPrefix: z.string(),
-          active: z.boolean(),
-          expiresAt: z.string().nullable(),
-          lastUsedAt: z.string().nullable(),
-          createdAt: z.string(),
-        })),
-      },
     },
   }, async (request) => {
     const user = request.session.user!;
@@ -56,16 +45,6 @@ export async function apiKeyRoutes(app: FastifyInstance) {
       tags: ['API Keys'],
       security: [{ session: [] }, { apiKey: [] }],
       body: CreateApiKeySchema,
-      response: {
-        201: z.object({
-          id: z.string(),
-          name: z.string(),
-          key: z.string().describe('Full API key (shown only once)'),
-          keyPrefix: z.string(),
-          expiresAt: z.string().nullable(),
-          createdAt: z.string(),
-        }),
-      },
     },
   }, async (request, reply) => {
     const user = request.session.user!;
@@ -105,10 +84,6 @@ export async function apiKeyRoutes(app: FastifyInstance) {
       params: z.object({
         id: z.string().describe('API key ID'),
       }),
-      response: {
-        200: z.object({ success: z.boolean() }),
-        404: ErrorResponse,
-      },
     },
   }, async (request, reply) => {
     const user = request.session.user!;

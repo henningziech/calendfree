@@ -152,16 +152,6 @@ export async function buildApp(): Promise<FastifyInstance> {
       tags: ['System'],
       summary: 'Health check',
       operationId: 'getHealth',
-      response: {
-        200: z.object({
-          status: z.enum(['ok', 'degraded']),
-          timestamp: z.string(),
-          services: z.object({
-            database: z.boolean(),
-            redis: z.boolean(),
-          }),
-        }),
-      },
     },
   }, async () => {
     const dbOk = await prisma.$queryRaw`SELECT 1`.then(() => true).catch(() => false);

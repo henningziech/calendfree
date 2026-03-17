@@ -36,16 +36,6 @@ export async function holidayRoutes(app: FastifyInstance) {
         country: z.string().optional().describe('Country code (de, at, ch, us, gb). Defaults to de.'),
         year: z.string().optional().describe('Year (2020-2100). Defaults to current year.'),
       }),
-      response: {
-        200: z.array(z.object({
-          name: z.string().describe('Holiday name'),
-          date: z.string().describe('Date in YYYY-MM-DD format'),
-          countryCode: z.string().describe('Country code'),
-        })),
-        400: ErrorResponse,
-        500: ErrorResponse,
-        502: ErrorResponse,
-      },
     },
   }, async (request, reply) => {
     const { id: userId } = request.session.user!;

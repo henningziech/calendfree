@@ -50,9 +50,10 @@ export async function routingFormAdminRoutes(app: FastifyInstance) {
   app.get('/api/admin/routing-forms/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
     const user = request.session.user!;
+    if (!user.activeCompanyId) return reply.status(400).send({ error: 'No active company' });
 
     const form = await prisma.routingForm.findFirst({
-      where: { id, companyId: user.activeCompanyId! },
+      where: { id, companyId: user.activeCompanyId },
       include: {
         options: { orderBy: { order: 'asc' } },
         company: { select: { slug: true } },
@@ -66,9 +67,10 @@ export async function routingFormAdminRoutes(app: FastifyInstance) {
   app.patch('/api/admin/routing-forms/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
     const user = request.session.user!;
+    if (!user.activeCompanyId) return reply.status(400).send({ error: 'No active company' });
 
     const form = await prisma.routingForm.findFirst({
-      where: { id, companyId: user.activeCompanyId! },
+      where: { id, companyId: user.activeCompanyId },
     });
     if (!form) return reply.status(404).send({ error: 'Routing form not found' });
 
@@ -101,9 +103,10 @@ export async function routingFormAdminRoutes(app: FastifyInstance) {
   app.delete('/api/admin/routing-forms/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
     const user = request.session.user!;
+    if (!user.activeCompanyId) return reply.status(400).send({ error: 'No active company' });
 
     const form = await prisma.routingForm.findFirst({
-      where: { id, companyId: user.activeCompanyId! },
+      where: { id, companyId: user.activeCompanyId },
     });
     if (!form) return reply.status(404).send({ error: 'Routing form not found' });
 

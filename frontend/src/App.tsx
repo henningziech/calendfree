@@ -10,6 +10,7 @@ import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { CompaniesPage } from './pages/admin/CompaniesPage';
+import { CompanyDetailPage } from './pages/admin/CompanyDetailPage';
 import { TeamsPage } from './pages/admin/TeamsPage';
 import { EventTypesPage } from './pages/admin/EventTypesPage';
 import { UsersPage } from './pages/admin/UsersPage';
@@ -41,6 +42,7 @@ export default function App() {
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
             <Route path="companies" element={<CompaniesPage />} />
+            <Route path="companies/:companyId" element={<CompanyDetailPage />} />
             <Route path="teams" element={<TeamsPage />} />
             <Route path="event-types" element={<EventTypesPage />} />
             <Route path="users" element={<UsersPage />} />

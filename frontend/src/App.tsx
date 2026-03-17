@@ -18,7 +18,7 @@ import { UsersPage } from './pages/admin/UsersPage';
 import { UserDetailPage } from './pages/admin/UserDetailPage';
 import { SettingsPage } from './pages/admin/SettingsPage';
 import { AnalyticsPage } from './pages/admin/AnalyticsPage';
-import { RoutingFormsPage } from './pages/admin/RoutingFormsPage';
+import { RoutingFormsPage } from './pages/dashboard/RoutingFormsPage';
 import { UserDashboard } from './pages/dashboard/UserDashboard';
 import { AvailabilityPage } from './pages/dashboard/AvailabilityPage';
 import { ApiKeysPage } from './pages/dashboard/ApiKeysPage';
@@ -49,7 +49,6 @@ export default function App() {
             <Route path="event-types" element={<EventTypesPage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="users/:userId" element={<UserDetailPage />} />
-            <Route path="routing-forms" element={<RoutingFormsPage />} />
             <Route path="analytics" element={<AnalyticsPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
@@ -64,6 +63,7 @@ export default function App() {
             <Route path="bookings/:bookingId" element={<BookingDetailPage />} />
             <Route path="api-keys" element={<ApiKeysPage />} />
             <Route path="settings" element={<AccountSettingsPage />} />
+            <Route path="routing-forms" element={<RoutingFormsPage />} />
           </Route>
 
           {/* Booking (public, must be last due to catch-all slug pattern) */}

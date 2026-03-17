@@ -1,19 +1,67 @@
 import type { FastifyInstance } from 'fastify';
+import { z } from 'zod/v4';
 import { getAuthUrl, handleCallback } from '../services/google-auth.js';
 import { config } from '../config.js';
 import { logAudit } from '../services/audit-log.js';
 import { prisma } from '../db.js';
 import { SwitchCompanySchema } from '@calendfree/shared';
 
+const ErrorResponse = z.object({ error: z.string() });
+
+const RoleEnum = z.enum(['ORG_ADMIN', 'COMPANY_ADMIN', 'USER']);
+
+const SessionUserResponse = z.object({
+  id: z.string().describe('User ID'),
+  email: z.string().describe('User email'),
+  name: z.string().describe('User display name'),
+  avatarUrl: z.string().nullable().describe('User avatar URL'),
+  organizationId: z.string().describe('Organization ID'),
+  activeCompanyId: z.string().nullable().describe('Currently active company ID'),
+  activeRole: RoleEnum.nullable().describe('Role in the active company'),
+  language: z.string().describe('UI language preference'),
+});
+
+const MeResponse = SessionUserResponse.extend({
+  companyMemberships: z.array(z.object({
+    companyId: z.string().describe('Company ID'),
+    companyName: z.string().describe('Company display name'),
+    role: RoleEnum.describe('User role in this company'),
+  })).describe('All company memberships for the user'),
+});
+
 export async function authRoutes(app: FastifyInstance) {
   /** Redirect to Google OAuth consent screen */
-  app.get('/api/auth/google', async (request, reply) => {
+  app.get('/api/auth/google', {
+    schema: {
+      summary: 'Start Google OAuth flow',
+      description: 'Redirects the user to the Google OAuth consent screen to begin authentication.',
+      tags: ['Auth'],
+      security: [],
+      response: {
+        302: z.object({}).describe('Redirect to Google OAuth consent screen'),
+      },
+    },
+  }, async (request, reply) => {
     const url = getAuthUrl();
     return reply.redirect(url);
   });
 
   /** Google OAuth callback — exchanges code for tokens, creates session */
-  app.get('/api/auth/google/callback', async (request, reply) => {
+  app.get('/api/auth/google/callback', {
+    schema: {
+      summary: 'Google OAuth callback',
+      description: 'Handles the OAuth callback from Google. Exchanges the authorization code for tokens, creates or updates the user, and establishes a session.',
+      tags: ['Auth'],
+      security: [],
+      querystring: z.object({
+        code: z.string().optional().describe('Authorization code from Google'),
+        error: z.string().optional().describe('Error code if OAuth was denied'),
+      }),
+      response: {
+        302: z.object({}).describe('Redirect to dashboard on success or login page on failure'),
+      },
+    },
+  }, async (request, reply) => {
     const { code, error } = request.query as { code?: string; error?: string };
 
     if (error || !code) {
@@ -42,7 +90,18 @@ export async function authRoutes(app: FastifyInstance) {
   });
 
   /** Get current session user — refreshes role/company from DB */
-  app.get('/api/auth/me', async (request, reply) => {
+  app.get('/api/auth/me', {
+    schema: {
+      summary: 'Get current user',
+      description: 'Returns the authenticated user profile including active company context and all company memberships. Refreshes role and company data from the database.',
+      tags: ['Auth'],
+      security: [{ session: [] }, { apiKey: [] }],
+      response: {
+        200: MeResponse,
+        401: ErrorResponse,
+      },
+    },
+  }, async (request, reply) => {
     if (!request.session.user) {
       return reply.status(401).send({ error: 'Not authenticated' });
     }
@@ -74,7 +133,22 @@ export async function authRoutes(app: FastifyInstance) {
   });
 
   /** Switch active company context */
-  app.patch('/api/auth/me/company', async (request, reply) => {
+  app.patch('/api/auth/me/company', {
+    schema: {
+      summary: 'Switch active company',
+      description: 'Switches the active company context for the current session. The user must be a member of the target company within their organization.',
+      tags: ['Auth'],
+      security: [{ session: [] }],
+      body: z.object({
+        companyId: z.string().uuid().describe('ID of the company to switch to'),
+      }),
+      response: {
+        200: SessionUserResponse,
+        401: ErrorResponse,
+        403: ErrorResponse,
+      },
+    },
+  }, async (request, reply) => {
     if (!request.session.user) {
       return reply.status(401).send({ error: 'Not authenticated' });
     }
@@ -101,7 +175,19 @@ export async function authRoutes(app: FastifyInstance) {
   });
 
   /** Logout — destroy session */
-  app.post('/api/auth/logout', async (request, reply) => {
+  app.post('/api/auth/logout', {
+    schema: {
+      summary: 'Log out',
+      description: 'Destroys the current session and logs the user out. Records an audit log entry.',
+      tags: ['Auth'],
+      security: [{ session: [] }],
+      response: {
+        200: z.object({
+          success: z.boolean().describe('Whether logout was successful'),
+        }),
+      },
+    },
+  }, async (request, reply) => {
     logAudit({
       userId: request.session.user?.id,
       action: 'USER_LOGOUT',

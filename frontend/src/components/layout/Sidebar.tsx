@@ -42,10 +42,12 @@ const ADMIN_NAV: NavItem[] = [
 ];
 
 export function Sidebar() {
-  const { user, logout } = useAuth();
+  const { user, logout, switchCompany } = useAuth();
   const navigate = useNavigate();
   const [createOpen, setCreateOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [companyOpen, setCompanyOpen] = useState(false);
+  const companyDropdownRef = useRef<HTMLDivElement>(null);
 
   if (!user) return null;
 
@@ -62,6 +64,23 @@ export function Sidebar() {
     if (createOpen) document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [createOpen]);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (companyDropdownRef.current && !companyDropdownRef.current.contains(e.target as Node)) {
+        setCompanyOpen(false);
+      }
+    }
+    if (companyOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [companyOpen]);
+
+  const handleCompanySwitch = async (companyId: string) => {
+    setCompanyOpen(false);
+    if (companyId !== user?.activeCompanyId) {
+      await switchCompany(companyId);
+    }
+  };
 
   const handleCreate = (key: string) => {
     setCreateOpen(false);
@@ -85,6 +104,46 @@ export function Sidebar() {
         <div className="flex items-center gap-2.5">
           <img src="/logo-mini.png" alt="Calendfree" className="h-8 w-8 rounded-lg" />
           <h1 className="text-lg font-bold text-[#1E293B]">Calendfree</h1>
+        </div>
+      </div>
+
+      {/* Company selector */}
+      <div className="px-3 pb-1">
+        <div className="relative" ref={companyDropdownRef}>
+          <button
+            onClick={() => setCompanyOpen(!companyOpen)}
+            className="flex w-full items-center justify-between rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-sm transition-all hover:border-[#0B8ECA]/30"
+          >
+            <p className="min-w-0 flex-1 truncate text-left font-medium text-[#1E293B]">
+              {user.companyMemberships?.find((c) => c.companyId === user.activeCompanyId)?.companyName ?? 'Firma wählen'}
+            </p>
+            <svg className={`ml-2 h-4 w-4 shrink-0 text-[#64748B] transition-transform ${companyOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          {companyOpen && (
+            <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-xl border border-[#E2E8F0] bg-white py-1 shadow-lg">
+              {(user.companyMemberships ?? []).map((c) => (
+                <button
+                  key={c.companyId}
+                  onClick={() => handleCompanySwitch(c.companyId)}
+                  className={`flex w-full items-center justify-between px-3 py-2 text-sm transition-colors hover:bg-[#F8FAFC] ${
+                    c.companyId === user.activeCompanyId ? 'bg-[#0B8ECA]/5 text-[#0B8ECA]' : 'text-[#1E293B]'
+                  }`}
+                >
+                  <span className="truncate">{c.companyName}</span>
+                  <span className={`ml-2 shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                    c.role === 'ORG_ADMIN' || c.role === 'COMPANY_ADMIN'
+                      ? 'bg-[#14B8A6]/10 text-[#14B8A6]'
+                      : 'bg-[#64748B]/10 text-[#64748B]'
+                  }`}>
+                    {c.role === 'ORG_ADMIN' ? 'Org Admin' : c.role === 'COMPANY_ADMIN' ? 'Admin' : 'User'}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

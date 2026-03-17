@@ -40,9 +40,24 @@ export async function companyRoutes(app: FastifyInstance) {
     const { id } = request.params as { id: string };
     const user = request.session.user!;
 
+    // COMPANY_ADMIN can only view their own company
+    if (user.activeRole === 'COMPANY_ADMIN') {
+      const membership = await prisma.companyMembership.findFirst({
+        where: { userId: user.id, companyId: id },
+      });
+      if (!membership) return reply.status(403).send({ error: 'Not authorized' });
+    }
+
     const company = await prisma.company.findFirst({
       where: { id, organizationId: user.organizationId },
-      include: { branding: true, teams: true },
+      include: {
+        branding: true,
+        teams: {
+          include: {
+            _count: { select: { memberships: true } },
+          },
+        },
+      },
     });
     if (!company) return reply.status(404).send({ error: 'Company not found' });
     return company;
@@ -61,6 +76,35 @@ export async function companyRoutes(app: FastifyInstance) {
     if (company.count === 0) return reply.status(404).send({ error: 'Company not found' });
 
     return prisma.company.findUnique({ where: { id } });
+  });
+
+  /** GET /api/admin/companies/:companyId/bookings — Recent bookings for a company */
+  app.get('/api/admin/companies/:companyId/bookings', { preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')] }, async (request, reply) => {
+    const { companyId } = request.params as { companyId: string };
+    const user = request.session.user!;
+
+    // COMPANY_ADMIN can only view their own company
+    if (user.activeRole === 'COMPANY_ADMIN') {
+      const membership = await prisma.companyMembership.findFirst({
+        where: { userId: user.id, companyId },
+      });
+      if (!membership) return reply.status(403).send({ error: 'Not authorized' });
+    }
+
+    const bookings = await prisma.booking.findMany({
+      where: {
+        eventType: { companyId },
+      },
+      include: {
+        eventType: { select: { title: true, slug: true, duration: true, teamId: true, team: { select: { name: true } }, company: { select: { slug: true } } } },
+        formData: { select: { name: true, email: true, data: true } },
+        assignedUser: { select: { name: true, email: true } },
+      },
+      orderBy: { startTime: 'desc' },
+      take: 20,
+    });
+
+    return bookings;
   });
 
   /** DELETE /api/admin/companies/:id — Delete company (ORG_ADMIN only) */

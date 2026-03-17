@@ -189,29 +189,30 @@ export function CompanyBrandingPage() {
           {/* Footer */}
           <div className="rounded-xl border border-[#E2E8F0] bg-white p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-[#1E293B] mb-4">Footer</h2>
-            <label className="flex items-center gap-3 mb-4">
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-[#1E293B] mb-1">Footer-Text</label>
+              <textarea
+                value={footerText}
+                onChange={(e) => setFooterText(e.target.value)}
+                maxLength={200}
+                rows={2}
+                placeholder="Powered by Calendfree (Standard)"
+                className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none resize-none"
+              />
+              <p className="mt-1 text-xs text-[#64748B]">{footerText.length}/200 Zeichen — leer lassen für Standard-Footer</p>
+            </div>
+            <label className="flex items-center gap-3">
               <input
                 type="checkbox"
                 checked={showPoweredBy}
                 onChange={(e) => setShowPoweredBy(e.target.checked)}
                 className="h-4 w-4 rounded border-[#E2E8F0] text-[#0B8ECA] focus:ring-[#0B8ECA]"
               />
-              <span className="text-sm font-medium text-[#1E293B]">„Powered by Calendfree" anzeigen</span>
-            </label>
-            {!showPoweredBy && (
               <div>
-                <label className="block text-sm font-medium text-[#1E293B] mb-1">Eigener Footer-Text</label>
-                <textarea
-                  value={footerText}
-                  onChange={(e) => setFooterText(e.target.value)}
-                  maxLength={200}
-                  rows={2}
-                  placeholder="z.B. © 2026 Ihre Firma"
-                  className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none resize-none"
-                />
-                <p className="mt-1 text-xs text-[#64748B]">{footerText.length}/200 Zeichen</p>
+                <span className="text-sm font-medium text-[#1E293B]">„Powered by Calendfree" anzeigen</span>
+                <p className="text-xs text-[#64748B]">Wird angezeigt wenn kein eigener Text gesetzt ist</p>
               </div>
-            )}
+            </label>
           </div>
 
           {/* Save */}
@@ -273,13 +274,13 @@ export function CompanyBrandingPage() {
                 </div>
 
                 {/* Footer preview */}
-                {showPoweredBy ? (
-                  <p className="mt-4 text-center text-[10px]" style={{ color: textColor, opacity: 0.5 }}>
-                    {company.name} — Powered by <span style={{ color: primaryColor }}>Calendfree</span>
-                  </p>
-                ) : footerText ? (
+                {footerText ? (
                   <p className="mt-4 text-center text-[10px]" style={{ color: textColor, opacity: 0.5 }}>
                     {footerText}
+                  </p>
+                ) : showPoweredBy ? (
+                  <p className="mt-4 text-center text-[10px]" style={{ color: textColor, opacity: 0.5 }}>
+                    {company.name} — Powered by <span style={{ color: primaryColor }}>Calendfree</span>
                   </p>
                 ) : null}
               </div>

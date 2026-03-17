@@ -70,14 +70,14 @@ export function BrandedLayout({
           </div>
         )}
         {children}
-        {showPoweredBy ? (
+        {footerText ? (
+          <footer className="mt-12 text-center text-xs text-[#64748B]">
+            {footerText}
+          </footer>
+        ) : showPoweredBy ? (
           <footer className="mt-12 text-center text-xs text-[#64748B]">
             {companyName && <span>{companyName} — </span>}
             Powered by <span className="font-medium" style={{ color: primary }}>Calendfree</span>
-          </footer>
-        ) : footerText ? (
-          <footer className="mt-12 text-center text-xs text-[#64748B]">
-            {footerText}
           </footer>
         ) : null}
       </div>

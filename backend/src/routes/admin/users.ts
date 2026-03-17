@@ -254,7 +254,10 @@ export async function userRoutes(app: FastifyInstance) {
     const user = request.session.user!;
 
     const teamMemberships = await prisma.teamMembership.findMany({
-      where: { userId: user.id },
+      where: {
+        userId: user.id,
+        team: { companyId: user.activeCompanyId },
+      },
       select: { teamId: true },
     });
     const teamIds = teamMemberships.map((m) => m.teamId);

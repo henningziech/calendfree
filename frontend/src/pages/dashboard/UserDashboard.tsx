@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router';
 import { getMyBookings, getTeamBookings } from '../../api/booking';
@@ -8,6 +9,7 @@ import type { Booking } from '../../components/bookings/types';
 import { parseISO, isPast } from 'date-fns';
 
 export function UserDashboard() {
+  const { t } = useTranslation('dashboard');
   const { user } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'mine' | 'team'>('mine');
@@ -43,8 +45,8 @@ export function UserDashboard() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-[#1E293B]">Meine Termine</h1>
-      <p className="mt-2 text-[#64748B]">Willkommen, {user?.name}.</p>
+      <h1 className="text-2xl font-bold text-[#1E293B]">{t('bookings.title')}</h1>
+      <p className="mt-2 text-[#64748B]">{t('bookings.welcome', { name: user?.name })}</p>
 
       {/* Tabs */}
       {hasTeamMemberships && (
@@ -57,7 +59,7 @@ export function UserDashboard() {
                 : 'text-[#64748B] hover:text-[#1E293B]'
             }`}
           >
-            Meine Termine ({myBookings.length})
+            {t('bookings.tabMine', { count: myBookings.length })}
           </button>
           <button
             onClick={() => setActiveTab('team')}
@@ -67,7 +69,7 @@ export function UserDashboard() {
                 : 'text-[#64748B] hover:text-[#1E293B]'
             }`}
           >
-            Teamtermine ({teamBookings.length})
+            {t('bookings.tabTeam', { count: teamBookings.length })}
           </button>
         </div>
       )}
@@ -77,12 +79,12 @@ export function UserDashboard() {
         <div className="mt-6 rounded-xl border-2 border-dashed border-[#E2E8F0] bg-[#F8FAFC] p-12 text-center">
           <div className="text-4xl mb-3">📅</div>
           <h3 className="text-lg font-medium text-[#1E293B]">
-            {activeTab === 'mine' ? 'Noch keine Termine' : 'Keine Teamtermine'}
+            {activeTab === 'mine' ? t('bookings.noBookings') : t('bookings.noTeamBookings')}
           </h3>
           <p className="mt-1 text-sm text-[#64748B]">
             {activeTab === 'mine'
-              ? 'Sobald Kunden Termine bei Ihnen buchen, erscheinen sie hier.'
-              : 'Sobald Teamkollegen Buchungen erhalten, erscheinen sie hier.'}
+              ? t('bookings.noBookingsHint')
+              : t('bookings.noTeamBookingsHint')}
           </p>
         </div>
       ) : (
@@ -90,7 +92,7 @@ export function UserDashboard() {
           {upcoming.length > 0 && (
             <div>
               <h2 className="text-xs font-semibold uppercase tracking-wider text-[#64748B] mb-3">
-                Kommende Termine ({upcoming.length})
+                {t('bookings.upcoming', { count: upcoming.length })}
               </h2>
               <div className="space-y-2">
                 {upcoming.map((b) => (
@@ -108,7 +110,7 @@ export function UserDashboard() {
           {past.length > 0 && (
             <div>
               <h2 className="text-xs font-semibold uppercase tracking-wider text-[#64748B] mb-3">
-                Vergangene / Andere ({past.length})
+                {t('bookings.pastOther', { count: past.length })}
               </h2>
               <div className="space-y-2">
                 {past.map((b) => (

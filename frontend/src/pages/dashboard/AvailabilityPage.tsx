@@ -1,18 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { getMyProfile, updateMyAvailability, updateMyTimezone, getHolidays } from '../../api/admin';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { ErrorMessage } from '../../components/ui/ErrorMessage';
+import { formatDateLocalized } from '../../utils/dateLocale';
 
-/** Day definitions starting with Sunday (Calendly-style). */
-const DAYS = [
-  { key: 'sunday', short: 'S', label: 'Sonntag' },
-  { key: 'monday', short: 'M', label: 'Montag' },
-  { key: 'tuesday', short: 'D', label: 'Dienstag' },
-  { key: 'wednesday', short: 'M', label: 'Mittwoch' },
-  { key: 'thursday', short: 'D', label: 'Donnerstag' },
-  { key: 'friday', short: 'F', label: 'Freitag' },
-  { key: 'saturday', short: 'S', label: 'Samstag' },
-] as const;
+const DAY_KEYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
 
 const DEFAULT_SLOT = { start: '09:00', end: '17:00' };
 
@@ -30,13 +23,7 @@ const TIMEZONES = [
   'Australia/Sydney',
 ];
 
-const HOLIDAY_COUNTRIES = [
-  { code: 'de', label: 'Deutschland' },
-  { code: 'at', label: 'Österreich' },
-  { code: 'ch', label: 'Schweiz' },
-  { code: 'gb', label: 'Vereinigtes Königreich' },
-  { code: 'us', label: 'USA' },
-];
+const HOLIDAY_COUNTRY_CODES = ['de', 'at', 'ch', 'gb', 'us'] as const;
 
 interface TimeSlot {
   start: string;
@@ -65,6 +52,7 @@ function CopyPopover({
   onApply: (targetKeys: string[]) => void;
   onClose: () => void;
 }) {
+  const { t } = useTranslation('dashboard');
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const toggle = (key: string) => {
@@ -77,25 +65,25 @@ function CopyPopover({
   };
 
   const selectAll = () => {
-    const allKeys = DAYS.filter((d) => d.key !== sourceDayKey).map((d) => d.key);
+    const allKeys = DAY_KEYS.filter((d) => d !== sourceDayKey);
     setSelected(new Set(allKeys));
   };
 
   return (
     <div className="absolute left-0 top-full z-20 mt-1 w-56 rounded-xl border border-[#E2E8F0] bg-white p-3 shadow-lg">
-      <p className="mb-2 text-xs font-medium text-[#64748B]">Zeiten kopieren nach:</p>
+      <p className="mb-2 text-xs font-medium text-[#64748B]">{t('availability.copyTimesTo')}</p>
       <button onClick={selectAll} className="mb-2 text-xs text-[#0B8ECA] hover:underline">
-        Alle auswählen
+        {t('availability.selectAll')}
       </button>
-      {DAYS.filter((d) => d.key !== sourceDayKey).map((d) => (
-        <label key={d.key} className="flex items-center gap-2 py-0.5 text-sm text-[#1E293B]">
+      {DAY_KEYS.filter((d) => d !== sourceDayKey).map((d) => (
+        <label key={d} className="flex items-center gap-2 py-0.5 text-sm text-[#1E293B]">
           <input
             type="checkbox"
-            checked={selected.has(d.key)}
-            onChange={() => toggle(d.key)}
+            checked={selected.has(d)}
+            onChange={() => toggle(d)}
             className="accent-[#0B8ECA]"
           />
-          {d.label}
+          {t(`availability.days.${d}`)}
         </label>
       ))}
       <div className="mt-2 flex gap-2">
@@ -104,10 +92,10 @@ function CopyPopover({
           disabled={selected.size === 0}
           className="rounded-lg bg-[#0B8ECA] px-3 py-1 text-xs font-medium text-white disabled:opacity-40"
         >
-          Übernehmen
+          {t('availability.apply')}
         </button>
         <button onClick={onClose} className="rounded-lg px-3 py-1 text-xs text-[#64748B] hover:bg-[#F1F5F9]">
-          Abbrechen
+          {t('common:cancel')}
         </button>
       </div>
     </div>
@@ -115,12 +103,6 @@ function CopyPopover({
 }
 
 // ─── Schedules Tab ─────────────────────────────────────────────────────────────
-
-/** Format date string in German locale. */
-function formatDateDE(dateStr: string): string {
-  const date = new Date(dateStr + 'T00:00:00');
-  return date.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' });
-}
 
 type DateSpecificHours = Record<string, TimeSlot[]>;
 
@@ -139,6 +121,7 @@ function SchedulesTab({
   onTimezoneChange: (tz: string) => void;
   onDateSpecificHoursChange: (dsh: DateSpecificHours) => void;
 }) {
+  const { t } = useTranslation(['dashboard', 'common']);
   const [copyDay, setCopyDay] = useState<string | null>(null);
   const [dshFormOpen, setDshFormOpen] = useState(false);
   const [dshDate, setDshDate] = useState('');
@@ -195,32 +178,32 @@ function SchedulesTab({
       {/* Weekly hours */}
       <div className="rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-sm">
         <h3 className="text-sm font-semibold text-[#64748B] uppercase tracking-wide">
-          Arbeitszeiten (Standard)
+          {t('dashboard:availability.workingHours')}
         </h3>
 
         <div className="mt-4 space-y-3">
-          {DAYS.map((day) => {
-            const slots = schedule[day.key] ?? [];
+          {DAY_KEYS.map((day) => {
+            const slots = schedule[day] ?? [];
             const isAvailable = slots.length > 0;
 
             return (
-              <div key={day.key} className="relative">
+              <div key={day} className="relative">
                 <div className="flex items-start gap-3">
                   {/* Day circle */}
                   <button
-                    onClick={() => toggleDay(day.key)}
-                    title={day.label}
+                    onClick={() => toggleDay(day)}
+                    title={t(`dashboard:availability.days.${day}`)}
                     className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white transition-colors ${
                       isAvailable ? 'bg-[#0B8ECA]' : 'bg-[#64748B]'
                     }`}
                   >
-                    {day.short}
+                    {t(`dashboard:availability.dayShort.${day}`)}
                   </button>
 
                   {/* Slots or "Nicht verfügbar" */}
                   <div className="flex-1">
                     {!isAvailable ? (
-                      <p className="mt-1.5 text-sm text-[#94A3B8]">Nicht verfügbar</p>
+                      <p className="mt-1.5 text-sm text-[#94A3B8]">{t('dashboard:availability.unavailable')}</p>
                     ) : (
                       <div className="space-y-1.5">
                         {slots.map((slot, idx) => (
@@ -228,21 +211,21 @@ function SchedulesTab({
                             <input
                               type="time"
                               value={slot.start}
-                              onChange={(e) => updateSlot(day.key, idx, 'start', e.target.value)}
+                              onChange={(e) => updateSlot(day, idx, 'start', e.target.value)}
                               className="rounded-lg border border-[#E2E8F0] px-2 py-1 text-sm focus:border-[#0B8ECA] focus:outline-none"
                             />
                             <span className="text-[#64748B]">–</span>
                             <input
                               type="time"
                               value={slot.end}
-                              onChange={(e) => updateSlot(day.key, idx, 'end', e.target.value)}
+                              onChange={(e) => updateSlot(day, idx, 'end', e.target.value)}
                               className="rounded-lg border border-[#E2E8F0] px-2 py-1 text-sm focus:border-[#0B8ECA] focus:outline-none"
                             />
                             {/* Remove slot */}
                             <button
-                              onClick={() => removeSlot(day.key, idx)}
+                              onClick={() => removeSlot(day, idx)}
                               className="text-[#94A3B8] hover:text-red-500"
-                              title="Zeitfenster entfernen"
+                              title={t('dashboard:availability.removeSlot')}
                             >
                               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -254,16 +237,16 @@ function SchedulesTab({
                         {/* Add slot + Copy */}
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => addSlot(day.key)}
+                            onClick={() => addSlot(day)}
                             className="text-xs text-[#0B8ECA] hover:underline"
-                            title="Weiteres Zeitfenster hinzufügen"
+                            title={t('dashboard:availability.addTimeSlot')}
                           >
-                            + Zeitfenster
+                            {t('dashboard:availability.addTimeSlot')}
                           </button>
                           <button
-                            onClick={() => setCopyDay(copyDay === day.key ? null : day.key)}
+                            onClick={() => setCopyDay(copyDay === day ? null : day)}
                             className="text-[#94A3B8] hover:text-[#0B8ECA]"
-                            title="Zeiten kopieren"
+                            title={t('dashboard:availability.copyTimes')}
                           >
                             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -276,11 +259,11 @@ function SchedulesTab({
                 </div>
 
                 {/* Copy popover */}
-                {copyDay === day.key && (
+                {copyDay === day && (
                   <CopyPopover
-                    sourceDayKey={day.key}
+                    sourceDayKey={day}
                     schedule={schedule}
-                    onApply={(targets) => copyToTargets(day.key, targets)}
+                    onApply={(targets) => copyToTargets(day, targets)}
                     onClose={() => setCopyDay(null)}
                   />
                 )}
@@ -295,9 +278,9 @@ function SchedulesTab({
         <div className="flex items-start justify-between">
           <div>
             <h3 className="text-sm font-semibold text-[#64748B] uppercase tracking-wide">
-              Datumsabhängige Stunden
+              {t('dashboard:availability.dateSpecificHours')}
             </h3>
-            <p className="mt-1 text-xs text-[#94A3B8]">Passe Verfügbarkeit für bestimmte Tage an</p>
+            <p className="mt-1 text-xs text-[#94A3B8]">{t('dashboard:availability.dateSpecificHoursHint')}</p>
           </div>
           {!dshFormOpen && (
             <button
@@ -308,7 +291,7 @@ function SchedulesTab({
               }}
               className="text-sm text-[#0B8ECA] hover:underline"
             >
-              + Stunden
+              {t('dashboard:availability.addHours')}
             </button>
           )}
         </div>
@@ -317,7 +300,7 @@ function SchedulesTab({
         {dshFormOpen && (
           <div className="mt-4 space-y-3 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-3">
             <div>
-              <label className="block text-xs font-medium text-[#1E293B]">Datum</label>
+              <label className="block text-xs font-medium text-[#1E293B]">{t('dashboard:availability.date')}</label>
               <input
                 type="date"
                 value={dshDate}
@@ -328,7 +311,7 @@ function SchedulesTab({
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-[#1E293B]">Zeitfenster</label>
+              <label className="block text-xs font-medium text-[#1E293B]">{t('dashboard:availability.timeSlots')}</label>
               <div className="mt-1 space-y-1.5">
                 {dshSlots.map((slot, idx) => (
                   <div key={idx} className="flex items-center gap-2">
@@ -357,7 +340,7 @@ function SchedulesTab({
                       <button
                         onClick={() => setDshSlots(dshSlots.filter((_, i) => i !== idx))}
                         className="text-[#94A3B8] hover:text-red-500"
-                        title="Zeitfenster entfernen"
+                        title={t('dashboard:availability.removeSlot')}
                       >
                         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -373,7 +356,7 @@ function SchedulesTab({
                   }}
                   className="text-xs text-[#0B8ECA] hover:underline"
                 >
-                  + Zeitfenster
+                  {t('dashboard:availability.addTimeSlot')}
                 </button>
               </div>
             </div>
@@ -388,13 +371,13 @@ function SchedulesTab({
                 disabled={!dshDate}
                 className="rounded-xl bg-[#0B8ECA] px-3 py-1.5 text-sm font-medium text-white disabled:opacity-40"
               >
-                Hinzufügen
+                {t('common:add')}
               </button>
               <button
                 onClick={() => setDshFormOpen(false)}
                 className="rounded-xl border border-[#E2E8F0] px-3 py-1.5 text-sm text-[#64748B]"
               >
-                Abbrechen
+                {t('common:cancel')}
               </button>
             </div>
           </div>
@@ -412,7 +395,7 @@ function SchedulesTab({
               {futureDates.map((date) => (
                 <div key={date} className="flex items-center justify-between rounded-lg px-2 py-1.5 hover:bg-[#F8FAFC]">
                   <div>
-                    <p className="text-sm font-medium text-[#1E293B]">{formatDateDE(date)}</p>
+                    <p className="text-sm font-medium text-[#1E293B]">{formatDateLocalized(date)}</p>
                     <p className="text-xs text-[#94A3B8]">
                       {dateSpecificHours[date].map((s) => `${s.start}–${s.end}`).join(', ')}
                     </p>
@@ -423,7 +406,7 @@ function SchedulesTab({
                       onDateSpecificHoursChange(rest);
                     }}
                     className="text-[#EF4444] hover:text-red-700"
-                    title="Eintrag löschen"
+                    title={t('dashboard:availability.deleteEntry')}
                   >
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -438,7 +421,7 @@ function SchedulesTab({
 
       {/* Timezone */}
       <div className="rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-sm">
-        <label className="block text-sm font-medium text-[#1E293B]">Zeitzone</label>
+        <label className="block text-sm font-medium text-[#1E293B]">{t('dashboard:availability.timezone')}</label>
         <select
           value={timezone}
           onChange={(e) => onTimezoneChange(e.target.value)}
@@ -474,6 +457,7 @@ function AdvancedSettingsTab({
   onHolidayCountryChange: (c: string) => void;
   onBlockedHolidaysChange: (h: string[]) => void;
 }) {
+  const { t } = useTranslation('dashboard');
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [holidaysLoading, setHolidaysLoading] = useState(false);
   const [holidaysError, setHolidaysError] = useState<string | null>(null);
@@ -488,7 +472,7 @@ function AdvancedSettingsTab({
     setHolidaysError(null);
     getHolidays(holidayCountry)
       .then((data) => { if (!cancelled) setHolidays(data); })
-      .catch((err) => { if (!cancelled) setHolidaysError(err.message ?? 'Fehler beim Laden'); })
+      .catch((err) => { if (!cancelled) setHolidaysError(err.message ?? 'Error'); })
       .finally(() => { if (!cancelled) setHolidaysLoading(false); });
     return () => { cancelled = true; };
   }, [holidayCountry]);
@@ -505,11 +489,7 @@ function AdvancedSettingsTab({
   /** Format an ISO date string for display. */
   const formatDate = (iso: string) => {
     try {
-      return new Date(iso).toLocaleDateString('de-DE', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-      });
+      return formatDateLocalized(iso);
     } catch {
       return iso;
     }
@@ -520,11 +500,11 @@ function AdvancedSettingsTab({
       {/* Appointment limits */}
       <div className="rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-sm">
         <h3 className="text-sm font-semibold text-[#64748B] uppercase tracking-wide">
-          Termin-Limits
+          {t('availability.appointmentLimits')}
         </h3>
         <div className="mt-4 flex gap-8">
           <div>
-            <label className="block text-sm text-[#1E293B]">Max. pro Tag</label>
+            <label className="block text-sm text-[#1E293B]">{t('availability.maxPerDay')}</label>
             <input
               type="number"
               value={maxPerDay ?? ''}
@@ -536,7 +516,7 @@ function AdvancedSettingsTab({
             />
           </div>
           <div>
-            <label className="block text-sm text-[#1E293B]">Max. pro Woche</label>
+            <label className="block text-sm text-[#1E293B]">{t('availability.maxPerWeek')}</label>
             <input
               type="number"
               value={maxPerWeek ?? ''}
@@ -553,19 +533,19 @@ function AdvancedSettingsTab({
       {/* Holidays */}
       <div className="rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-sm">
         <h3 className="text-sm font-semibold text-[#64748B] uppercase tracking-wide">
-          Feiertage
+          {t('availability.holidays')}
         </h3>
 
         {/* Country selector */}
         <div className="mt-3">
-          <label className="block text-sm text-[#1E293B]">Land</label>
+          <label className="block text-sm text-[#1E293B]">{t('availability.country')}</label>
           <select
             value={holidayCountry}
             onChange={(e) => onHolidayCountryChange(e.target.value)}
             className="mt-1 rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none"
           >
-            {HOLIDAY_COUNTRIES.map((c) => (
-              <option key={c.code} value={c.code}>{c.label}</option>
+            {HOLIDAY_COUNTRY_CODES.map((code) => (
+              <option key={code} value={code}>{t(`availability.countries.${code}`)}</option>
             ))}
           </select>
         </div>
@@ -576,13 +556,13 @@ function AdvancedSettingsTab({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z" />
           </svg>
           <p className="text-xs text-[#0B8ECA]">
-            Feiertage werden automatisch über den Google Kalender abgerufen.
+            {t('availability.holidayInfo')}
           </p>
         </div>
 
         {/* Hide past toggle */}
         <div className="mt-3 flex items-center justify-between">
-          <label className="text-sm text-[#64748B]">Vergangene Feiertage ausblenden</label>
+          <label className="text-sm text-[#64748B]">{t('availability.hidePastHolidays')}</label>
           <button
             onClick={() => { setHidePast(!hidePast); setHolidayPage(0); }}
             className={`relative h-6 w-11 rounded-full transition-colors ${
@@ -600,11 +580,11 @@ function AdvancedSettingsTab({
         {/* Holiday list */}
         <div className="mt-4">
           {holidaysLoading && (
-            <p className="text-sm text-[#94A3B8]">Feiertage werden geladen...</p>
+            <p className="text-sm text-[#94A3B8]">{t('availability.loadingHolidays')}</p>
           )}
 
           {holidaysError && (
-            <p className="text-sm text-red-500">Fehler: {holidaysError}</p>
+            <p className="text-sm text-red-500">{t('availability.holidayError', { message: holidaysError })}</p>
           )}
 
           {!holidaysLoading && !holidaysError && (() => {
@@ -614,7 +594,7 @@ function AdvancedSettingsTab({
             const pageHolidays = filtered.slice(holidayPage * HOLIDAYS_PER_PAGE, (holidayPage + 1) * HOLIDAYS_PER_PAGE);
 
             if (filtered.length === 0) {
-              return <p className="text-sm text-[#94A3B8]">Keine Feiertage gefunden.</p>;
+              return <p className="text-sm text-[#94A3B8]">{t('availability.noHolidays')}</p>;
             }
 
             return (
@@ -633,7 +613,7 @@ function AdvancedSettingsTab({
                           className={`relative h-6 w-11 rounded-full transition-colors ${
                             isBlocked ? 'bg-[#0B8ECA]' : 'bg-[#E2E8F0]'
                           }`}
-                          title={isBlocked ? 'Feiertag blockiert' : 'Feiertag nicht blockiert'}
+                          title={isBlocked ? t('availability.holidayBlocked') : t('availability.holidayNotBlocked')}
                         >
                           <div
                             className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
@@ -654,17 +634,17 @@ function AdvancedSettingsTab({
                       disabled={holidayPage === 0}
                       className="rounded-lg px-3 py-1 text-sm text-[#64748B] hover:bg-[#F8FAFC] disabled:opacity-30 disabled:cursor-not-allowed"
                     >
-                      ← Zurück
+                      {t('availability.previousPage')}
                     </button>
                     <span className="text-xs text-[#94A3B8]">
-                      Seite {holidayPage + 1} von {totalPages}
+                      {t('availability.pageOf', { page: holidayPage + 1, total: totalPages })}
                     </span>
                     <button
                       onClick={() => setHolidayPage((p) => Math.min(totalPages - 1, p + 1))}
                       disabled={holidayPage >= totalPages - 1}
                       className="rounded-lg px-3 py-1 text-sm text-[#64748B] hover:bg-[#F8FAFC] disabled:opacity-30 disabled:cursor-not-allowed"
                     >
-                      Weiter →
+                      {t('availability.nextPage')}
                     </button>
                   </div>
                 )}
@@ -682,6 +662,7 @@ function AdvancedSettingsTab({
 type TabKey = 'schedules' | 'advanced';
 
 export function AvailabilityPage() {
+  const { t } = useTranslation(['dashboard', 'common']);
   const [profile, setProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -748,24 +729,24 @@ export function AvailabilityPage() {
   };
 
   if (isLoading) return <LoadingSpinner />;
-  if (!profile) return <ErrorMessage message="Profil konnte nicht geladen werden" onRetry={load} />;
+  if (!profile) return <ErrorMessage message={t('dashboard:availability.profileError')} onRetry={load} />;
 
   const tabs: { key: TabKey; label: string }[] = [
-    { key: 'schedules', label: 'Zeitplan' },
-    { key: 'advanced', label: 'Erweiterte Einstellungen' },
+    { key: 'schedules', label: t('dashboard:availability.tabSchedules') },
+    { key: 'advanced', label: t('dashboard:availability.tabAdvanced') },
   ];
 
   return (
     <div>
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[#1E293B]">Verfügbarkeit</h1>
+        <h1 className="text-2xl font-bold text-[#1E293B]">{t('dashboard:availability.title')}</h1>
         <button
           onClick={handleSave}
           disabled={isSaving}
           className="rounded-xl bg-gradient-to-r from-[#0B8ECA] to-[#14B8A6] px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:shadow-md disabled:opacity-50"
         >
-          {isSaving ? 'Speichern...' : 'Speichern'}
+          {isSaving ? t('dashboard:availability.saving') : t('common:save')}
         </button>
       </div>
 

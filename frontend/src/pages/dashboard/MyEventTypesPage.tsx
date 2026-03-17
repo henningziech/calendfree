@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { getEventTypes, createEventType, updateEventType, toggleEventType, deleteEventType, getTeams } from '../../api/admin';
 import { getCompanies } from '../../api/admin';
@@ -7,6 +8,7 @@ import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { ErrorMessage } from '../../components/ui/ErrorMessage';
 
 export function MyEventTypesPage() {
+  const { t } = useTranslation(['dashboard', 'common']);
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [eventTypes, setEventTypes] = useState<any[]>([]);
@@ -87,7 +89,6 @@ export function MyEventTypesPage() {
     if (!companyId) return;
     try {
       if (editingId) {
-        // Update existing
         const { slug, ...updateData } = form;
         await updateEventType(editingId, {
           ...updateData,
@@ -99,7 +100,6 @@ export function MyEventTypesPage() {
           } : {}),
         });
       } else {
-        // Create new
         await createEventType(companyId, {
           ...form,
           teamId: form.teamId || null,
@@ -162,11 +162,11 @@ export function MyEventTypesPage() {
     <div>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#1E293B]">Meine Buchungsseiten</h1>
-          <p className="mt-1 text-sm text-[#64748B]">Erstellen Sie Event Types und teilen Sie den Buchungslink mit Kunden.</p>
+          <h1 className="text-2xl font-bold text-[#1E293B]">{t('dashboard:eventTypes.title')}</h1>
+          <p className="mt-1 text-sm text-[#64748B]">{t('dashboard:eventTypes.subtitle')}</p>
         </div>
         <button onClick={() => setShowCreate(true)} className="rounded-xl bg-[#0B8ECA] px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-[#0874A6] hover:shadow-md">
-          + Neuer Event Type
+          {t('dashboard:eventTypes.newEventType')}
         </button>
       </div>
 
@@ -174,36 +174,36 @@ export function MyEventTypesPage() {
 
       {showCreate && (
         <form onSubmit={handleSubmit} className="mt-4 space-y-5 rounded-xl border border-[#E2E8F0] bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-[#1E293B]">{editingId ? 'Event Type bearbeiten' : 'Neuen Event Type erstellen'}</h3>
+          <h3 className="text-lg font-semibold text-[#1E293B]">{editingId ? t('dashboard:eventTypes.editTitle') : t('dashboard:eventTypes.createTitle')}</h3>
 
           {/* Event Category indicator */}
           <div className="mb-4 rounded-lg bg-[#F8FAFC] px-3 py-2 text-sm text-[#64748B]">
-            {form.eventCategory === 'PERSONAL' && 'Persönlicher Planer — 1 Host → 1 Teilnehmer'}
-            {form.eventCategory === 'TEAM' && 'Team-Planer — Rotierende Hosts → 1 Teilnehmer'}
-            {form.eventCategory === 'GROUP' && 'Gruppe — 1 Host → Mehrere Teilnehmer'}
+            {form.eventCategory === 'PERSONAL' && t('dashboard:eventTypes.categoryPersonal')}
+            {form.eventCategory === 'TEAM' && t('dashboard:eventTypes.categoryTeam')}
+            {form.eventCategory === 'GROUP' && t('dashboard:eventTypes.categoryGroup')}
           </div>
 
           {/* Basic info */}
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-[#1E293B]">Titel *</label>
+                <label className="block text-sm font-medium text-[#1E293B]">{t('dashboard:eventTypes.fieldTitle')}</label>
                 <input
                   value={form.title}
                   onChange={(e) => { setForm({ ...form, title: e.target.value, slug: generateSlug(e.target.value) }); }}
-                  placeholder="z.B. 30min Erstgespräch"
+                  placeholder={t('dashboard:eventTypes.titlePlaceholder')}
                   required
                   className="mt-1 w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:ring-2 focus:ring-[#0B8ECA]/20 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#1E293B]">URL-Slug *</label>
+                <label className="block text-sm font-medium text-[#1E293B]">{t('dashboard:eventTypes.fieldSlug')}</label>
                 <div className="mt-1 flex items-center gap-1">
                   <span className="text-xs text-[#64748B]">/{companySlug}/</span>
                   <input
                     value={form.slug}
                     onChange={(e) => setForm({ ...form, slug: e.target.value })}
-                    placeholder="erstgespraech"
+                    placeholder={t('dashboard:eventTypes.slugPlaceholder')}
                     required
                     className="flex-1 rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:ring-2 focus:ring-[#0B8ECA]/20 focus:outline-none"
                   />
@@ -211,11 +211,11 @@ export function MyEventTypesPage() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-[#1E293B]">Beschreibung</label>
+              <label className="block text-sm font-medium text-[#1E293B]">{t('dashboard:eventTypes.fieldDescription')}</label>
               <textarea
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
-                placeholder="Kurze Beschreibung für die Buchungsseite..."
+                placeholder={t('dashboard:eventTypes.descriptionPlaceholder')}
                 rows={2}
                 className="mt-1 w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:ring-2 focus:ring-[#0B8ECA]/20 focus:outline-none"
               />
@@ -224,31 +224,31 @@ export function MyEventTypesPage() {
 
           {/* Scheduling settings */}
           <div>
-            <h4 className="text-sm font-semibold text-[#1E293B] mb-3">Termineinstellungen</h4>
+            <h4 className="text-sm font-semibold text-[#1E293B] mb-3">{t('dashboard:eventTypes.schedulingSettings')}</h4>
             <div className="grid grid-cols-4 gap-4">
               <div>
-                <label className="block text-xs font-medium text-[#64748B]">Dauer</label>
+                <label className="block text-xs font-medium text-[#64748B]">{t('dashboard:eventTypes.duration')}</label>
                 <div className="mt-1 flex items-center gap-1">
                   <input type="number" value={form.duration} onChange={(e) => setForm({ ...form, duration: +e.target.value })} min={5} max={480} className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none" />
-                  <span className="text-xs text-[#64748B]">Min</span>
+                  <span className="text-xs text-[#64748B]">{t('dashboard:eventTypes.minutes')}</span>
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-[#64748B]">Puffer davor</label>
+                <label className="block text-xs font-medium text-[#64748B]">{t('dashboard:eventTypes.bufferBefore')}</label>
                 <div className="mt-1 flex items-center gap-1">
                   <input type="number" value={form.bufferBefore} onChange={(e) => setForm({ ...form, bufferBefore: +e.target.value })} min={0} max={120} className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none" />
-                  <span className="text-xs text-[#64748B]">Min</span>
+                  <span className="text-xs text-[#64748B]">{t('dashboard:eventTypes.minutes')}</span>
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-[#64748B]">Puffer danach</label>
+                <label className="block text-xs font-medium text-[#64748B]">{t('dashboard:eventTypes.bufferAfter')}</label>
                 <div className="mt-1 flex items-center gap-1">
                   <input type="number" value={form.bufferAfter} onChange={(e) => setForm({ ...form, bufferAfter: +e.target.value })} min={0} max={120} className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none" />
-                  <span className="text-xs text-[#64748B]">Min</span>
+                  <span className="text-xs text-[#64748B]">{t('dashboard:eventTypes.minutes')}</span>
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-[#64748B]">Farbe</label>
+                <label className="block text-xs font-medium text-[#64748B]">{t('dashboard:eventTypes.color')}</label>
                 <input type="color" value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })} className="mt-1 h-[38px] w-full rounded-xl border border-[#E2E8F0] cursor-pointer" />
               </div>
             </div>
@@ -256,23 +256,23 @@ export function MyEventTypesPage() {
 
           {/* Booking window */}
           <div>
-            <h4 className="text-sm font-semibold text-[#1E293B] mb-3">Buchungsfenster</h4>
+            <h4 className="text-sm font-semibold text-[#1E293B] mb-3">{t('dashboard:eventTypes.bookingWindow')}</h4>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-[#64748B]">Mindestvorlaufzeit</label>
+                <label className="block text-xs font-medium text-[#64748B]">{t('dashboard:eventTypes.minNotice')}</label>
                 <div className="mt-1 flex items-center gap-1">
                   <input type="number" value={form.minNotice} onChange={(e) => setForm({ ...form, minNotice: +e.target.value })} min={0} max={720} className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none" />
-                  <span className="text-xs text-[#64748B] whitespace-nowrap">Stunden</span>
+                  <span className="text-xs text-[#64748B] whitespace-nowrap">{t('dashboard:eventTypes.hours')}</span>
                 </div>
-                <p className="mt-1 text-xs text-[#64748B]/70">Kunden können frühestens X Stunden im Voraus buchen</p>
+                <p className="mt-1 text-xs text-[#64748B]/70">{t('dashboard:eventTypes.minNoticeHelp')}</p>
               </div>
               <div>
-                <label className="block text-xs font-medium text-[#64748B]">Buchbar bis</label>
+                <label className="block text-xs font-medium text-[#64748B]">{t('dashboard:eventTypes.bookableUntil')}</label>
                 <div className="mt-1 flex items-center gap-1">
                   <input type="number" value={form.maxAdvance} onChange={(e) => setForm({ ...form, maxAdvance: +e.target.value })} min={1} max={365} className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none" />
-                  <span className="text-xs text-[#64748B] whitespace-nowrap">Tage voraus</span>
+                  <span className="text-xs text-[#64748B] whitespace-nowrap">{t('dashboard:eventTypes.daysAhead')}</span>
                 </div>
-                <p className="mt-1 text-xs text-[#64748B]/70">Wie weit in die Zukunft können Kunden buchen</p>
+                <p className="mt-1 text-xs text-[#64748B]/70">{t('dashboard:eventTypes.bookableUntilHelp')}</p>
               </div>
             </div>
           </div>
@@ -280,7 +280,7 @@ export function MyEventTypesPage() {
           {/* Bookable hours */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h4 className="text-sm font-semibold text-[#1E293B]">Buchbare Zeiten</h4>
+              <h4 className="text-sm font-semibold text-[#1E293B]">{t('dashboard:eventTypes.bookableHours')}</h4>
               <label className="flex items-center gap-2 text-xs text-[#64748B]">
                 <input
                   type="checkbox"
@@ -299,17 +299,16 @@ export function MyEventTypesPage() {
                     }
                   }}
                 />
-                Eigene Zeiten festlegen
+                {t('dashboard:eventTypes.setCustomHours')}
               </label>
             </div>
             {form.bookableHours === null ? (
               <p className="text-xs text-[#64748B] bg-[#F8FAFC] rounded-xl p-3">
-                Standard: Mo–Fr 9:00–17:00 Uhr. Nur freie Slots laut Google Kalender werden angezeigt.
+                {t('dashboard:eventTypes.defaultHours')}
               </p>
             ) : (
               <div className="space-y-2">
                 {(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const).map((day) => {
-                  const labels: Record<string, string> = { monday: 'Montag', tuesday: 'Dienstag', wednesday: 'Mittwoch', thursday: 'Donnerstag', friday: 'Freitag', saturday: 'Samstag', sunday: 'Sonntag' };
                   const slots = form.bookableHours?.[day] ?? [];
                   const hasSlot = slots.length > 0;
                   const start = hasSlot ? slots[0].start : '09:00';
@@ -317,7 +316,7 @@ export function MyEventTypesPage() {
 
                   return (
                     <div key={day} className="flex items-center gap-3">
-                      <label className="w-24 text-sm text-[#1E293B]">{labels[day]}</label>
+                      <label className="w-24 text-sm text-[#1E293B]">{t(`dashboard:eventTypes.days.${day}`)}</label>
                       <input
                         type="checkbox"
                         checked={hasSlot}
@@ -356,7 +355,7 @@ export function MyEventTypesPage() {
                   );
                 })}
                 <p className="text-xs text-[#64748B] mt-1">
-                  Nur innerhalb dieser Zeiten werden Slots angeboten. Google Kalender filtert zusätzlich belegte Zeiten.
+                  {t('dashboard:eventTypes.customHoursHelp')}
                 </p>
               </div>
             )}
@@ -364,34 +363,34 @@ export function MyEventTypesPage() {
 
           {/* Team & features */}
           <div>
-            <h4 className="text-sm font-semibold text-[#1E293B] mb-3">Zuweisung & Features</h4>
+            <h4 className="text-sm font-semibold text-[#1E293B] mb-3">{t('dashboard:eventTypes.assignmentFeatures')}</h4>
             <div className="grid grid-cols-2 gap-4">
               {form.eventCategory !== 'GROUP' && (
               <div>
-                <label className="block text-xs font-medium text-[#64748B]">Team</label>
+                <label className="block text-xs font-medium text-[#64748B]">{t('dashboard:eventTypes.team')}</label>
                 <select value={form.teamId ?? ''} onChange={(e) => setForm({ ...form, teamId: e.target.value || null })} required={form.eventCategory === 'TEAM'} className="mt-1 w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none">
-                  <option value="">Kein Team — persönliche Buchungsseite</option>
-                  {teams.map((t: any) => (
-                    <option key={t.id} value={t.id}>{t.name} ({t.memberships?.length ?? 0} Mitglieder)</option>
+                  <option value="">{t('dashboard:eventTypes.noTeam')}</option>
+                  {teams.map((tm: any) => (
+                    <option key={tm.id} value={tm.id}>{tm.name} ({t('dashboard:eventTypes.members', { count: tm.memberships?.length ?? 0 })})</option>
                   ))}
                 </select>
                 <p className="mt-1 text-xs text-[#64748B]/70">
-                  {form.teamId ? 'Termine werden per Round-Robin im Team verteilt' : 'Alle Termine werden direkt bei Ihnen gebucht'}
+                  {form.teamId ? t('dashboard:eventTypes.teamAssigned') : t('dashboard:eventTypes.personalAssigned')}
                 </p>
               </div>
               )}
               {form.eventCategory !== 'GROUP' && form.teamId && (
                 <div>
-                  <label className="block text-xs font-medium text-[#64748B]">Round-Robin Verfahren</label>
+                  <label className="block text-xs font-medium text-[#64748B]">{t('dashboard:eventTypes.roundRobinMode')}</label>
                   <select value={form.roundRobinMode} onChange={(e) => setForm({ ...form, roundRobinMode: e.target.value })} className="mt-1 w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none">
-                    <option value="SEQUENTIAL">Sequential — der Reihe nach</option>
-                    <option value="LEAST_BUSY">Least Busy — wenigste Termine</option>
-                    <option value="WEIGHTED">Weighted — nach Gewichtung</option>
+                    <option value="SEQUENTIAL">{t('dashboard:eventTypes.sequential')}</option>
+                    <option value="LEAST_BUSY">{t('dashboard:eventTypes.leastBusy')}</option>
+                    <option value="WEIGHTED">{t('dashboard:eventTypes.weighted')}</option>
                   </select>
                   <p className="mt-1 text-xs text-[#64748B]/70">
-                    {form.roundRobinMode === 'SEQUENTIAL' && 'Jedes Teammitglied kommt abwechselnd dran'}
-                    {form.roundRobinMode === 'LEAST_BUSY' && 'Wer die wenigsten Termine hat, bekommt den nächsten'}
-                    {form.roundRobinMode === 'WEIGHTED' && 'Verteilung nach Gewichtung (Team-Einstellung)'}
+                    {form.roundRobinMode === 'SEQUENTIAL' && t('dashboard:eventTypes.sequentialHelp')}
+                    {form.roundRobinMode === 'LEAST_BUSY' && t('dashboard:eventTypes.leastBusyHelp')}
+                    {form.roundRobinMode === 'WEIGHTED' && t('dashboard:eventTypes.weightedHelp')}
                   </p>
                 </div>
               )}
@@ -399,15 +398,15 @@ export function MyEventTypesPage() {
                 <div className="flex items-start gap-3">
                   <input type="checkbox" id="autoMeet" checked={form.autoMeetLink} onChange={(e) => setForm({ ...form, autoMeetLink: e.target.checked })} className="mt-0.5" />
                   <div>
-                    <label htmlFor="autoMeet" className="text-sm font-medium text-[#1E293B]">Google Meet Link</label>
-                    <p className="text-xs text-[#64748B]">Automatisch Meet-Link zum Kalender-Event hinzufügen</p>
+                    <label htmlFor="autoMeet" className="text-sm font-medium text-[#1E293B]">{t('dashboard:eventTypes.googleMeetLink')}</label>
+                    <p className="text-xs text-[#64748B]">{t('dashboard:eventTypes.autoMeetHelp')}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <input type="checkbox" id="allowComment" checked={form.allowComment} onChange={(e) => setForm({ ...form, allowComment: e.target.checked })} className="mt-0.5" />
                   <div>
-                    <label htmlFor="allowComment" className="text-sm font-medium text-[#1E293B]">Kommentar vom Kunden erlauben</label>
-                    <p className="text-xs text-[#64748B]">Kunden können bei der Buchung eine Nachricht hinterlassen</p>
+                    <label htmlFor="allowComment" className="text-sm font-medium text-[#1E293B]">{t('dashboard:eventTypes.allowComment')}</label>
+                    <p className="text-xs text-[#64748B]">{t('dashboard:eventTypes.allowCommentHelp')}</p>
                   </div>
                 </div>
               </div>
@@ -417,8 +416,8 @@ export function MyEventTypesPage() {
           {/* GROUP-specific fields */}
           {form.eventCategory === 'GROUP' && (
             <div className="rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-sm">
-              <h4 className="font-semibold text-[#1E293B]">Teilnehmer-Limit</h4>
-              <p className="text-sm text-[#64748B]">Max. Teilnehmer pro Termin</p>
+              <h4 className="font-semibold text-[#1E293B]">{t('dashboard:eventTypes.participantLimit')}</h4>
+              <p className="text-sm text-[#64748B]">{t('dashboard:eventTypes.maxParticipants')}</p>
               <input
                 type="number"
                 value={form.maxInvitees ?? 2}
@@ -432,14 +431,14 @@ export function MyEventTypesPage() {
                   checked={form.showRemainingSpots ?? false}
                   onChange={(e) => setForm({ ...form, showRemainingSpots: e.target.checked })}
                 />
-                <span className="text-sm text-[#64748B]">Verbleibende Plätze auf Buchungsseite anzeigen</span>
+                <span className="text-sm text-[#64748B]">{t('dashboard:eventTypes.showRemainingSpots')}</span>
               </label>
             </div>
           )}
 
           <div className="flex gap-3 border-t border-[#E2E8F0] pt-4">
-            <button type="submit" className="rounded-xl bg-gradient-to-r from-[#0B8ECA] to-[#14B8A6] px-6 py-2 text-sm font-medium text-white shadow-sm transition-all hover:shadow-md">{editingId ? 'Speichern' : 'Event Type erstellen'}</button>
-            <button type="button" onClick={resetForm} className="rounded-xl bg-[#F8FAFC] px-4 py-2 text-sm text-[#64748B] ring-1 ring-[#E2E8F0] hover:bg-[#E2E8F0]">Abbrechen</button>
+            <button type="submit" className="rounded-xl bg-gradient-to-r from-[#0B8ECA] to-[#14B8A6] px-6 py-2 text-sm font-medium text-white shadow-sm transition-all hover:shadow-md">{editingId ? t('common:save') : t('dashboard:eventTypes.createButton')}</button>
+            <button type="button" onClick={resetForm} className="rounded-xl bg-[#F8FAFC] px-4 py-2 text-sm text-[#64748B] ring-1 ring-[#E2E8F0] hover:bg-[#E2E8F0]">{t('common:cancel')}</button>
           </div>
         </form>
       )}
@@ -457,7 +456,7 @@ export function MyEventTypesPage() {
                   <div className="flex items-center gap-2">
                     <h3 className="text-lg font-semibold text-[#1E293B]">{et.title}</h3>
                     <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${et.active ? 'bg-emerald-100 text-emerald-700' : 'bg-[#F8FAFC] text-[#64748B]'}`}>
-                      {et.active ? 'Aktiv' : 'Inaktiv'}
+                      {et.active ? t('common:active') : t('common:inactive')}
                     </span>
                   </div>
                   {et.description && <p className="mt-1 text-sm text-[#64748B]">{et.description}</p>}
@@ -467,29 +466,29 @@ export function MyEventTypesPage() {
                     onClick={() => startEdit(et)}
                     className="rounded-xl bg-[#F8FAFC] px-3 py-1.5 text-xs font-medium text-[#1E293B] ring-1 ring-[#E2E8F0] transition-colors hover:bg-[#E2E8F0]"
                   >
-                    Bearbeiten
+                    {t('common:edit')}
                   </button>
                   <button
                     onClick={() => toggleEventType(et.id).then(load)}
                     className="rounded-xl bg-[#F8FAFC] px-3 py-1.5 text-xs font-medium text-[#1E293B] ring-1 ring-[#E2E8F0] transition-colors hover:bg-[#E2E8F0]"
                   >
-                    {et.active ? 'Deaktivieren' : 'Aktivieren'}
+                    {et.active ? t('dashboard:eventTypes.deactivate') : t('dashboard:eventTypes.activate')}
                   </button>
-                  <button onClick={() => { if (confirm(`"${et.title}" löschen?`)) deleteEventType(et.id).then(load); }} className="rounded-xl bg-red-50 px-3 py-1.5 text-xs font-medium text-[#EF4444] ring-1 ring-red-200 transition-colors hover:bg-red-100">
-                    Löschen
+                  <button onClick={() => { if (confirm(t('dashboard:eventTypes.confirmDelete', { title: et.title }))) deleteEventType(et.id).then(load); }} className="rounded-xl bg-red-50 px-3 py-1.5 text-xs font-medium text-[#EF4444] ring-1 ring-red-200 transition-colors hover:bg-red-100">
+                    {t('common:delete')}
                   </button>
                 </div>
               </div>
 
               {/* Booking link */}
               <div className="mt-4 flex items-center gap-2 rounded-xl bg-[#F8FAFC] px-3 py-2 ring-1 ring-[#E2E8F0]">
-                <span className="text-xs text-[#64748B]">Buchungslink:</span>
+                <span className="text-xs text-[#64748B]">{t('dashboard:eventTypes.bookingLink')}</span>
                 <code className="flex-1 text-sm text-[#0B8ECA] truncate">{getBookingUrl(et.slug)}</code>
                 <button
                   onClick={() => copyLink(et.id, et.slug)}
                   className="rounded-lg bg-white px-2.5 py-1 text-xs font-medium text-[#1E293B] ring-1 ring-[#E2E8F0] transition-colors hover:bg-[#E2E8F0]"
                 >
-                  {copiedId === et.id ? 'Kopiert!' : 'Kopieren'}
+                  {copiedId === et.id ? t('dashboard:eventTypes.copied') : t('dashboard:eventTypes.copy')}
                 </button>
                 <a
                   href={getBookingUrl(et.slug)}
@@ -497,46 +496,46 @@ export function MyEventTypesPage() {
                   rel="noopener noreferrer"
                   className="rounded-lg bg-[#0B8ECA] px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-[#0874A6]"
                 >
-                  Öffnen
+                  {t('dashboard:eventTypes.open')}
                 </a>
               </div>
 
               {/* Settings grid */}
               <div className="mt-4 grid grid-cols-2 gap-x-8 gap-y-2 text-sm sm:grid-cols-4">
                 <div>
-                  <span className="text-[#64748B]">Dauer</span>
-                  <p className="font-medium text-[#1E293B]">{et.duration} Min</p>
+                  <span className="text-[#64748B]">{t('dashboard:eventTypes.duration')}</span>
+                  <p className="font-medium text-[#1E293B]">{et.duration} {t('dashboard:eventTypes.minutes')}</p>
                 </div>
                 <div>
-                  <span className="text-[#64748B]">Puffer</span>
+                  <span className="text-[#64748B]">{t('dashboard:eventTypes.bufferBefore').split(' ')[0]}</span>
                   <p className="font-medium text-[#1E293B]">
                     {et.bufferBefore > 0 || et.bufferAfter > 0
-                      ? `${et.bufferBefore}/${et.bufferAfter} Min`
-                      : 'Kein Puffer'}
+                      ? t('dashboard:eventTypes.bufferDisplay', { before: et.bufferBefore, after: et.bufferAfter })
+                      : t('dashboard:eventTypes.noBuffer')}
                   </p>
                 </div>
                 <div>
-                  <span className="text-[#64748B]">Vorlaufzeit</span>
-                  <p className="font-medium text-[#1E293B]">Min. {et.minNotice}h</p>
+                  <span className="text-[#64748B]">{t('dashboard:eventTypes.leadTime')}</span>
+                  <p className="font-medium text-[#1E293B]">{t('dashboard:eventTypes.minNoticeDisplay', { hours: et.minNotice })}</p>
                 </div>
                 <div>
-                  <span className="text-[#64748B]">Buchbar bis</span>
-                  <p className="font-medium text-[#1E293B]">{et.maxAdvance} Tage</p>
+                  <span className="text-[#64748B]">{t('dashboard:eventTypes.bookableUntil')}</span>
+                  <p className="font-medium text-[#1E293B]">{t('dashboard:eventTypes.daysDisplay', { days: et.maxAdvance })}</p>
                 </div>
                 <div>
-                  <span className="text-[#64748B]">Zuweisung</span>
-                  <p className="font-medium text-[#1E293B]">{et.team ? `Team: ${et.team.name} (${et.roundRobinMode?.replace('_', ' ')})` : 'Persönlich'}</p>
+                  <span className="text-[#64748B]">{t('dashboard:eventTypes.assignment')}</span>
+                  <p className="font-medium text-[#1E293B]">{et.team ? t('dashboard:eventTypes.teamAssignment', { name: et.team.name, mode: et.roundRobinMode?.replace('_', ' ') }) : t('dashboard:eventTypes.personal')}</p>
                 </div>
                 <div>
-                  <span className="text-[#64748B]">Meet Link</span>
-                  <p className="font-medium text-[#1E293B]">{et.autoMeetLink ? 'Automatisch' : 'Aus'}</p>
+                  <span className="text-[#64748B]">{t('dashboard:eventTypes.meetLink')}</span>
+                  <p className="font-medium text-[#1E293B]">{et.autoMeetLink ? t('dashboard:eventTypes.automatic') : t('dashboard:eventTypes.off')}</p>
                 </div>
                 <div>
-                  <span className="text-[#64748B]">Buchbare Zeiten</span>
-                  <p className="font-medium text-[#1E293B]">{et.bookableHours ? 'Eigene Zeiten' : 'Standard (Mo–Fr 9–17)'}</p>
+                  <span className="text-[#64748B]">{t('dashboard:eventTypes.bookableHours')}</span>
+                  <p className="font-medium text-[#1E293B]">{et.bookableHours ? t('dashboard:eventTypes.customHours') : t('dashboard:eventTypes.defaultHoursShort')}</p>
                 </div>
                 <div>
-                  <span className="text-[#64748B]">Buchungen</span>
+                  <span className="text-[#64748B]">{t('dashboard:eventTypes.bookingsCount')}</span>
                   <p className="font-medium text-[#1E293B]">{et._count?.bookings ?? 0}</p>
                 </div>
               </div>
@@ -546,10 +545,10 @@ export function MyEventTypesPage() {
         {eventTypes.length === 0 && (
           <div className="rounded-xl border-2 border-dashed border-[#E2E8F0] bg-[#F8FAFC] p-12 text-center">
             <div className="text-4xl mb-3">📅</div>
-            <h3 className="text-lg font-medium text-[#1E293B]">Noch keine Buchungsseiten</h3>
-            <p className="mt-1 text-sm text-[#64748B]">Erstellen Sie Ihren ersten Event Type und teilen Sie den Link mit Kunden.</p>
+            <h3 className="text-lg font-medium text-[#1E293B]">{t('dashboard:eventTypes.noEventTypes')}</h3>
+            <p className="mt-1 text-sm text-[#64748B]">{t('dashboard:eventTypes.noEventTypesHint')}</p>
             <button onClick={() => setShowCreate(true)} className="mt-4 rounded-xl bg-[#0B8ECA] px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-[#0874A6] hover:shadow-md">
-              Ersten Event Type erstellen
+              {t('dashboard:eventTypes.createFirst')}
             </button>
           </div>
         )}

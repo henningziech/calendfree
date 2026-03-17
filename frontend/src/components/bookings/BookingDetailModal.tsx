@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { updateBookingNotes, cancelBookingAsUser } from '../../api/booking';
 import { Modal } from '../ui/Modal';
 import { format, parseISO, isPast } from 'date-fns';
-import { de } from 'date-fns/locale';
+import { getDateLocale } from '../../utils/dateLocale';
 import type { Booking } from './types';
-import { statusLabel } from './types';
+import { statusColor, statusTranslationKey } from './types';
 
 interface BookingDetailModalProps {
   booking: Booking | null;
@@ -15,6 +16,7 @@ interface BookingDetailModalProps {
 }
 
 export function BookingDetailModal({ booking, open, onClose, onNotesUpdated, onCancelled }: BookingDetailModalProps) {
+  const { t } = useTranslation('dashboard');
   const [notes, setNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
@@ -27,7 +29,10 @@ export function BookingDetailModal({ booking, open, onClose, onNotesUpdated, onC
 
   if (!booking) return null;
 
-  const st = statusLabel[booking.status] ?? { text: booking.status, color: 'bg-[#F8FAFC] text-[#64748B]' };
+  const color = statusColor[booking.status] ?? 'bg-[#F8FAFC] text-[#64748B]';
+  const statusText = statusTranslationKey[booking.status]
+    ? t(statusTranslationKey[booking.status])
+    : booking.status;
   const comment = booking.formData?.data?._comment;
   const isUpcoming = !isPast(parseISO(booking.startTime)) && booking.status === 'CONFIRMED';
 
@@ -37,24 +42,24 @@ export function BookingDetailModal({ booking, open, onClose, onNotesUpdated, onC
     try {
       await updateBookingNotes(booking.id, notes);
       onNotesUpdated(booking.id, notes || null);
-      setSaveMessage('Gespeichert');
+      setSaveMessage(t('bookingModal.saved'));
       setTimeout(() => setSaveMessage(null), 2000);
     } catch {
-      setSaveMessage('Fehler beim Speichern');
+      setSaveMessage(t('bookingModal.saveError'));
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleCancel = async () => {
-    if (!confirm('Termin wirklich absagen? Der Google Calendar Eintrag wird gelöscht.')) return;
+    if (!confirm(t('bookingModal.confirmCancel'))) return;
     setIsCancelling(true);
     try {
       await cancelBookingAsUser(booking.id);
       onCancelled(booking.id);
       onClose();
     } catch {
-      alert('Fehler beim Absagen des Termins.');
+      alert(t('bookingModal.cancelError'));
     } finally {
       setIsCancelling(false);
     }
@@ -66,31 +71,31 @@ export function BookingDetailModal({ booking, open, onClose, onNotesUpdated, onC
         {/* Status + Time */}
         <div className="rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] p-4 space-y-2">
           <div className="flex items-center gap-2">
-            <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${st.color}`}>{st.text}</span>
+            <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${color}`}>{statusText}</span>
             {booking.eventType.team && (
-              <span className="text-xs text-[#64748B]">Team: {booking.eventType.team.name}</span>
+              <span className="text-xs text-[#64748B]">{t('bookingDetail.team', { name: booking.eventType.team.name })}</span>
             )}
           </div>
           <p className="text-sm font-medium text-[#1E293B]">
-            {format(parseISO(booking.startTime), "EEEE, d. MMMM yyyy", { locale: de })}
+            {format(parseISO(booking.startTime), "EEEE, d. MMMM yyyy", { locale: getDateLocale() })}
           </p>
           <p className="text-sm text-[#64748B]">
-            {format(parseISO(booking.startTime), "HH:mm", { locale: de })} – {format(parseISO(booking.endTime), "HH:mm 'Uhr'", { locale: de })} ({booking.eventType.duration} Min)
+            {format(parseISO(booking.startTime), "HH:mm", { locale: getDateLocale() })} – {format(parseISO(booking.endTime), "HH:mm 'Uhr'", { locale: getDateLocale() })} ({t('bookings.duration', { duration: booking.eventType.duration })})
           </p>
           {booking.assignedUser && (
-            <p className="text-xs text-[#0B8ECA]">Zugewiesen: {booking.assignedUser.name} ({booking.assignedUser.email})</p>
+            <p className="text-xs text-[#0B8ECA]">{t('bookingDetail.assigned', { name: booking.assignedUser.name, email: booking.assignedUser.email })}</p>
           )}
         </div>
 
         {/* Customer Info */}
         {booking.formData && (
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-[#64748B] mb-1">Kunde</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-[#64748B] mb-1">{t('bookingDetail.customer')}</h3>
             <p className="text-sm text-[#1E293B]">{booking.formData.name}</p>
             <a href={`mailto:${booking.formData.email}`} className="text-sm text-[#0B8ECA] hover:underline">{booking.formData.email}</a>
             {comment && (
               <div className="mt-2 rounded-lg bg-amber-50 border border-amber-100 p-3">
-                <p className="text-xs font-medium text-amber-700 mb-0.5">Kommentar vom Kunden:</p>
+                <p className="text-xs font-medium text-amber-700 mb-0.5">{t('bookingDetail.customerComment')}</p>
                 <p className="text-sm text-amber-900">{comment}</p>
               </div>
             )}
@@ -100,7 +105,7 @@ export function BookingDetailModal({ booking, open, onClose, onNotesUpdated, onC
         {/* Internal Notes */}
         <div>
           <label htmlFor="internal-notes" className="text-xs font-semibold uppercase tracking-wider text-[#64748B]">
-            Interne Notizen
+            {t('bookingModal.internalNotes')}
           </label>
           <textarea
             id="internal-notes"
@@ -108,7 +113,7 @@ export function BookingDetailModal({ booking, open, onClose, onNotesUpdated, onC
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
             className="mt-1 block w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm shadow-sm transition-all focus:border-[#0B8ECA] focus:ring-2 focus:ring-[#0B8ECA]/20 focus:outline-none resize-none"
-            placeholder="Notizen zum Termin (nur intern sichtbar)..."
+            placeholder={t('bookingModal.notesPlaceholder')}
           />
           <div className="mt-2 flex items-center gap-2">
             <button
@@ -116,10 +121,10 @@ export function BookingDetailModal({ booking, open, onClose, onNotesUpdated, onC
               disabled={isSaving}
               className="rounded-lg bg-[#0B8ECA] px-3 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-[#0874A6] disabled:opacity-50 transition-colors"
             >
-              {isSaving ? 'Speichert...' : 'Notizen speichern'}
+              {isSaving ? t('bookingDetail.saving') : t('bookingModal.saveNotes')}
             </button>
             {saveMessage && (
-              <span className={`text-xs ${saveMessage === 'Gespeichert' ? 'text-teal-600' : 'text-red-600'}`}>
+              <span className={`text-xs ${saveMessage === t('bookingModal.saved') ? 'text-teal-600' : 'text-red-600'}`}>
                 {saveMessage}
               </span>
             )}
@@ -134,7 +139,7 @@ export function BookingDetailModal({ booking, open, onClose, onNotesUpdated, onC
               disabled={isCancelling}
               className="flex-1 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-100 disabled:opacity-50 transition-colors"
             >
-              {isCancelling ? 'Wird abgesagt...' : 'Absagen'}
+              {isCancelling ? t('bookingModal.cancelling') : t('bookingModal.cancel')}
             </button>
           </div>
         )}

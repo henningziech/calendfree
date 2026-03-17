@@ -1,18 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { getMyProfile, updateMyStatus, getMyVacations, createVacation, deleteVacation } from '../../api/admin';
 import { ApiKeysTab } from './ApiKeysPage';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import { formatDateLocalized } from '../../utils/dateLocale';
 
 /** Account settings page with Profile and API Keys tabs */
 export function AccountSettingsPage() {
+  const { t } = useTranslation('dashboard');
   const [searchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') === 'apikeys' ? 'apikeys' : 'profile';
   const [activeTab, setActiveTab] = useState<'profile' | 'apikeys'>(initialTab);
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-[#1E293B]">Einstellungen</h1>
+      <h1 className="text-2xl font-bold text-[#1E293B]">{t('settings.title')}</h1>
 
       <div className="mt-4 flex gap-6 border-b-2 border-[#E2E8F0]">
         <button
@@ -22,7 +25,7 @@ export function AccountSettingsPage() {
               ? 'border-b-2 border-[#0B8ECA] text-[#0B8ECA] -mb-[2px]'
               : 'text-[#64748B] hover:text-[#1E293B]'
           }`}
-        >Profil</button>
+        >{t('settings.tabProfile')}</button>
         <button
           onClick={() => setActiveTab('apikeys')}
           className={`pb-3 text-sm font-medium transition-colors ${
@@ -30,7 +33,7 @@ export function AccountSettingsPage() {
               ? 'border-b-2 border-[#0B8ECA] text-[#0B8ECA] -mb-[2px]'
               : 'text-[#64748B] hover:text-[#1E293B]'
           }`}
-        >API Keys</button>
+        >{t('settings.tabApiKeys')}</button>
       </div>
 
       <div className="mt-6">
@@ -42,6 +45,7 @@ export function AccountSettingsPage() {
 
 /** Profile tab with status toggle and vacation management */
 function ProfileTab() {
+  const { t } = useTranslation(['dashboard', 'common']);
   const [profile, setProfile] = useState<any>(null);
   const [vacations, setVacations] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -95,14 +99,8 @@ function ProfileTab() {
     setVacations((prev) => prev.filter((v) => v.id !== id));
   };
 
-  const formatDateDE = (dateStr: string) => {
-    try {
-      return new Date(dateStr).toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' });
-    } catch { return dateStr; }
-  };
-
   if (isLoading) return <LoadingSpinner />;
-  if (!profile) return <p className="text-[#64748B]">Profil konnte nicht geladen werden.</p>;
+  if (!profile) return <p className="text-[#64748B]">{t('dashboard:settings.profileError')}</p>;
 
   const sortedVacations = [...vacations].sort((a, b) => a.startDate.localeCompare(b.startDate));
 
@@ -125,7 +123,7 @@ function ProfileTab() {
         </div>
         <div className="mt-4 grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-[#64748B]">Zeitzone</label>
+            <label className="block text-xs font-medium text-[#64748B]">{t('dashboard:settings.timezone')}</label>
             <p className="text-sm text-[#1E293B]">{profile.timezone ?? 'Europe/Berlin'}</p>
           </div>
         </div>
@@ -133,7 +131,7 @@ function ProfileTab() {
 
       {/* Status */}
       <div className="rounded-xl border border-[#E2E8F0] bg-white p-6 shadow-sm">
-        <h3 className="text-base font-semibold text-[#1E293B]">Status</h3>
+        <h3 className="text-base font-semibold text-[#1E293B]">{t('dashboard:settings.status')}</h3>
         <div className="mt-3 flex items-center gap-3">
           <button
             onClick={() => handleStatusChange('AVAILABLE')}
@@ -143,7 +141,7 @@ function ProfileTab() {
                 : 'border border-[#E2E8F0] text-[#64748B] hover:bg-[#F8FAFC]'
             }`}
           >
-            Verfügbar
+            {t('common:available')}
           </button>
           <button
             onClick={() => handleStatusChange('ABSENT')}
@@ -153,12 +151,12 @@ function ProfileTab() {
                 : 'border border-[#E2E8F0] text-[#64748B] hover:bg-[#F8FAFC]'
             }`}
           >
-            Abwesend
+            {t('common:absent')}
           </button>
         </div>
         {profile.status === 'ABSENT' && (
           <div className="mt-3 flex items-center gap-2">
-            <label className="text-sm text-[#64748B]">bis</label>
+            <label className="text-sm text-[#64748B]">{t('dashboard:settings.absentUntil')}</label>
             <input
               type="date"
               value={absentUntil}
@@ -174,15 +172,15 @@ function ProfileTab() {
       <div className="rounded-xl border border-[#E2E8F0] bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-base font-semibold text-[#1E293B]">Urlaub &amp; Abwesenheiten</h3>
-            <p className="mt-0.5 text-xs text-[#94A3B8]">Zeiträume in denen keine Termine gebucht werden können</p>
+            <h3 className="text-base font-semibold text-[#1E293B]">{t('dashboard:settings.vacations')}</h3>
+            <p className="mt-0.5 text-xs text-[#94A3B8]">{t('dashboard:settings.vacationsHint')}</p>
           </div>
           {!addingVacation && (
             <button
               onClick={() => setAddingVacation(true)}
               className="rounded-xl bg-[#0B8ECA] px-3 py-1.5 text-sm font-medium text-white"
             >
-              + Urlaub hinzufügen
+              {t('dashboard:settings.addVacation')}
             </button>
           )}
         </div>
@@ -191,7 +189,7 @@ function ProfileTab() {
           <div className="mt-4 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-4">
             <div className="flex flex-wrap items-end gap-3">
               <div>
-                <label className="block text-xs font-medium text-[#64748B]">Von</label>
+                <label className="block text-xs font-medium text-[#64748B]">{t('dashboard:settings.from')}</label>
                 <input
                   type="date"
                   value={newVacStart}
@@ -201,7 +199,7 @@ function ProfileTab() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-[#64748B]">Bis</label>
+                <label className="block text-xs font-medium text-[#64748B]">{t('dashboard:settings.to')}</label>
                 <input
                   type="date"
                   value={newVacEnd}
@@ -211,12 +209,12 @@ function ProfileTab() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-[#64748B]">Bezeichnung</label>
+                <label className="block text-xs font-medium text-[#64748B]">{t('dashboard:settings.label')}</label>
                 <input
                   type="text"
                   value={newVacLabel}
                   onChange={(e) => setNewVacLabel(e.target.value)}
-                  placeholder="z.B. Sommerurlaub"
+                  placeholder={t('dashboard:settings.labelPlaceholder')}
                   className="mt-1 rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none"
                 />
               </div>
@@ -225,13 +223,13 @@ function ProfileTab() {
                   onClick={handleAddVacation}
                   className="rounded-xl bg-[#0B8ECA] px-3 py-1.5 text-sm font-medium text-white"
                 >
-                  Hinzufügen
+                  {t('common:add')}
                 </button>
                 <button
                   onClick={() => { setAddingVacation(false); setNewVacStart(''); setNewVacEnd(''); setNewVacLabel(''); }}
                   className="rounded-xl border border-[#E2E8F0] px-3 py-1.5 text-sm text-[#64748B]"
                 >
-                  Abbrechen
+                  {t('common:cancel')}
                 </button>
               </div>
             </div>
@@ -240,14 +238,14 @@ function ProfileTab() {
 
         <div className="mt-4">
           {sortedVacations.length === 0 ? (
-            <p className="text-sm text-[#94A3B8]">Keine Urlaube eingetragen.</p>
+            <p className="text-sm text-[#94A3B8]">{t('dashboard:settings.noVacations')}</p>
           ) : (
             <ul className="divide-y divide-[#E2E8F0]">
               {sortedVacations.map((vac) => (
                 <li key={vac.id} className="flex items-center justify-between py-3">
                   <div>
                     <span className="text-sm text-[#1E293B]">
-                      {formatDateDE(vac.startDate)} – {formatDateDE(vac.endDate)}
+                      {formatDateLocalized(vac.startDate)} – {formatDateLocalized(vac.endDate)}
                     </span>
                     {vac.label && (
                       <span className="ml-2 text-sm text-[#64748B]">({vac.label})</span>
@@ -257,7 +255,7 @@ function ProfileTab() {
                     onClick={() => handleDeleteVacation(vac.id)}
                     className="text-sm text-[#EF4444] hover:underline"
                   >
-                    Löschen
+                    {t('common:delete')}
                   </button>
                 </li>
               ))}

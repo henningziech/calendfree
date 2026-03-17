@@ -1,7 +1,8 @@
+import { useTranslation } from 'react-i18next';
 import { format, parseISO } from 'date-fns';
-import { de } from 'date-fns/locale';
+import { getDateLocale } from '../../utils/dateLocale';
 import type { Booking } from './types';
-import { statusLabel } from './types';
+import { statusColor, statusTranslationKey } from './types';
 
 interface BookingCardProps {
   booking: Booking;
@@ -10,7 +11,11 @@ interface BookingCardProps {
 }
 
 export function BookingCard({ booking, onClick, showAssignee }: BookingCardProps) {
-  const st = statusLabel[booking.status] ?? { text: booking.status, color: 'bg-[#F8FAFC] text-[#64748B]' };
+  const { t } = useTranslation('dashboard');
+  const color = statusColor[booking.status] ?? 'bg-[#F8FAFC] text-[#64748B]';
+  const statusText = statusTranslationKey[booking.status]
+    ? t(statusTranslationKey[booking.status])
+    : booking.status;
   return (
     <button
       onClick={onClick}
@@ -19,20 +24,20 @@ export function BookingCard({ booking, onClick, showAssignee }: BookingCardProps
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <h3 className="font-medium text-[#1E293B] truncate">{booking.eventType.title}</h3>
-          <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${st.color}`}>{st.text}</span>
+          <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${color}`}>{statusText}</span>
         </div>
         <p className="mt-1 text-sm text-[#64748B]">
-          {format(parseISO(booking.startTime), "EEEE, d. MMM yyyy 'um' HH:mm 'Uhr'", { locale: de })}
-          {' · '}{booking.eventType.duration} Min
+          {format(parseISO(booking.startTime), "EEEE, d. MMM yyyy 'um' HH:mm 'Uhr'", { locale: getDateLocale() })}
+          {' · '}{t('bookings.duration', { duration: booking.eventType.duration })}
         </p>
         {booking.formData && (
           <p className="mt-1 text-sm text-[#64748B]/70 truncate">
-            Kunde: {booking.formData.name} ({booking.formData.email})
+            {t('bookings.customer', { name: booking.formData.name, email: booking.formData.email })}
           </p>
         )}
         {showAssignee && booking.assignedUser && (
           <p className="mt-0.5 text-xs text-[#0B8ECA]">
-            Zugewiesen: {booking.assignedUser.name}
+            {t('bookings.assignedTo', { name: booking.assignedUser.name })}
           </p>
         )}
       </div>

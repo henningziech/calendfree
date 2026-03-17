@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { getTeams, createTeam } from '../../api/admin';
 import { apiRequest } from '../../api/client';
@@ -7,6 +8,7 @@ import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { ErrorMessage } from '../../components/ui/ErrorMessage';
 
 export function MyTeamsPage() {
+  const { t } = useTranslation(['dashboard', 'common']);
   const { user } = useAuth();
   const navigate = useNavigate();
   const [teams, setTeams] = useState<any[]>([]);
@@ -66,12 +68,12 @@ export function MyTeamsPage() {
   return (
     <div>
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[#1E293B]">Teams</h1>
+        <h1 className="text-2xl font-bold text-[#1E293B]">{t('dashboard:teams.title')}</h1>
         <button
           onClick={() => setShowCreate(!showCreate)}
           className="rounded-xl bg-gradient-to-r from-[#0B8ECA] to-[#14B8A6] px-4 py-2 text-sm font-medium text-white shadow-sm hover:shadow-md"
         >
-          + Neues Team
+          {t('dashboard:teams.newTeam')}
         </button>
       </div>
 
@@ -85,7 +87,7 @@ export function MyTeamsPage() {
               : 'text-[#64748B] hover:text-[#1E293B]'
           }`}
         >
-          Meine Teams
+          {t('dashboard:teams.tabMine')}
         </button>
         <button
           onClick={() => setTab('all')}
@@ -95,7 +97,7 @@ export function MyTeamsPage() {
               : 'text-[#64748B] hover:text-[#1E293B]'
           }`}
         >
-          Alle Teams
+          {t('dashboard:teams.tabAll')}
         </button>
       </div>
 
@@ -103,20 +105,20 @@ export function MyTeamsPage() {
 
       {showCreate && (
         <form onSubmit={handleCreate} className="mt-4 rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-sm">
-          <label className="block text-sm font-medium text-[#1E293B]">Teamname</label>
+          <label className="block text-sm font-medium text-[#1E293B]">{t('dashboard:teams.teamName')}</label>
           <div className="mt-1 flex gap-2">
             <input
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              placeholder="z.B. Vertrieb, Support"
+              placeholder={t('dashboard:teams.teamNamePlaceholder')}
               className="flex-1 rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#0B8ECA] focus:outline-none"
               autoFocus
             />
             <button type="submit" className="rounded-xl bg-[#0B8ECA] px-4 py-2 text-sm font-medium text-white">
-              Erstellen
+              {t('dashboard:teams.create')}
             </button>
             <button type="button" onClick={() => setShowCreate(false)} className="rounded-xl border border-[#E2E8F0] px-4 py-2 text-sm text-[#64748B]">
-              Abbrechen
+              {t('common:cancel')}
             </button>
           </div>
         </form>
@@ -133,19 +135,19 @@ export function MyTeamsPage() {
               <h3 className="font-semibold text-[#1E293B]">{team.name}</h3>
               {isMember(team) ? (
                 <span className="rounded-full bg-[#0B8ECA]/10 px-2 py-0.5 text-xs font-medium text-[#0B8ECA]">
-                  Mitglied
+                  {t('dashboard:teams.member')}
                 </span>
               ) : tab === 'all' ? (
                 <button
                   onClick={(e) => { e.preventDefault(); handleJoin(team.id); }}
                   className="rounded-full bg-[#14B8A6]/10 px-2 py-0.5 text-xs font-medium text-[#14B8A6] hover:bg-[#14B8A6]/20 transition-colors"
                 >
-                  Beitreten
+                  {t('dashboard:teams.join')}
                 </button>
               ) : null}
             </div>
             <p className="mt-2 text-sm text-[#64748B]">
-              {team.memberships?.length ?? 0} Mitglieder · {team._count?.eventTypes ?? team.eventTypes?.length ?? 0} Event-Typen
+              {t('dashboard:teams.membersAndTypes', { members: team.memberships?.length ?? 0, eventTypes: team._count?.eventTypes ?? team.eventTypes?.length ?? 0 })}
             </p>
           </Link>
         ))}
@@ -155,13 +157,13 @@ export function MyTeamsPage() {
         <div className="mt-12 text-center">
           {tab === 'mine' ? (
             <>
-              <p className="text-lg text-[#64748B]">Du bist noch keinem Team beigetreten</p>
-              <p className="text-sm text-[#94A3B8]">Wechsle zum Tab "Alle Teams", um einem Team beizutreten.</p>
+              <p className="text-lg text-[#64748B]">{t('dashboard:teams.noMembership')}</p>
+              <p className="text-sm text-[#94A3B8]">{t('dashboard:teams.noMembershipHint')}</p>
             </>
           ) : (
             <>
-              <p className="text-lg text-[#64748B]">Keine Teams in dieser Firma vorhanden</p>
-              <p className="text-sm text-[#94A3B8]">Erstelle ein Team, um Termine im Round-Robin-Verfahren zu verteilen.</p>
+              <p className="text-lg text-[#64748B]">{t('dashboard:teams.noTeams')}</p>
+              <p className="text-sm text-[#94A3B8]">{t('dashboard:teams.noTeamsHint')}</p>
             </>
           )}
         </div>

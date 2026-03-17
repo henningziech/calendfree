@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CommentItem } from './CommentItem';
 
 interface Comment {
@@ -18,6 +19,7 @@ interface CommentListProps {
 }
 
 export function CommentList({ comments, currentUserId, onAdd, onEdit, onDelete }: CommentListProps) {
+  const { t } = useTranslation('dashboard');
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -41,7 +43,7 @@ export function CommentList({ comments, currentUserId, onAdd, onEdit, onDelete }
           ))}
         </div>
       ) : (
-        <p className="text-sm text-[#64748B] mb-4">Noch keine Kommentare.</p>
+        <p className="text-sm text-[#64748B] mb-4">{t('comments.noComments')}</p>
       )}
 
       <div>
@@ -49,18 +51,18 @@ export function CommentList({ comments, currentUserId, onAdd, onEdit, onDelete }
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
           rows={2}
-          placeholder="Kommentar hinzufügen..."
+          placeholder={t('comments.placeholder')}
           className="w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm shadow-sm transition-all focus:border-[#0B8ECA] focus:ring-2 focus:ring-[#0B8ECA]/20 focus:outline-none resize-none"
           onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSubmit(); }}
         />
         <div className="mt-2 flex items-center justify-between">
-          <span className="text-xs text-[#64748B]">Cmd+Enter zum Absenden</span>
+          <span className="text-xs text-[#64748B]">{t('comments.submitHint')}</span>
           <button
             onClick={handleSubmit}
             disabled={isSubmitting || !newComment.trim()}
             className="rounded-lg bg-[#0B8ECA] px-4 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-[#0874A6] disabled:opacity-50 transition-colors"
           >
-            {isSubmitting ? 'Wird gesendet...' : 'Kommentar'}
+            {isSubmitting ? t('comments.submitting') : t('comments.submit')}
           </button>
         </div>
       </div>

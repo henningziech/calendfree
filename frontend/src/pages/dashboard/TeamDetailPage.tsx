@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { getTeamDetail, getTeamBookings, deleteTeam, removeTeamMember, updateTeamName, updateTeamMemberRole, type TeamBookingsParams } from '../../api/admin';
 import { apiRequest } from '../../api/client';
@@ -9,6 +10,7 @@ import { BookingCard } from '../../components/bookings/BookingCard';
 import type { Booking } from '../../components/bookings/types';
 
 export function TeamDetailPage() {
+  const { t } = useTranslation(['dashboard', 'common']);
   const { teamId } = useParams<{ teamId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -48,11 +50,11 @@ export function TeamDetailPage() {
     try {
       setTeam(await getTeamDetail(teamId));
     } catch (err: any) {
-      setError(err.status === 403 ? 'Kein Zugriff auf dieses Team.' : 'Team nicht gefunden.');
+      setError(err.status === 403 ? t('dashboard:teams.accessDenied') : t('dashboard:teams.notFound'));
     } finally {
       setIsLoading(false);
     }
-  }, [teamId]);
+  }, [teamId, t]);
 
   const loadBookings = useCallback(async () => {
     if (!teamId) return;
@@ -88,7 +90,7 @@ export function TeamDetailPage() {
   };
 
   const handleDelete = async () => {
-    if (!confirm('Team wirklich löschen? Alle zugehörigen Event-Typen verlieren die Team-Zuordnung.')) return;
+    if (!confirm(t('dashboard:teams.confirmDelete'))) return;
     await deleteTeam(teamId!);
     navigate('/dashboard/teams');
   };
@@ -98,17 +100,17 @@ export function TeamDetailPage() {
       await updateTeamMemberRole(teamId!, memberId, currentRole === 'OWNER' ? 'MEMBER' : 'OWNER');
       loadTeam();
     } catch (err: any) {
-      alert(err.message || 'Fehler beim Ändern der Rolle');
+      alert(err.message || t('dashboard:teams.roleChangeError'));
     }
   };
 
   const handleRemoveMember = async (memberId: string, memberName: string) => {
-    if (!confirm(`${memberName} wirklich aus dem Team entfernen?`)) return;
+    if (!confirm(t('dashboard:teams.confirmRemove', { name: memberName }))) return;
     try {
       await removeTeamMember(teamId!, memberId);
       loadTeam();
     } catch (err: any) {
-      alert(err.message || 'Fehler beim Entfernen');
+      alert(err.message || t('dashboard:teams.removeError'));
     }
   };
 
@@ -124,7 +126,7 @@ export function TeamDetailPage() {
       setTimeout(() => setInviteSuccess(false), 3000);
       loadTeam();
     } catch (err: any) {
-      alert(err.message || 'Fehler beim Einladen');
+      alert(err.message || t('dashboard:teams.inviteError'));
     }
   };
 
@@ -134,12 +136,12 @@ export function TeamDetailPage() {
   };
 
   const handleLeave = async () => {
-    if (!confirm('Team wirklich verlassen?')) return;
+    if (!confirm(t('dashboard:teams.confirmLeave'))) return;
     try {
       await apiRequest(`/admin/teams/${teamId}/leave`, { method: 'POST' });
       navigate('/dashboard/teams');
     } catch (err: any) {
-      alert(err.message || 'Fehler');
+      alert(err.message || t('dashboard:teams.leaveError'));
     }
   };
 
@@ -151,7 +153,7 @@ export function TeamDetailPage() {
     <div>
       {/* Back link */}
       <Link to="/dashboard/teams" className="text-sm font-medium text-[#0B8ECA] hover:text-[#0874A6] transition-colors">
-        &larr; Zurück zu Teams
+        {t('dashboard:teams.backToTeams')}
       </Link>
 
       {/* Header */}
@@ -171,13 +173,13 @@ export function TeamDetailPage() {
                 onClick={handleRename}
                 className="rounded-lg bg-[#0B8ECA] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#0874A6] transition-colors"
               >
-                Speichern
+                {t('common:save')}
               </button>
               <button
                 onClick={() => setEditing(false)}
                 className="rounded-lg border border-[#E2E8F0] px-3 py-1.5 text-sm font-medium text-[#64748B] hover:bg-[#F8FAFC] transition-colors"
               >
-                Abbrechen
+                {t('common:cancel')}
               </button>
             </div>
           ) : (
@@ -199,7 +201,7 @@ export function TeamDetailPage() {
             onClick={handleDelete}
             className="rounded-lg border border-[#EF4444]/20 px-4 py-2 text-sm font-medium text-[#EF4444] hover:bg-[#EF4444]/5 transition-colors"
           >
-            Team löschen
+            {t('dashboard:teams.deleteTeam')}
           </button>
         )}
       </div>
@@ -208,7 +210,7 @@ export function TeamDetailPage() {
       <div className="mt-8">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-[#64748B]">
-            Mitglieder ({team.memberships?.length ?? 0})
+            {t('dashboard:teams.members_heading', { count: team.memberships?.length ?? 0 })}
           </h2>
           <div className="flex items-center gap-2">
             {!isMember() && (
@@ -216,7 +218,7 @@ export function TeamDetailPage() {
                 onClick={handleJoin}
                 className="rounded-lg bg-[#0B8ECA] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#0874A6] transition-colors"
               >
-                Beitreten
+                {t('dashboard:teams.join')}
               </button>
             )}
             {canManage() && (
@@ -224,7 +226,7 @@ export function TeamDetailPage() {
                 onClick={() => setShowInvite(!showInvite)}
                 className="rounded-lg border border-[#E2E8F0] px-3 py-1.5 text-xs font-medium text-[#1E293B] hover:bg-[#F8FAFC] transition-colors"
               >
-                Mitglied einladen
+                {t('dashboard:teams.inviteMember')}
               </button>
             )}
           </div>
@@ -238,7 +240,7 @@ export function TeamDetailPage() {
               value={inviteEmail}
               onChange={(e) => setInviteEmail(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleInvite(); }}
-              placeholder="E-Mail-Adresse"
+              placeholder={t('dashboard:teams.emailPlaceholder')}
               className="flex-1 rounded-lg border border-[#E2E8F0] px-3 py-1.5 text-sm focus:border-[#0B8ECA] focus:outline-none"
               autoFocus
             />
@@ -246,7 +248,7 @@ export function TeamDetailPage() {
               onClick={handleInvite}
               className="rounded-lg bg-[#0B8ECA] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#0874A6] transition-colors"
             >
-              Einladen
+              {t('dashboard:teams.invite')}
             </button>
           </div>
         )}
@@ -254,7 +256,7 @@ export function TeamDetailPage() {
         {/* Invite success */}
         {inviteSuccess && (
           <div className="mb-4 rounded-lg bg-[#14B8A6]/10 px-4 py-2 text-sm text-[#14B8A6]">
-            Einladung erfolgreich gesendet!
+            {t('dashboard:teams.inviteSuccess')}
           </div>
         )}
 
@@ -285,7 +287,7 @@ export function TeamDetailPage() {
                     </div>
                   )}
                   <div>
-                    <p className="text-sm font-medium text-[#1E293B]">{memberUser?.name || 'Unbenannt'}</p>
+                    <p className="text-sm font-medium text-[#1E293B]">{memberUser?.name || t('dashboard:teams.unnamed')}</p>
                     <p className="text-xs text-[#64748B]">{memberUser?.email}</p>
                   </div>
                   {/* Role badge */}
@@ -294,7 +296,7 @@ export function TeamDetailPage() {
                       ? 'bg-[#14B8A6]/10 text-[#14B8A6]'
                       : 'bg-[#64748B]/10 text-[#64748B]'
                   }`}>
-                    {m.role === 'OWNER' ? 'Owner' : 'Mitglied'}
+                    {m.role === 'OWNER' ? t('dashboard:teams.owner') : t('dashboard:teams.member')}
                   </span>
                 </div>
                 {/* Actions */}
@@ -304,14 +306,14 @@ export function TeamDetailPage() {
                       onClick={() => handleToggleRole(memberUser.id, m.role)}
                       className="rounded-lg border border-[#E2E8F0] px-3 py-1.5 text-xs font-medium text-[#1E293B] hover:bg-[#F8FAFC] transition-colors"
                     >
-                      {m.role === 'OWNER' ? 'Owner entfernen' : 'Zum Owner machen'}
+                      {m.role === 'OWNER' ? t('dashboard:teams.removeOwner') : t('dashboard:teams.makeOwner')}
                     </button>
                     {memberUser?.id !== user?.id && (
                       <button
                         onClick={() => handleRemoveMember(memberUser.id, memberUser.name || memberUser.email)}
                         className="text-xs font-medium text-[#EF4444] hover:text-[#DC2626] transition-colors"
                       >
-                        Entfernen
+                        {t('dashboard:teams.remove')}
                       </button>
                     )}
                   </div>
@@ -327,7 +329,7 @@ export function TeamDetailPage() {
             onClick={handleLeave}
             className="mt-4 rounded-lg border border-[#E2E8F0] px-4 py-2 text-sm font-medium text-[#64748B] hover:bg-[#F8FAFC] transition-colors"
           >
-            Team verlassen
+            {t('dashboard:teams.leaveTeam')}
           </button>
         )}
       </div>
@@ -335,7 +337,7 @@ export function TeamDetailPage() {
       {/* Event Types */}
       <div className="mt-8">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-[#64748B] mb-3">
-          Buchungsseiten ({team.eventTypes?.length ?? 0})
+          {t('dashboard:teams.eventTypesHeading', { count: team.eventTypes?.length ?? 0 })}
         </h2>
         {team.eventTypes?.length > 0 ? (
           <div className="space-y-2">
@@ -343,29 +345,29 @@ export function TeamDetailPage() {
               <div key={et.id} className="flex items-center justify-between rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-sm">
                 <div className="flex items-center gap-2">
                   <h3 className="font-medium text-[#1E293B]">{et.title}</h3>
-                  <span className="text-xs text-[#64748B]">{et.duration} Min</span>
+                  <span className="text-xs text-[#64748B]">{et.duration} {t('dashboard:eventTypes.minutes')}</span>
                   <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${et.active ? 'bg-teal-100 text-teal-700' : 'bg-[#F8FAFC] text-[#64748B]'}`}>
-                    {et.active ? 'Aktiv' : 'Inaktiv'}
+                    {et.active ? t('common:active') : t('common:inactive')}
                   </span>
                 </div>
                 <button
                   onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/${team.company?.slug ?? ''}/${et.slug}`); }}
                   className="rounded-lg bg-[#F8FAFC] px-3 py-1.5 text-xs font-medium text-[#1E293B] ring-1 ring-[#E2E8F0] transition-colors hover:bg-[#E2E8F0]"
                 >
-                  URL kopieren
+                  {t('dashboard:teams.copyUrl')}
                 </button>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-sm text-[#64748B]">Keine Buchungsseiten für dieses Team.</p>
+          <p className="text-sm text-[#64748B]">{t('dashboard:teams.noEventTypes')}</p>
         )}
       </div>
 
       {/* Bookings */}
       <div className="mt-8">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-[#64748B] mb-3">
-          Gebuchte Termine ({total})
+          {t('dashboard:teams.bookedAppointments', { count: total })}
         </h2>
 
         {/* Filters */}
@@ -377,14 +379,14 @@ export function TeamDetailPage() {
               onChange={(e) => setShowPast(e.target.checked)}
               className="rounded border-[#E2E8F0] text-[#0B8ECA] focus:ring-[#0B8ECA]/20"
             />
-            Auch vergangene anzeigen
+            {t('dashboard:teams.showPast')}
           </label>
           <select
             value={filterUserId}
             onChange={(e) => setFilterUserId(e.target.value)}
             className="rounded-xl border border-[#E2E8F0] px-3 py-1.5 text-sm focus:border-[#0B8ECA] focus:outline-none"
           >
-            <option value="">Alle Teammitglieder</option>
+            <option value="">{t('dashboard:teams.allMembers')}</option>
             {team.memberships?.map((m: any) => (
               <option key={m.user?.id} value={m.user?.id}>{m.user?.name}</option>
             ))}
@@ -393,11 +395,11 @@ export function TeamDetailPage() {
 
         {/* Booking List */}
         {bookingsLoading ? (
-          <LoadingSpinner text="Termine werden geladen..." />
+          <LoadingSpinner text={t('dashboard:teams.loadingBookings')} />
         ) : bookings.length === 0 ? (
           <div className="rounded-xl border-2 border-dashed border-[#E2E8F0] bg-[#F8FAFC] p-8 text-center">
             <p className="text-sm text-[#64748B]">
-              {showPast ? 'Keine Termine gefunden.' : 'Keine kommenden Termine.'}
+              {showPast ? t('dashboard:teams.noBookingsFound') : t('dashboard:teams.noUpcomingBookings')}
             </p>
           </div>
         ) : (
@@ -421,17 +423,17 @@ export function TeamDetailPage() {
                   disabled={page <= 1}
                   className="rounded-xl border border-[#E2E8F0] px-4 py-2 text-sm font-medium text-[#1E293B] hover:bg-[#F8FAFC] disabled:opacity-50 transition-colors"
                 >
-                  &larr; Zurück
+                  {t('dashboard:availability.previousPage')}
                 </button>
                 <span className="text-sm text-[#64748B]">
-                  Seite {page} von {totalPages}
+                  {t('dashboard:availability.pageOf', { page, total: totalPages })}
                 </span>
                 <button
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page >= totalPages}
                   className="rounded-xl border border-[#E2E8F0] px-4 py-2 text-sm font-medium text-[#1E293B] hover:bg-[#F8FAFC] disabled:opacity-50 transition-colors"
                 >
-                  Weiter &rarr;
+                  {t('dashboard:availability.nextPage')}
                 </button>
               </div>
             )}

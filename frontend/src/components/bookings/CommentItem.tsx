@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { format, parseISO } from 'date-fns';
-import { de } from 'date-fns/locale';
+import { getDateLocale } from '../../utils/dateLocale';
 
 interface Comment {
   id: string;
@@ -18,6 +19,7 @@ interface CommentItemProps {
 }
 
 export function CommentItem({ comment, currentUserId, onEdit, onDelete }: CommentItemProps) {
+  const { t } = useTranslation(['dashboard', 'common']);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
   const [isSaving, setIsSaving] = useState(false);
@@ -36,7 +38,7 @@ export function CommentItem({ comment, currentUserId, onEdit, onDelete }: Commen
   };
 
   const handleDelete = async () => {
-    if (!confirm('Kommentar wirklich löschen?')) return;
+    if (!confirm(t('dashboard:comments.confirmDelete'))) return;
     await onDelete(comment.id);
   };
 
@@ -53,8 +55,8 @@ export function CommentItem({ comment, currentUserId, onEdit, onDelete }: Commen
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-[#1E293B]">{comment.user.name}</span>
           <span className="text-xs text-[#64748B]">
-            {format(parseISO(comment.createdAt), "d. MMM yyyy, HH:mm", { locale: de })}
-            {wasEdited && ' (bearbeitet)'}
+            {format(parseISO(comment.createdAt), "d. MMM yyyy, HH:mm", { locale: getDateLocale() })}
+            {wasEdited && ` ${t('dashboard:comments.edited')}`}
           </span>
         </div>
 
@@ -68,10 +70,10 @@ export function CommentItem({ comment, currentUserId, onEdit, onDelete }: Commen
             />
             <div className="mt-1 flex gap-2">
               <button onClick={handleSave} disabled={isSaving} className="rounded-lg bg-[#0B8ECA] px-3 py-1 text-xs font-medium text-white hover:bg-[#0874A6] disabled:opacity-50">
-                {isSaving ? 'Speichert...' : 'Speichern'}
+                {isSaving ? t('common:loading') : t('common:save')}
               </button>
               <button onClick={() => { setIsEditing(false); setEditContent(comment.content); }} className="rounded-lg px-3 py-1 text-xs text-[#64748B] hover:text-[#1E293B]">
-                Abbrechen
+                {t('common:cancel')}
               </button>
             </div>
           </div>
@@ -81,10 +83,10 @@ export function CommentItem({ comment, currentUserId, onEdit, onDelete }: Commen
             {isOwn && (
               <div className="mt-1 flex gap-3">
                 <button onClick={() => setIsEditing(true)} className="text-xs text-[#64748B] hover:text-[#0B8ECA] transition-colors">
-                  Bearbeiten
+                  {t('common:edit')}
                 </button>
                 <button onClick={handleDelete} className="text-xs text-[#64748B] hover:text-[#EF4444] transition-colors">
-                  Löschen
+                  {t('common:delete')}
                 </button>
               </div>
             )}

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 
 interface NavItem {
@@ -8,47 +9,48 @@ interface NavItem {
   end?: boolean;
 }
 
-const CREATE_OPTIONS = [
-  {
-    key: 'personal',
-    label: 'Persönlicher Planer',
-    subtitle: '1 Host → 1 Teilnehmer',
-    description: 'Einzelgespräche, 1:1 Interviews',
-  },
-  {
-    key: 'team',
-    label: 'Team-Planer',
-    subtitle: 'Rotierende Hosts → 1 Teilnehmer',
-    description: 'Round Robin, Verteilung im Team',
-  },
-  {
-    key: 'group',
-    label: 'Gruppe',
-    subtitle: '1 Host → Mehrere Teilnehmer',
-    description: 'Workshops, Schulungen, Webinare',
-  },
-];
-
-const MAIN_NAV: NavItem[] = [
-  { to: '/dashboard/my-event-types', label: 'Terminplanung' },
-  { to: '/dashboard', label: 'Termine', end: true },
-  { to: '/dashboard/availability', label: 'Verfügbarkeit' },
-  { to: '/dashboard/teams', label: 'Teams' },
-  { to: '/dashboard/routing-forms', label: 'Routing' },
-];
-
-const ADMIN_NAV: NavItem[] = [
-  { to: '/admin/analytics', label: 'Analytik' },
-  { to: '/admin', label: 'Admin-Bereich', end: true },
-];
-
 export function Sidebar() {
+  const { t } = useTranslation(['dashboard', 'common']);
   const { user, logout, switchCompany } = useAuth();
   const navigate = useNavigate();
   const [createOpen, setCreateOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [companyOpen, setCompanyOpen] = useState(false);
   const companyDropdownRef = useRef<HTMLDivElement>(null);
+
+  const createOptions = [
+    {
+      key: 'personal',
+      label: t('dashboard:sidebar.personalPlanner'),
+      subtitle: t('dashboard:sidebar.personalPlannerSubtitle'),
+      description: t('dashboard:sidebar.personalPlannerDescription'),
+    },
+    {
+      key: 'team',
+      label: t('dashboard:sidebar.teamPlanner'),
+      subtitle: t('dashboard:sidebar.teamPlannerSubtitle'),
+      description: t('dashboard:sidebar.teamPlannerDescription'),
+    },
+    {
+      key: 'group',
+      label: t('dashboard:sidebar.groupPlanner'),
+      subtitle: t('dashboard:sidebar.groupPlannerSubtitle'),
+      description: t('dashboard:sidebar.groupPlannerDescription'),
+    },
+  ];
+
+  const mainNav: NavItem[] = [
+    { to: '/dashboard/my-event-types', label: t('dashboard:nav.scheduling') },
+    { to: '/dashboard', label: t('dashboard:nav.bookings'), end: true },
+    { to: '/dashboard/availability', label: t('dashboard:nav.availability') },
+    { to: '/dashboard/teams', label: t('dashboard:nav.teams') },
+    { to: '/dashboard/routing-forms', label: t('dashboard:nav.routing') },
+  ];
+
+  const adminNav: NavItem[] = [
+    { to: '/admin/analytics', label: t('dashboard:nav.analytics') },
+    { to: '/admin', label: t('dashboard:nav.adminArea'), end: true },
+  ];
 
   if (!user) return null;
 
@@ -116,7 +118,7 @@ export function Sidebar() {
             className="flex w-full items-center justify-between rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-sm transition-all hover:border-[#0B8ECA]/30"
           >
             <p className="min-w-0 flex-1 truncate text-left font-medium text-[#1E293B]">
-              {user.companyMemberships?.find((c) => c.companyId === user.activeCompanyId)?.companyName ?? 'Firma wählen'}
+              {user.companyMemberships?.find((c) => c.companyId === user.activeCompanyId)?.companyName ?? t('dashboard:sidebar.selectCompany')}
             </p>
             <svg className={`ml-2 h-4 w-4 shrink-0 text-[#64748B] transition-transform ${companyOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -154,16 +156,16 @@ export function Sidebar() {
           onClick={() => setCreateOpen(!createOpen)}
           className="w-full rounded-xl border-2 border-[#0B8ECA] px-4 py-2.5 text-sm font-semibold text-[#0B8ECA] transition-all hover:bg-[#0B8ECA]/5"
         >
-          + Erstellen
+          {t('dashboard:sidebar.create')}
         </button>
 
         {createOpen && (
           <div className="absolute left-3 right-3 top-full z-50 mt-1 rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-lg">
             <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-[#64748B]">
-              Event-Typen
+              {t('dashboard:sidebar.eventTypes')}
             </p>
             <div className="space-y-1">
-              {CREATE_OPTIONS.map((opt, i) => (
+              {createOptions.map((opt, i) => (
                 <div key={opt.key}>
                   {i > 0 && <div className="my-1 border-t border-[#F1F5F9]" />}
                   <button
@@ -184,7 +186,7 @@ export function Sidebar() {
       {/* Main navigation */}
       <nav className="flex-1 overflow-y-auto px-3">
         <ul className="space-y-1">
-          {MAIN_NAV.map((item) => (
+          {mainNav.map((item) => (
             <li key={item.to}>
               <NavLink to={item.to} end={item.end} className={navLinkClass}>
                 {item.label}
@@ -198,7 +200,7 @@ export function Sidebar() {
           <div className="mt-auto pt-4">
             <div className="border-t border-[#E2E8F0] pt-3">
               <ul className="space-y-1">
-                {ADMIN_NAV.map((item) => (
+                {adminNav.map((item) => (
                   <li key={item.to}>
                     <NavLink to={item.to} end={item.end} className={navLinkClass}>
                       {item.label}
@@ -228,7 +230,7 @@ export function Sidebar() {
           <button
             onClick={() => navigate('/dashboard/settings')}
             className="rounded-lg p-1.5 text-[#64748B] transition-colors hover:bg-[#F8FAFC] hover:text-[#1E293B]"
-            title="Einstellungen"
+            title={t('dashboard:sidebar.settings')}
           >
             ⚙
           </button>
@@ -237,7 +239,7 @@ export function Sidebar() {
           onClick={logout}
           className="mt-3 w-full rounded-xl bg-[#F8FAFC] px-3 py-2 text-sm font-medium text-[#64748B] transition-colors hover:bg-[#E2E8F0] hover:text-[#1E293B]"
         >
-          Abmelden
+          {t('dashboard:sidebar.logout')}
         </button>
       </div>
     </aside>

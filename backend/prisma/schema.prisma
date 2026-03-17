@@ -146,6 +146,7 @@ model User {
   auditLogs      AuditLog[]
   bookingComments BookingComment[]
   vacations       VacationPeriod[]
+  routingForms  RoutingForm[] @relation("routingForms")
 
   // Slug is unique within the organization (for personal booking pages)
   @@unique([organizationId, slug])
@@ -396,31 +397,34 @@ model VacationPeriod {
 // ──────────────────────────────────────────────
 
 model RoutingForm {
-  id        String   @id @default(uuid())
-  title     String
-  slug      String
-  companyId String
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(uuid())
+  title           String
+  slug            String
+  companyId       String
+  createdByUserId String
+  active          Boolean  @default(true)
+  description     String?
+  question        String   @default("Wofür interessieren Sie sich?")
+  collectName     Boolean  @default(false)
+  collectEmail    Boolean  @default(false)
+  fallbackType    String   @default("MESSAGE")
+  fallbackValue   String   @default("Bitte kontaktieren Sie uns direkt.")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  company Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  rules   RoutingRule[]
+  company   Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdBy User           @relation("routingForms", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  options   RoutingOption[]
 
   @@unique([companyId, slug])
 }
 
-model RoutingRule {
+model RoutingOption {
   id            String @id @default(uuid())
   routingFormId String
-  /// Field name to match
-  field         String
-  /// Operator: equals, contains, regex
-  operator      String @default("equals")
-  /// Value to match against
-  value         String
-  /// Target event type slug or URL
-  targetSlug    String
+  label         String
+  targetType    String
+  targetValue   String
   order         Int    @default(0)
 
   routingForm RoutingForm @relation(fields: [routingFormId], references: [id], onDelete: Cascade)

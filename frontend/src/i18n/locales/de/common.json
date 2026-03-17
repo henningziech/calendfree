@@ -1,1 +1,33 @@
-{}
+{
+  "loading": "Laden...",
+  "error": "Fehler",
+  "retry": "Erneut versuchen",
+  "save": "Speichern",
+  "cancel": "Abbrechen",
+  "delete": "Löschen",
+  "add": "Hinzufügen",
+  "edit": "Bearbeiten",
+  "close": "Schließen",
+  "back": "Zurück",
+  "confirm": "Bestätigen",
+  "yes": "Ja",
+  "no": "Nein",
+  "search": "Suchen",
+  "noResults": "Keine Ergebnisse",
+  "active": "Aktiv",
+  "inactive": "Inaktiv",
+  "available": "Verfügbar",
+  "absent": "Abwesend",
+  "logout": "Abmelden",
+  "home": {
+    "tagline": "Terminplanung, die einfach funktioniert."
+  },
+  "login": {
+    "googleButton": "Mit Google anmelden"
+  },
+  "notFound": {
+    "title": "Seite nicht gefunden",
+    "message": "Die Buchungsseite existiert nicht oder wurde entfernt.",
+    "backHome": "Zurück zur Startseite"
+  }
+}

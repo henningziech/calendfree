@@ -1,1 +1,33 @@
-{}
+{
+  "loading": "Loading...",
+  "error": "Error",
+  "retry": "Try again",
+  "save": "Save",
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "add": "Add",
+  "edit": "Edit",
+  "close": "Close",
+  "back": "Back",
+  "confirm": "Confirm",
+  "yes": "Yes",
+  "no": "No",
+  "search": "Search",
+  "noResults": "No results",
+  "active": "Active",
+  "inactive": "Inactive",
+  "available": "Available",
+  "absent": "Absent",
+  "logout": "Sign out",
+  "home": {
+    "tagline": "Scheduling that just works."
+  },
+  "login": {
+    "googleButton": "Sign in with Google"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "message": "The booking page does not exist or has been removed.",
+    "backHome": "Back to home"
+  }
+}

@@ -8,6 +8,11 @@ export interface SessionUser {
   organizationId: string;
   activeCompanyId: string | null;
   activeRole: 'ORG_ADMIN' | 'COMPANY_ADMIN' | 'USER' | null;
+  companyMemberships: Array<{
+    companyId: string;
+    companyName: string;
+    role: string;
+  }>;
 }
 
 export async function getCurrentUser(): Promise<SessionUser> {
@@ -20,4 +25,11 @@ export async function logout(): Promise<void> {
 
 export function getLoginUrl(): string {
   return '/api/auth/google';
+}
+
+export async function switchCompany(companyId: string): Promise<SessionUser> {
+  return apiRequest('/auth/me/company', {
+    method: 'PATCH',
+    body: JSON.stringify({ companyId }),
+  });
 }

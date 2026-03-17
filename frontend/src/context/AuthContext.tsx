@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import { getCurrentUser, logout as apiLogout, type SessionUser } from '../api/auth';
+import { getCurrentUser, logout as apiLogout, switchCompany as apiSwitchCompany, type SessionUser } from '../api/auth';
 
 interface AuthContextType {
   user: SessionUser | null;
@@ -7,6 +7,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
+  switchCompany: (companyId: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -28,6 +29,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => { refresh(); }, []);
 
+  const handleSwitchCompany = async (companyId: string) => {
+    setIsLoading(true);
+    try {
+      await apiSwitchCompany(companyId);
+      await refresh();
+    } catch (err) {
+      console.error('Failed to switch company:', err);
+    }
+  };
+
   const logout = async () => {
     try {
       await apiLogout();
@@ -39,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, isAuthenticated: !!user, logout, refresh }}>
+    <AuthContext.Provider value={{ user, isLoading, isAuthenticated: !!user, logout, refresh, switchCompany: handleSwitchCompany }}>
       {children}
     </AuthContext.Provider>
   );

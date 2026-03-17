@@ -1,5 +1,6 @@
 // backend/src/routes/admin/company.ts
 import type { FastifyInstance } from 'fastify';
+import { z } from 'zod/v4';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -10,9 +11,48 @@ import { CreateCompanySchema, UpdateCompanySchema, BrandingConfigSchema } from '
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const UPLOADS_DIR = path.join(__dirname, '..', '..', '..', 'public', 'uploads', 'logos');
 
+const ErrorResponse = z.object({ error: z.string() });
+
+const BrandingResponse = z.object({
+  id: z.string().describe('Branding config ID'),
+  companyId: z.string().describe('Associated company ID'),
+  logoUrl: z.string().nullable().describe('Logo image URL'),
+  primaryColor: z.string().nullable().describe('Primary brand color'),
+  accentColor: z.string().nullable().describe('Accent brand color'),
+  backgroundColor: z.string().nullable().describe('Background color'),
+  textColor: z.string().nullable().describe('Text color'),
+  fontFamily: z.string().nullable().describe('Font family'),
+  showPoweredBy: z.boolean().describe('Whether to show powered-by badge'),
+  footerText: z.string().nullable().describe('Custom footer text'),
+});
+
+const CompanyResponse = z.object({
+  id: z.string().describe('Company ID'),
+  name: z.string().describe('Company display name'),
+  slug: z.string().describe('Company URL slug'),
+  customDomain: z.string().nullable().describe('Custom domain for booking pages'),
+  language: z.string().nullable().describe('Preferred language code'),
+  organizationId: z.string().describe('Parent organization ID'),
+  createdAt: z.string().describe('Creation timestamp (ISO 8601)'),
+  updatedAt: z.string().describe('Last update timestamp (ISO 8601)'),
+});
+
 export async function companyRoutes(app: FastifyInstance) {
   /** POST /api/admin/companies — Create company (ORG_ADMIN only) */
-  app.post('/api/admin/companies', { preHandler: [requireRole('ORG_ADMIN')] }, async (request, reply) => {
+  app.post('/api/admin/companies', {
+    schema: {
+      summary: 'Create company',
+      description: 'Creates a new company within the current organization. Requires ORG_ADMIN role.',
+      tags: ['Companies'],
+      security: [{ session: [] }, { apiKey: [] }],
+      body: CreateCompanySchema,
+      response: {
+        201: CompanyResponse,
+        400: ErrorResponse,
+      },
+    },
+    preHandler: [requireRole('ORG_ADMIN')],
+  }, async (request, reply) => {
     const user = request.session.user!;
     const body = CreateCompanySchema.parse(request.body);
 
@@ -23,7 +63,20 @@ export async function companyRoutes(app: FastifyInstance) {
   });
 
   /** GET /api/admin/companies — List companies */
-  app.get('/api/admin/companies', { preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')] }, async (request) => {
+  app.get('/api/admin/companies', {
+    schema: {
+      summary: 'List companies',
+      description: 'Lists companies accessible to the current user. ORG_ADMIN sees all companies in the organization; COMPANY_ADMIN sees only their own.',
+      tags: ['Companies'],
+      security: [{ session: [] }, { apiKey: [] }],
+      response: {
+        200: z.array(CompanyResponse.extend({
+          branding: BrandingResponse.nullable().describe('Company branding configuration'),
+        })),
+      },
+    },
+    preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')],
+  }, async (request) => {
     const user = request.session.user!;
 
     // ORG_ADMIN sees all companies, COMPANY_ADMIN sees only their own
@@ -42,7 +95,35 @@ export async function companyRoutes(app: FastifyInstance) {
   });
 
   /** GET /api/admin/companies/:id — Get company details */
-  app.get('/api/admin/companies/:id', { preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')] }, async (request, reply) => {
+  app.get('/api/admin/companies/:id', {
+    schema: {
+      summary: 'Get company details',
+      description: 'Returns detailed company information including branding and teams. COMPANY_ADMIN can only view companies they are a member of.',
+      tags: ['Companies'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: z.object({
+        id: z.string().describe('Company ID'),
+      }),
+      response: {
+        200: CompanyResponse.extend({
+          branding: BrandingResponse.nullable().describe('Company branding configuration'),
+          teams: z.array(z.object({
+            id: z.string().describe('Team ID'),
+            name: z.string().describe('Team name'),
+            companyId: z.string().describe('Parent company ID'),
+            createdAt: z.string().describe('Creation timestamp (ISO 8601)'),
+            updatedAt: z.string().describe('Last update timestamp (ISO 8601)'),
+            _count: z.object({
+              memberships: z.number().describe('Number of team members'),
+            }),
+          })).describe('Teams within the company'),
+        }),
+        403: ErrorResponse,
+        404: ErrorResponse,
+      },
+    },
+    preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')],
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const user = request.session.user!;
 
@@ -70,7 +151,23 @@ export async function companyRoutes(app: FastifyInstance) {
   });
 
   /** PATCH /api/admin/companies/:id — Update company */
-  app.patch('/api/admin/companies/:id', { preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')] }, async (request, reply) => {
+  app.patch('/api/admin/companies/:id', {
+    schema: {
+      summary: 'Update company',
+      description: 'Updates company properties such as name, slug, custom domain, or language. Only fields provided in the request body are updated.',
+      tags: ['Companies'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: z.object({
+        id: z.string().describe('Company ID'),
+      }),
+      body: UpdateCompanySchema,
+      response: {
+        200: CompanyResponse,
+        404: ErrorResponse,
+      },
+    },
+    preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')],
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const user = request.session.user!;
     const body = UpdateCompanySchema.parse(request.body);
@@ -85,7 +182,49 @@ export async function companyRoutes(app: FastifyInstance) {
   });
 
   /** GET /api/admin/companies/:companyId/bookings — Recent bookings for a company */
-  app.get('/api/admin/companies/:companyId/bookings', { preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')] }, async (request, reply) => {
+  app.get('/api/admin/companies/:companyId/bookings', {
+    schema: {
+      summary: 'Get company bookings',
+      description: 'Returns the 20 most recent bookings for a company, ordered by start time descending. Includes event type, customer, and assigned user details.',
+      tags: ['Companies'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: z.object({
+        companyId: z.string().describe('Company ID'),
+      }),
+      response: {
+        200: z.array(z.object({
+          id: z.string().describe('Booking ID'),
+          startTime: z.string().describe('Start time (ISO 8601)'),
+          endTime: z.string().describe('End time (ISO 8601)'),
+          status: z.string().describe('Booking status'),
+          eventType: z.object({
+            title: z.string().describe('Event type title'),
+            slug: z.string().describe('Event type slug'),
+            duration: z.number().describe('Duration in minutes'),
+            teamId: z.string().nullable().describe('Associated team ID'),
+            team: z.object({
+              name: z.string().describe('Team name'),
+            }).nullable(),
+            company: z.object({
+              slug: z.string().describe('Company slug'),
+            }).nullable(),
+          }),
+          formData: z.object({
+            name: z.string().describe('Customer name'),
+            email: z.string().describe('Customer email'),
+            data: z.any().describe('Additional form data'),
+          }).nullable(),
+          assignedUser: z.object({
+            name: z.string().nullable().describe('Assigned user name'),
+            email: z.string().describe('Assigned user email'),
+          }),
+        })),
+        403: ErrorResponse,
+        404: ErrorResponse,
+      },
+    },
+    preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')],
+  }, async (request, reply) => {
     const { companyId } = request.params as { companyId: string };
     const user = request.session.user!;
 
@@ -114,7 +253,22 @@ export async function companyRoutes(app: FastifyInstance) {
   });
 
   /** DELETE /api/admin/companies/:id — Delete company (ORG_ADMIN only) */
-  app.delete('/api/admin/companies/:id', { preHandler: [requireRole('ORG_ADMIN')] }, async (request, reply) => {
+  app.delete('/api/admin/companies/:id', {
+    schema: {
+      summary: 'Delete company',
+      description: 'Permanently deletes a company and all associated data. Requires ORG_ADMIN role.',
+      tags: ['Companies'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: z.object({
+        id: z.string().describe('Company ID'),
+      }),
+      response: {
+        200: z.object({ success: z.boolean() }),
+        404: ErrorResponse,
+      },
+    },
+    preHandler: [requireRole('ORG_ADMIN')],
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const user = request.session.user!;
 
@@ -126,7 +280,23 @@ export async function companyRoutes(app: FastifyInstance) {
   });
 
   /** PUT /api/admin/companies/:id/branding — Update company branding */
-  app.put('/api/admin/companies/:id/branding', { preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')] }, async (request, reply) => {
+  app.put('/api/admin/companies/:id/branding', {
+    schema: {
+      summary: 'Update company branding',
+      description: 'Creates or updates branding configuration for a company, including colors, fonts, logo URL, and footer text.',
+      tags: ['Companies'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: z.object({
+        id: z.string().describe('Company ID'),
+      }),
+      body: BrandingConfigSchema,
+      response: {
+        200: BrandingResponse,
+        404: ErrorResponse,
+      },
+    },
+    preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')],
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const user = request.session.user!;
     const body = BrandingConfigSchema.parse(request.body);
@@ -146,7 +316,30 @@ export async function companyRoutes(app: FastifyInstance) {
   });
 
   /** POST /api/admin/companies/:id/branding/logo — Upload company logo */
-  app.post('/api/admin/companies/:id/branding/logo', { preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')] }, async (request, reply) => {
+  app.post('/api/admin/companies/:id/branding/logo', {
+    schema: {
+      summary: 'Upload company logo',
+      description: 'Uploads a logo image for the company. Accepts PNG, JPEG, GIF, and WebP formats. Replaces any existing logo.',
+      tags: ['Companies'],
+      security: [{ session: [] }, { apiKey: [] }],
+      consumes: ['multipart/form-data'],
+      params: z.object({
+        id: z.string().describe('Company ID'),
+      }),
+      body: {
+        type: 'object',
+        properties: {
+          file: { type: 'string', format: 'binary' },
+        },
+      },
+      response: {
+        200: BrandingResponse,
+        400: ErrorResponse,
+        404: ErrorResponse,
+      },
+    },
+    preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')],
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const user = request.session.user!;
 
@@ -195,7 +388,22 @@ export async function companyRoutes(app: FastifyInstance) {
   });
 
   /** DELETE /api/admin/companies/:id/branding/logo — Remove company logo */
-  app.delete('/api/admin/companies/:id/branding/logo', { preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')] }, async (request, reply) => {
+  app.delete('/api/admin/companies/:id/branding/logo', {
+    schema: {
+      summary: 'Delete company logo',
+      description: 'Removes the company logo file from the server and clears the logo URL from the branding configuration.',
+      tags: ['Companies'],
+      security: [{ session: [] }, { apiKey: [] }],
+      params: z.object({
+        id: z.string().describe('Company ID'),
+      }),
+      response: {
+        200: z.object({ success: z.boolean() }),
+        404: ErrorResponse,
+      },
+    },
+    preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')],
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const user = request.session.user!;
 

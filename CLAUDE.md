@@ -37,6 +37,7 @@ docker compose up -d     # Start PostgreSQL and Redis
 - All DB queries must include tenant context (organizationId/companyId)
 - Commits follow conventional commits: `feat:`, `fix:`, `refactor:`, `test:`, `docs:`
 - JSDoc on all exported functions and interfaces
+- **i18n:** All user-facing strings MUST use `react-i18next` (`useTranslation` hook / `t()` function). Never hardcode UI text. Add translations for both `en` and `de` in the corresponding namespace JSON files under `frontend/src/i18n/locales/`.
 
 ## Documentation
 

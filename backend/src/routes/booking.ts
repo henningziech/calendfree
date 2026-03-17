@@ -1,5 +1,6 @@
 // backend/src/routes/booking.ts
 import type { FastifyInstance } from 'fastify';
+import { z } from 'zod/v4';
 import { randomBytes } from 'node:crypto';
 import { addMinutes } from 'date-fns';
 import { prisma } from '../db.js';
@@ -11,12 +12,41 @@ import { logAudit } from '../services/audit-log.js';
 import { scheduleBookingNotifications, cancelBookingNotifications } from '../jobs/notification-jobs.js';
 import { queueHubSpotSync } from '../jobs/hubspot-jobs.js';
 
+const ErrorResponse = z.object({ error: z.string() });
+
 export async function bookingRoutes(app: FastifyInstance) {
   /**
    * GET /api/booking/:companySlug/:eventTypeSlug/slots
    * Public endpoint — returns available time slots for a date range.
    */
-  app.get('/api/booking/:companySlug/:eventTypeSlug/slots', async (request, reply) => {
+  app.get('/api/booking/:companySlug/:eventTypeSlug/slots', {
+    schema: {
+      summary: 'Get available time slots',
+      description: 'Returns available booking slots for an event type. If a specific date is provided, returns slots for that day; otherwise returns slots for the next 7 days.',
+      tags: ['Bookings'],
+      security: [],
+      params: z.object({
+        companySlug: z.string().describe('Company URL slug'),
+        eventTypeSlug: z.string().describe('Event type URL slug'),
+      }),
+      querystring: z.object({
+        date: z.string().optional().describe('Date in YYYY-MM-DD format'),
+        timezone: z.string().optional().describe('IANA timezone (defaults to Europe/Berlin)'),
+      }),
+      response: {
+        200: z.object({
+          slots: z.array(z.object({
+            start: z.string().describe('Slot start time (ISO 8601)'),
+            end: z.string().describe('Slot end time (ISO 8601)'),
+            remainingSpots: z.number().optional().describe('Remaining spots for group events'),
+          })),
+        }),
+        400: ErrorResponse,
+        404: ErrorResponse,
+        503: ErrorResponse,
+      },
+    },
+  }, async (request, reply) => {
     const { companySlug, eventTypeSlug } = request.params as {
       companySlug: string;
       eventTypeSlug: string;
@@ -100,7 +130,43 @@ export async function bookingRoutes(app: FastifyInstance) {
    * POST /api/booking/:companySlug/:eventTypeSlug
    * Public endpoint — create a booking.
    */
-  app.post('/api/booking/:companySlug/:eventTypeSlug', async (request, reply) => {
+  app.post('/api/booking/:companySlug/:eventTypeSlug', {
+    schema: {
+      summary: 'Create a booking',
+      description: 'Books a time slot for the specified event type. Assigns a consultant via round-robin for team events or directly for personal event types.',
+      tags: ['Bookings'],
+      security: [],
+      params: z.object({
+        companySlug: z.string().describe('Company URL slug'),
+        eventTypeSlug: z.string().describe('Event type URL slug'),
+      }),
+      body: z.object({
+        startTime: z.string().describe('Desired start time (ISO 8601)'),
+        timezone: z.string().optional().describe('Customer IANA timezone (defaults to Europe/Berlin)'),
+        name: z.string().describe('Customer full name'),
+        email: z.string().describe('Customer email address'),
+        comment: z.string().optional().describe('Optional comment from the customer'),
+        formData: z.record(z.string(), z.string()).optional().describe('Additional form field values'),
+      }),
+      response: {
+        201: z.object({
+          id: z.string().describe('Booking ID'),
+          startTime: z.string().describe('Confirmed start time (ISO 8601)'),
+          endTime: z.string().describe('Confirmed end time (ISO 8601)'),
+          assignedUser: z.object({
+            name: z.string().nullable(),
+            email: z.string(),
+          }).describe('Assigned consultant'),
+          meetLink: z.string().nullable().describe('Google Meet link if auto-generated'),
+          cancelUrl: z.string().describe('URL to cancel the booking'),
+          rescheduleUrl: z.string().describe('URL to reschedule the booking'),
+        }),
+        400: ErrorResponse,
+        404: ErrorResponse,
+        409: ErrorResponse,
+      },
+    },
+  }, async (request, reply) => {
     const { companySlug, eventTypeSlug } = request.params as {
       companySlug: string;
       eventTypeSlug: string;
@@ -384,7 +450,52 @@ export async function bookingRoutes(app: FastifyInstance) {
    * GET /api/booking/:bookingToken
    * Public endpoint — get booking details + company branding via token.
    */
-  app.get('/api/booking/:bookingToken', async (request, reply) => {
+  app.get('/api/booking/:bookingToken', {
+    schema: {
+      summary: 'Get booking details',
+      description: 'Retrieves booking details including event type, assigned consultant, customer info, and company branding by booking token.',
+      tags: ['Bookings'],
+      security: [],
+      params: z.object({
+        bookingToken: z.string().describe('Unique booking token'),
+      }),
+      response: {
+        200: z.object({
+          id: z.string().describe('Booking ID'),
+          startTime: z.string().describe('Start time (ISO 8601)'),
+          endTime: z.string().describe('End time (ISO 8601)'),
+          status: z.string().describe('Booking status'),
+          eventType: z.object({
+            title: z.string(),
+            duration: z.number(),
+          }),
+          assignedUser: z.object({
+            name: z.string().nullable(),
+            email: z.string(),
+          }),
+          customer: z.object({
+            name: z.string(),
+            email: z.string(),
+          }).nullable(),
+          company: z.object({
+            name: z.string(),
+            slug: z.string(),
+          }).nullable(),
+          branding: z.object({
+            primaryColor: z.string().nullable(),
+            accentColor: z.string().nullable(),
+            backgroundColor: z.string().nullable(),
+            textColor: z.string().nullable(),
+            logoUrl: z.string().nullable(),
+            fontFamily: z.string().nullable(),
+            showPoweredBy: z.boolean(),
+            footerText: z.string().nullable(),
+          }).nullable(),
+        }),
+        404: ErrorResponse,
+      },
+    },
+  }, async (request, reply) => {
     const { bookingToken } = request.params as { bookingToken: string };
 
     const booking = await prisma.booking.findUnique({
@@ -447,7 +558,26 @@ export async function bookingRoutes(app: FastifyInstance) {
    * POST /api/booking/:bookingToken/cancel
    * Public endpoint — cancel a booking via token.
    */
-  app.post('/api/booking/:bookingToken/cancel', async (request, reply) => {
+  app.post('/api/booking/:bookingToken/cancel', {
+    schema: {
+      summary: 'Cancel a booking',
+      description: 'Cancels an existing booking via its token. Removes the associated calendar event and sends cancellation notifications.',
+      tags: ['Bookings'],
+      security: [],
+      params: z.object({
+        bookingToken: z.string().describe('Unique booking token'),
+      }),
+      response: {
+        200: z.object({
+          success: z.boolean(),
+          message: z.string(),
+        }),
+        400: ErrorResponse,
+        404: ErrorResponse,
+        410: ErrorResponse,
+      },
+    },
+  }, async (request, reply) => {
     const { bookingToken } = request.params as { bookingToken: string };
 
     const booking = await prisma.booking.findUnique({
@@ -500,7 +630,35 @@ export async function bookingRoutes(app: FastifyInstance) {
   });
 
   /** GET /api/booking/:companySlug/info — Public company info (branding) */
-  app.get('/api/booking/:companySlug/info', async (request, reply) => {
+  app.get('/api/booking/:companySlug/info', {
+    schema: {
+      summary: 'Get company info and branding',
+      description: 'Returns public company information and branding settings for the booking page. Falls back to organization-level branding if no company branding is set.',
+      tags: ['Bookings'],
+      security: [],
+      params: z.object({
+        companySlug: z.string().describe('Company URL slug'),
+      }),
+      response: {
+        200: z.object({
+          name: z.string().describe('Company display name'),
+          slug: z.string().describe('Company URL slug'),
+          language: z.string().nullable().describe('Preferred language code'),
+          branding: z.object({
+            primaryColor: z.string().nullable(),
+            accentColor: z.string().nullable(),
+            backgroundColor: z.string().nullable(),
+            textColor: z.string().nullable(),
+            logoUrl: z.string().nullable(),
+            fontFamily: z.string().nullable(),
+            showPoweredBy: z.boolean(),
+            footerText: z.string().nullable(),
+          }).nullable(),
+        }),
+        404: ErrorResponse,
+      },
+    },
+  }, async (request, reply) => {
     const { companySlug } = request.params as { companySlug: string };
     const company = await prisma.company.findFirst({
       where: { slug: companySlug },
@@ -532,7 +690,39 @@ export async function bookingRoutes(app: FastifyInstance) {
   });
 
   /** GET /api/booking/:companySlug/:eventTypeSlug/info — Public event type info */
-  app.get('/api/booking/:companySlug/:eventTypeSlug/info', async (request, reply) => {
+  app.get('/api/booking/:companySlug/:eventTypeSlug/info', {
+    schema: {
+      summary: 'Get event type info',
+      description: 'Returns public event type details including title, duration, form fields, and team name for the booking page.',
+      tags: ['Bookings'],
+      security: [],
+      params: z.object({
+        companySlug: z.string().describe('Company URL slug'),
+        eventTypeSlug: z.string().describe('Event type URL slug'),
+      }),
+      response: {
+        200: z.object({
+          title: z.string().describe('Event type display title'),
+          slug: z.string().describe('Event type URL slug'),
+          description: z.string().nullable().describe('Event type description'),
+          duration: z.number().describe('Duration in minutes'),
+          color: z.string().nullable().describe('Display color'),
+          teamName: z.string().nullable().describe('Associated team name'),
+          formFields: z.array(z.object({
+            id: z.string(),
+            label: z.string(),
+            type: z.string(),
+            required: z.boolean(),
+            placeholder: z.string().nullable(),
+            options: z.array(z.string()).nullable(),
+            order: z.number(),
+          })).describe('Custom form fields for the booking form'),
+          allowComment: z.boolean().describe('Whether a free-text comment field is shown'),
+        }),
+        404: ErrorResponse,
+      },
+    },
+  }, async (request, reply) => {
     const { companySlug, eventTypeSlug } = request.params as { companySlug: string; eventTypeSlug: string };
 
     const company = await prisma.company.findFirst({ where: { slug: companySlug } });

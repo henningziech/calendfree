@@ -38,6 +38,14 @@ docker compose up -d     # Start PostgreSQL and Redis
 - Commits follow conventional commits: `feat:`, `fix:`, `refactor:`, `test:`, `docs:`
 - JSDoc on all exported functions and interfaces
 
+## Documentation
+
+- **All new features and API changes MUST be documented** in both:
+  - `docs/` (Docusaurus end-user & feature documentation)
+  - Backend route OpenAPI schemas (API reference, auto-generated from Fastify route definitions)
+- When adding/modifying an API endpoint: update the route's Fastify schema (description, examples, response schemas, tags)
+- When adding/modifying a user-facing feature: add or update the corresponding page in `docs/docs/`
+
 ## Git Workflow
 
 - **IMMER committen** nach jeder abgeschlossenen Änderung

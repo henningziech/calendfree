@@ -83,6 +83,8 @@ POST /api/booking/:companySlug/:eventTypeSlug
 1. **Personal event types** -- the booking is assigned to the event type's owner.
 2. **Team event types** -- the system re-checks slot availability and assigns a user via round-robin (see [Teams & Round-Robin](./teams-round-robin.md)).
 3. **Group event types** -- the booking is created inside a `Serializable` transaction to prevent overbooking beyond `maxInvitees`.
+
+All booking types use **serializable database transactions** with conflict checks to prevent double-booking of the same time slot.
 4. A Google Calendar event is created on the assigned user's calendar (with optional Google Meet link).
 5. Notification emails are scheduled.
 6. A HubSpot sync job is queued (if configured).

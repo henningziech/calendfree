@@ -83,7 +83,7 @@ Each team has a `RoundRobinConfig` that determines how bookings are distributed 
 
 ### SEQUENTIAL
 
-Members are assigned in a fixed rotation order. The system tracks a `lastAssignedIndex` that advances with each booking. Uses optimistic concurrency control (`version` field) to handle concurrent bookings.
+Members are assigned in a fixed rotation order. The system tracks a `lastAssignedIndex` that advances with each booking. Uses a serializable database transaction to safely handle concurrent bookings and ensure correct index advancement.
 
 ### LEAST_BUSY
 

@@ -62,6 +62,12 @@ Optional variables:
 | `PORT` | `3001` | Backend server port |
 | `LOG_LEVEL` | `info` | Log level (`debug`, `info`, `warn`, `error`) |
 
+### Email domain restriction
+
+Organizations can restrict registration to specific email domains by configuring `allowedDomains` on the Organization model. When set, only users whose email address matches one of the allowed domains can sign up. This is configured via the organization admin API, not via environment variables.
+
+For example, setting `allowedDomains` to `["example.com", "acme.org"]` would only allow users with `@example.com` or `@acme.org` email addresses to register.
+
 ### Generating secrets
 
 ```bash

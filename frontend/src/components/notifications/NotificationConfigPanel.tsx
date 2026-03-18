@@ -80,7 +80,7 @@ const DEFAULT_CONFIG: NotificationConfigState = {
  * Loads the current config on open, renders five NotificationTypeCard components,
  * and provides save and preview functionality.
  */
-export default function NotificationConfigPanel({
+export function NotificationConfigPanel({
   eventTypeId,
   isOpen,
   onClose,

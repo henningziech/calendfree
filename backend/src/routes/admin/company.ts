@@ -167,6 +167,12 @@ export async function companyRoutes(app: FastifyInstance) {
     const { companyId } = request.params as { companyId: string };
     const user = request.session.user!;
 
+    // Verify company belongs to the requesting user's organization
+    const company = await prisma.company.findFirst({
+      where: { id: companyId, organizationId: user.organizationId },
+    });
+    if (!company) return reply.status(404).send({ error: 'Company not found' });
+
     // COMPANY_ADMIN can only view their own company
     if (user.activeRole === 'COMPANY_ADMIN') {
       const membership = await prisma.companyMembership.findFirst({

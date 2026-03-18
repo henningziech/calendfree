@@ -280,6 +280,7 @@ model EventType {
 
   formFields FormField[]
   bookings   Booking[]
+  notificationConfig NotificationConfig?
 
   // Slug uniqueness: per-company for team events, per-user for personal events
   @@unique([companyId, slug])
@@ -311,6 +312,7 @@ model Booking {
   customerTimezone String     @default("Europe/Berlin")
   /// Google Calendar event ID (for sync)
   calendarEventId String?
+  meetLink        String?
   /// Secure token for cancel/reschedule links — generated in application code with crypto.randomBytes
   bookingToken   String        @unique
   /// Token expiry (meeting time or configured notice period before)
@@ -466,4 +468,40 @@ model AuditLog {
   createdAt DateTime    @default(now())
 
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+// ──────────────────────────────────────────────
+// Notification Config
+// ──────────────────────────────────────────────
+
+model NotificationConfig {
+  id               String  @id @default(uuid())
+  eventTypeId      String  @unique
+  eventType        EventType @relation(fields: [eventTypeId], references: [id], onDelete: Cascade)
+
+  confirmationEnabled  Boolean @default(false)
+  confirmationSubject  String?
+  confirmationBody     String?
+
+  cancellationEnabled  Boolean @default(false)
+  cancellationSubject  String?
+  cancellationBody     String?
+
+  reminder1Enabled     Boolean @default(false)
+  reminder1Timing      String  @default("24h")
+  reminder1Subject     String?
+  reminder1Body        String?
+
+  reminder2Enabled     Boolean @default(false)
+  reminder2Timing      String  @default("1h")
+  reminder2Subject     String?
+  reminder2Body        String?
+
+  followUpEnabled      Boolean @default(false)
+  followUpTiming       String  @default("30min")
+  followUpSubject      String?
+  followUpBody         String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

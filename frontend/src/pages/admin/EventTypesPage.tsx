@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { getEventTypes, createEventType, toggleEventType, deleteEventType } from '../../api/admin';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { ErrorMessage } from '../../components/ui/ErrorMessage';
+import { NotificationConfigPanel } from '../../components/notifications/NotificationConfigPanel';
 
 export function EventTypesPage() {
   const { user } = useAuth();
@@ -12,6 +13,7 @@ export function EventTypesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [notifEventTypeId, setNotifEventTypeId] = useState<string | null>(null);
   const [form, setForm] = useState({ title: '', slug: '', duration: 30 });
 
   const companyId = user?.activeCompanyId;
@@ -82,6 +84,15 @@ export function EventTypesPage() {
             </div>
             <div className="flex items-center gap-3">
               <button
+                onClick={() => setNotifEventTypeId(et.id)}
+                title={t('notifications.configure')}
+                className="rounded-lg p-1.5 text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#1E293B]"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+                </svg>
+              </button>
+              <button
                 onClick={() => toggleEventType(et.id).then(load)}
                 className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${et.active ? 'bg-emerald-100 text-emerald-700' : 'bg-[#F8FAFC] text-[#64748B]'}`}
               >
@@ -92,6 +103,14 @@ export function EventTypesPage() {
           </div>
         ))}
       </div>
+
+      {notifEventTypeId && (
+        <NotificationConfigPanel
+          eventTypeId={notifEventTypeId}
+          isOpen={!!notifEventTypeId}
+          onClose={() => setNotifEventTypeId(null)}
+        />
+      )}
     </div>
   );
 }

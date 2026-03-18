@@ -23,7 +23,11 @@ export async function domainRoutes(app: FastifyInstance) {
     },
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
-    const company = await prisma.company.findUnique({ where: { id }, select: { customDomain: true } });
+    const user = request.session.user!;
+    const company = await prisma.company.findFirst({
+      where: { id, organizationId: user.organizationId },
+      select: { customDomain: true },
+    });
     if (!company) return reply.status(404).send({ error: 'Company not found' });
     return { customDomain: company.customDomain };
   });
@@ -44,7 +48,14 @@ export async function domainRoutes(app: FastifyInstance) {
     },
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
+    const user = request.session.user!;
     const { domain } = request.body as { domain: string | null };
+
+    // Verify company belongs to the requesting user's organization
+    const company = await prisma.company.findFirst({
+      where: { id, organizationId: user.organizationId },
+    });
+    if (!company) return reply.status(404).send({ error: 'Company not found' });
 
     if (domain) {
       // Verify DNS CNAME

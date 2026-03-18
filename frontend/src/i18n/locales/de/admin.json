@@ -94,6 +94,34 @@
     "previewDateSecondary": "Dienstag, 18. März 2026",
     "previewBookButton": "Termin buchen"
   },
+  "eventTypeDetail": {
+    "back": "Event Types",
+    "tabs": {
+      "general": "Allgemein",
+      "formFields": "Formularfelder",
+      "notifications": "Benachrichtigungen"
+    },
+    "general": {
+      "title": "Titel",
+      "slug": "URL-Slug",
+      "duration": "Dauer (Minuten)",
+      "team": "Team",
+      "noTeam": "Persönlicher Terminplaner",
+      "roundRobin": "Round-Robin-Modus",
+      "save": "Speichern",
+      "saved": "Gespeichert",
+      "delete": "Terminplaner löschen",
+      "confirmDelete": "Terminplaner \"{{title}}\" wirklich löschen?"
+    },
+    "formFields": {
+      "title": "Formularfelder",
+      "noFields": "Keine benutzerdefinierten Formularfelder konfiguriert.",
+      "label": "Label",
+      "type": "Typ",
+      "required": "Pflichtfeld",
+      "placeholder": "Platzhalter"
+    }
+  },
   "eventTypes": {
     "title": "Event Types",
     "create": "+ Neuer Event Type",

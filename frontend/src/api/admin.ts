@@ -77,6 +77,10 @@ export async function getEventTypes(companyId: string) {
   return apiRequest<any[]>(`/admin/companies/${companyId}/event-types`);
 }
 
+export async function getEventType(id: string) {
+  return apiRequest<any>(`/admin/event-types/${id}`);
+}
+
 export async function createEventType(companyId: string, data: any) {
   return apiRequest(`/admin/companies/${companyId}/event-types`, { method: 'POST', body: JSON.stringify(data) });
 }

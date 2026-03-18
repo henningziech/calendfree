@@ -16,6 +16,7 @@ import { CompanyDetailPage } from './pages/admin/CompanyDetailPage';
 import { CompanyBrandingPage } from './pages/admin/CompanyBrandingPage';
 import { TeamsPage } from './pages/admin/TeamsPage';
 import { EventTypesPage } from './pages/admin/EventTypesPage';
+import { EventTypeDetailPage } from './pages/admin/EventTypeDetailPage';
 import { UsersPage } from './pages/admin/UsersPage';
 import { UserDetailPage } from './pages/admin/UserDetailPage';
 import { SettingsPage } from './pages/admin/SettingsPage';
@@ -52,6 +53,7 @@ export default function App() {
             <Route path="companies/:companyId/branding" element={<CompanyBrandingPage />} />
             <Route path="teams" element={<TeamsPage />} />
             <Route path="event-types" element={<EventTypesPage />} />
+            <Route path="event-types/:eventTypeId" element={<EventTypeDetailPage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="users/:userId" element={<UserDetailPage />} />
             <Route path="analytics" element={<AnalyticsPage />} />

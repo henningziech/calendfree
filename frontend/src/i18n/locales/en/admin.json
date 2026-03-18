@@ -94,6 +94,34 @@
     "previewDateSecondary": "Tuesday, March 18, 2026",
     "previewBookButton": "Book appointment"
   },
+  "eventTypeDetail": {
+    "back": "Event Types",
+    "tabs": {
+      "general": "General",
+      "formFields": "Form Fields",
+      "notifications": "Notifications"
+    },
+    "general": {
+      "title": "Title",
+      "slug": "URL Slug",
+      "duration": "Duration (minutes)",
+      "team": "Team",
+      "noTeam": "Personal event type",
+      "roundRobin": "Round-robin mode",
+      "save": "Save",
+      "saved": "Saved",
+      "delete": "Delete event type",
+      "confirmDelete": "Really delete event type \"{{title}}\"?"
+    },
+    "formFields": {
+      "title": "Form Fields",
+      "noFields": "No custom form fields configured.",
+      "label": "Label",
+      "type": "Type",
+      "required": "Required",
+      "placeholder": "Placeholder"
+    }
+  },
   "eventTypes": {
     "title": "Event Types",
     "create": "+ New Event Type",

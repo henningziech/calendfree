@@ -192,5 +192,42 @@
     "personioSyncTooltip": "Automatic sync with Personio absences. Planned feature.",
     "personioSyncDesc": "Automatic sync with Personio absences",
     "planned": "Planned"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "confirmation": "Confirmation",
+    "cancellation": "Cancellation",
+    "reminder1": "Reminder 1",
+    "reminder2": "Reminder 2",
+    "followUp": "Follow-Up",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "timing": "Timing",
+    "subject": "Subject",
+    "body": "Body",
+    "subjectPlaceholder": "Default subject will be used",
+    "bodyPlaceholder": "Default body will be used",
+    "preview": "Preview",
+    "resetToDefault": "Reset to default",
+    "variables": "Available variables",
+    "save": "Save",
+    "saved": "Saved",
+    "saving": "Saving...",
+    "configure": "Notifications",
+    "timingOptions": {
+      "15min": "15 minutes",
+      "30min": "30 minutes",
+      "1h": "1 hour",
+      "2h": "2 hours",
+      "4h": "4 hours",
+      "6h": "6 hours",
+      "12h": "12 hours",
+      "24h": "24 hours",
+      "48h": "48 hours"
+    },
+    "timingPrefix": {
+      "reminder": "before appointment",
+      "followUp": "after appointment"
+    }
   }
 }

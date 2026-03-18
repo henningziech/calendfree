@@ -268,3 +268,22 @@ export async function updateRoutingForm(id: string, data: any) {
 export async function deleteRoutingForm(id: string) {
   return apiRequest(`/admin/routing-forms/${id}`, { method: 'DELETE' });
 }
+
+// Notification config
+export async function getNotificationConfig(eventTypeId: string) {
+  return apiRequest<any>(`/admin/event-types/${eventTypeId}/notifications`);
+}
+
+export async function updateNotificationConfig(eventTypeId: string, data: any) {
+  return apiRequest<any>(`/admin/event-types/${eventTypeId}/notifications`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function previewNotification(eventTypeId: string, data: { type: string; subject?: string | null; body?: string | null }) {
+  return apiRequest<{ subject: string; htmlBody: string }>(`/admin/event-types/${eventTypeId}/notifications/preview`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}

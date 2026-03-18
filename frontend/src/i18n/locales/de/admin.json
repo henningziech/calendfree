@@ -192,5 +192,42 @@
     "personioSyncTooltip": "Automatischer Abgleich mit Personio-Abwesenheiten. Geplantes Feature.",
     "personioSyncDesc": "Automatischer Abgleich mit Personio-Abwesenheiten",
     "planned": "Geplant"
+  },
+  "notifications": {
+    "title": "Benachrichtigungen",
+    "confirmation": "Bestätigung",
+    "cancellation": "Absage",
+    "reminder1": "Erinnerung 1",
+    "reminder2": "Erinnerung 2",
+    "followUp": "Follow-Up",
+    "enabled": "Aktiviert",
+    "disabled": "Deaktiviert",
+    "timing": "Zeitpunkt",
+    "subject": "Betreff",
+    "body": "Text",
+    "subjectPlaceholder": "Standard-Betreff wird verwendet",
+    "bodyPlaceholder": "Standard-Text wird verwendet",
+    "preview": "Vorschau",
+    "resetToDefault": "Auf Standard zurücksetzen",
+    "variables": "Verfügbare Variablen",
+    "save": "Speichern",
+    "saved": "Gespeichert",
+    "saving": "Speichert...",
+    "configure": "Benachrichtigungen",
+    "timingOptions": {
+      "15min": "15 Minuten",
+      "30min": "30 Minuten",
+      "1h": "1 Stunde",
+      "2h": "2 Stunden",
+      "4h": "4 Stunden",
+      "6h": "6 Stunden",
+      "12h": "12 Stunden",
+      "24h": "24 Stunden",
+      "48h": "48 Stunden"
+    },
+    "timingPrefix": {
+      "reminder": "vor dem Termin",
+      "followUp": "nach dem Termin"
+    }
   }
 }

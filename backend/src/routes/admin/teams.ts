@@ -17,13 +17,18 @@ const TeamMemberParams = z.object({
   userId: z.string().describe('User ID'),
 });
 
-/** Check if user can manage a team (is Owner or Company/Org Admin). */
-async function canManageTeam(userId: string, userRole: string, teamId: string): Promise<boolean> {
-  if (userRole === 'ORG_ADMIN' || userRole === 'COMPANY_ADMIN') return true;
+/** Check if user can manage a team (is Owner or Company/Org Admin). Also verifies org ownership. */
+async function canManageTeam(userId: string, userRole: string, teamId: string, organizationId: string): Promise<{ allowed: boolean; team: any }> {
+  const team = await prisma.team.findFirst({
+    where: { id: teamId, company: { organizationId } },
+  });
+  if (!team) return { allowed: false, team: null };
+
+  if (userRole === 'ORG_ADMIN' || userRole === 'COMPANY_ADMIN') return { allowed: true, team };
   const membership = await prisma.teamMembership.findUnique({
     where: { userId_teamId: { userId, teamId } },
   });
-  return membership?.role === 'OWNER';
+  return { allowed: membership?.role === 'OWNER', team };
 }
 
 export async function teamRoutes(app: FastifyInstance) {
@@ -46,6 +51,12 @@ export async function teamRoutes(app: FastifyInstance) {
   }, async (request, reply) => {
     const { companyId } = request.params as { companyId: string };
     const user = request.session.user!;
+
+    const company = await prisma.company.findFirst({
+      where: { id: companyId, organizationId: user.organizationId },
+    });
+    if (!company) return reply.status(404).send({ error: 'Company not found' });
+
     const body = CreateTeamSchema.parse(request.body);
 
     const team = await prisma.team.create({
@@ -75,8 +86,15 @@ export async function teamRoutes(app: FastifyInstance) {
         companyId: z.string().describe('Company ID'),
       }),
     },
-  }, async (request) => {
+  }, async (request, reply) => {
     const { companyId } = request.params as { companyId: string };
+    const user = request.session.user!;
+
+    const company = await prisma.company.findFirst({
+      where: { id: companyId, organizationId: user.organizationId },
+    });
+    if (!company) return reply.status(404).send({ error: 'Company not found' });
+
     return prisma.team.findMany({
       where: { companyId },
       include: {
@@ -98,8 +116,9 @@ export async function teamRoutes(app: FastifyInstance) {
     },
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
-    const team = await prisma.team.findUnique({
-      where: { id },
+    const user = request.session.user!;
+    const team = await prisma.team.findFirst({
+      where: { id, company: { organizationId: user.organizationId } },
       include: {
         rrConfig: true,
         memberships: { include: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } } },
@@ -135,6 +154,12 @@ export async function teamRoutes(app: FastifyInstance) {
       status?: string;
       userId?: string;
     };
+
+    // Org isolation check
+    const team = await prisma.team.findFirst({
+      where: { id, company: { organizationId: user.organizationId } },
+    });
+    if (!team) return reply.status(404).send({ error: 'Team not found' });
 
     // Access check: must be a team member
     const membership = await prisma.teamMembership.findUnique({
@@ -197,12 +222,12 @@ export async function teamRoutes(app: FastifyInstance) {
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const user = request.session.user!;
-    if (!(await canManageTeam(user.id, user.activeRole ?? 'USER', id))) {
-      return reply.status(403).send({ error: 'Not authorized' });
-    }
+    const { allowed, team } = await canManageTeam(user.id, user.activeRole ?? 'USER', id, user.organizationId);
+    if (!team) return reply.status(404).send({ error: 'Team not found' });
+    if (!allowed) return reply.status(403).send({ error: 'Not authorized' });
     const body = UpdateTeamSchema.parse(request.body);
-    const team = await prisma.team.update({ where: { id }, data: body });
-    return team;
+    const updated = await prisma.team.update({ where: { id }, data: body });
+    return updated;
   });
 
   /** DELETE /api/admin/teams/:id — Delete team */
@@ -217,9 +242,9 @@ export async function teamRoutes(app: FastifyInstance) {
   }, async (request, reply) => {
     const { id } = (request.params as { id: string });
     const user = request.session.user!;
-    if (!(await canManageTeam(user.id, user.activeRole ?? 'USER', id))) {
-      return reply.status(403).send({ error: 'Not authorized' });
-    }
+    const { allowed, team } = await canManageTeam(user.id, user.activeRole ?? 'USER', id, user.organizationId);
+    if (!team) return reply.status(404).send({ error: 'Team not found' });
+    if (!allowed) return reply.status(403).send({ error: 'Not authorized' });
     await prisma.team.delete({ where: { id } });
     return { success: true };
   });
@@ -234,8 +259,15 @@ export async function teamRoutes(app: FastifyInstance) {
       params: TeamIdParam,
       body: UpdateRoundRobinSchema,
     },
-  }, async (request) => {
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
+    const user = request.session.user!;
+
+    const team = await prisma.team.findFirst({
+      where: { id, company: { organizationId: user.organizationId } },
+    });
+    if (!team) return reply.status(404).send({ error: 'Team not found' });
+
     const body = UpdateRoundRobinSchema.parse(request.body);
     return prisma.roundRobinConfig.update({
       where: { teamId: id },
@@ -255,6 +287,13 @@ export async function teamRoutes(app: FastifyInstance) {
     },
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
+    const user = request.session.user!;
+
+    const team = await prisma.team.findFirst({
+      where: { id, company: { organizationId: user.organizationId } },
+    });
+    if (!team) return reply.status(404).send({ error: 'Team not found' });
+
     const body = AddTeamMemberSchema.parse(request.body);
     const membership = await prisma.teamMembership.create({
       data: { teamId: id, userId: body.userId, weight: body.weight },
@@ -273,8 +312,15 @@ export async function teamRoutes(app: FastifyInstance) {
       params: TeamMemberParams,
       body: UpdateTeamMemberSchema,
     },
-  }, async (request) => {
+  }, async (request, reply) => {
     const { teamId, userId } = request.params as { teamId: string; userId: string };
+    const user = request.session.user!;
+
+    const team = await prisma.team.findFirst({
+      where: { id: teamId, company: { organizationId: user.organizationId } },
+    });
+    if (!team) return reply.status(404).send({ error: 'Team not found' });
+
     const body = UpdateTeamMemberSchema.parse(request.body);
     return prisma.teamMembership.update({
       where: { userId_teamId: { userId, teamId } },
@@ -297,9 +343,9 @@ export async function teamRoutes(app: FastifyInstance) {
     const { teamId, userId: targetUserId } = request.params as { teamId: string; userId: string };
     const user = request.session.user!;
 
-    if (!(await canManageTeam(user.id, user.activeRole ?? 'USER', teamId))) {
-      return reply.status(403).send({ error: 'Not authorized' });
-    }
+    const { allowed, team } = await canManageTeam(user.id, user.activeRole ?? 'USER', teamId, user.organizationId);
+    if (!team) return reply.status(404).send({ error: 'Team not found' });
+    if (!allowed) return reply.status(403).send({ error: 'Not authorized' });
 
     const body = UpdateTeamMemberRoleSchema.parse(request.body);
 
@@ -332,9 +378,9 @@ export async function teamRoutes(app: FastifyInstance) {
   }, async (request, reply) => {
     const { teamId, userId } = request.params as { teamId: string; userId: string };
     const user = request.session.user!;
-    if (!(await canManageTeam(user.id, user.activeRole ?? 'USER', teamId))) {
-      return reply.status(403).send({ error: 'Not authorized' });
-    }
+    const { allowed, team } = await canManageTeam(user.id, user.activeRole ?? 'USER', teamId, user.organizationId);
+    if (!team) return reply.status(404).send({ error: 'Team not found' });
+    if (!allowed) return reply.status(403).send({ error: 'Not authorized' });
 
     const target = await prisma.teamMembership.findUnique({
       where: { userId_teamId: { userId, teamId } },
@@ -364,6 +410,12 @@ export async function teamRoutes(app: FastifyInstance) {
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const user = request.session.user!;
+
+    const team = await prisma.team.findFirst({
+      where: { id, company: { organizationId: user.organizationId } },
+    });
+    if (!team) return reply.status(404).send({ error: 'Team not found' });
+
     try {
       const membership = await prisma.teamMembership.create({
         data: { teamId: id, userId: user.id, weight: 100 },
@@ -387,6 +439,11 @@ export async function teamRoutes(app: FastifyInstance) {
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const user = request.session.user!;
+
+    const team = await prisma.team.findFirst({
+      where: { id, company: { organizationId: user.organizationId } },
+    });
+    if (!team) return reply.status(404).send({ error: 'Team not found' });
 
     // Last-owner protection
     const membership = await prisma.teamMembership.findUnique({
@@ -420,7 +477,13 @@ export async function teamRoutes(app: FastifyInstance) {
     },
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
+    const user = request.session.user!;
     const { email, weight } = request.body as { email: string; weight?: number };
+
+    const team = await prisma.team.findFirst({
+      where: { id, company: { organizationId: user.organizationId } },
+    });
+    if (!team) return reply.status(404).send({ error: 'Team not found' });
 
     const targetUser = await prisma.user.findUnique({ where: { email } });
     if (!targetUser) {

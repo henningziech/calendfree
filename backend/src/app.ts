@@ -32,6 +32,7 @@ import { routingRoutes } from './routes/routing.js';
 import { hubspotRoutes } from './routes/admin/hubspot.js';
 import { analyticsRoutes } from './routes/admin/analytics.js';
 import { domainRoutes } from './routes/admin/domains.js';
+import { notificationRoutes } from './routes/admin/notifications.js';
 import { embedRoutes } from './routes/embed.js';
 import { holidayRoutes } from './routes/holidays.js';
 import { registerHubSpotHandlers } from './jobs/hubspot-jobs.js';
@@ -131,6 +132,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(teamRoutes);
   await app.register(userRoutes);
   await app.register(eventTypeRoutes);
+  await app.register(notificationRoutes);
   await app.register(apiKeyRoutes);
   await app.register(routingFormAdminRoutes);
   await app.register(hubspotRoutes);

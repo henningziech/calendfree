@@ -116,9 +116,17 @@ export async function userRoutes(app: FastifyInstance) {
       }),
     },
     preHandler: [requireRole('ORG_ADMIN')],
-  }, async (request) => {
+  }, async (request, reply) => {
     const { companyId, userId } = request.params as { companyId: string; userId: string };
+    const user = request.session.user!;
     const body = UpdateMembershipRoleSchema.parse(request.body);
+
+    // Verify company belongs to requesting user's organization
+    const company = await prisma.company.findFirst({
+      where: { id: companyId, organizationId: user.organizationId },
+    });
+    if (!company) return reply.status(404).send({ error: 'Company not found' });
+
     return prisma.companyMembership.update({
       where: { userId_companyId: { userId, companyId } },
       data: { role: body.role },
@@ -138,8 +146,16 @@ export async function userRoutes(app: FastifyInstance) {
       }),
     },
     preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')],
-  }, async (request) => {
+  }, async (request, reply) => {
     const { companyId, userId } = request.params as { companyId: string; userId: string };
+    const user = request.session.user!;
+
+    // Verify company belongs to requesting user's organization
+    const company = await prisma.company.findFirst({
+      where: { id: companyId, organizationId: user.organizationId },
+    });
+    if (!company) return reply.status(404).send({ error: 'Company not found' });
+
     await prisma.companyMembership.delete({
       where: { userId_companyId: { userId, companyId } },
     });
@@ -191,9 +207,10 @@ export async function userRoutes(app: FastifyInstance) {
     preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')],
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
+    const requestingUser = request.session.user!;
     const { status, absentUntil } = request.body as { status: 'AVAILABLE' | 'ABSENT'; absentUntil?: string };
 
-    const user = await prisma.user.findUnique({ where: { id } });
+    const user = await prisma.user.findFirst({ where: { id, organizationId: requestingUser.organizationId } });
     if (!user) return reply.status(404).send({ error: 'User not found' });
 
     const updated = await prisma.user.update({
@@ -219,8 +236,16 @@ export async function userRoutes(app: FastifyInstance) {
       }),
     },
     preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')],
-  }, async (request) => {
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
+    const requestingUser = request.session.user!;
+
+    // Verify target user belongs to the same organization
+    const targetUser = await prisma.user.findFirst({
+      where: { id, organizationId: requestingUser.organizationId },
+    });
+    if (!targetUser) return reply.status(404).send({ error: 'User not found' });
+
     const bookings = await prisma.booking.findMany({
       where: {
         assignedUserId: id,
@@ -257,10 +282,12 @@ export async function userRoutes(app: FastifyInstance) {
       return reply.status(400).send({ error: 'Cannot delete yourself' });
     }
 
-    const user = await prisma.user.findUnique({ where: { id } });
+    const user = await prisma.user.findFirst({
+      where: { id, organizationId: requestingUser.organizationId },
+    });
     if (!user) return reply.status(404).send({ error: 'User not found' });
 
-    await prisma.user.delete({ where: { id } });
+    await prisma.user.delete({ where: { id: user.id } });
 
     logAudit({
       userId: requestingUser.id,

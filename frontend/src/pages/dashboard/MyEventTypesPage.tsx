@@ -6,9 +6,10 @@ import { getEventTypes, createEventType, updateEventType, toggleEventType, delet
 import { getCompanies } from '../../api/admin';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { ErrorMessage } from '../../components/ui/ErrorMessage';
+import { NotificationConfigPanel } from '../../components/notifications/NotificationConfigPanel';
 
 export function MyEventTypesPage() {
-  const { t } = useTranslation(['dashboard', 'common']);
+  const { t } = useTranslation(['dashboard', 'common', 'admin']);
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [eventTypes, setEventTypes] = useState<any[]>([]);
@@ -19,6 +20,7 @@ export function MyEventTypesPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [notifEventTypeId, setNotifEventTypeId] = useState<string | null>(null);
   const [form, setForm] = useState({
     title: '',
     slug: '',
@@ -463,6 +465,15 @@ export function MyEventTypesPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <button
+                    onClick={() => setNotifEventTypeId(et.id)}
+                    className="rounded-xl bg-[#F8FAFC] px-3 py-1.5 text-xs font-medium text-[#1E293B] ring-1 ring-[#E2E8F0] transition-colors hover:bg-[#E2E8F0] flex items-center gap-1"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-3.5 w-3.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+                    </svg>
+                    {t('admin:notifications.configure')}
+                  </button>
+                  <button
                     onClick={() => startEdit(et)}
                     className="rounded-xl bg-[#F8FAFC] px-3 py-1.5 text-xs font-medium text-[#1E293B] ring-1 ring-[#E2E8F0] transition-colors hover:bg-[#E2E8F0]"
                   >
@@ -553,6 +564,14 @@ export function MyEventTypesPage() {
           </div>
         )}
       </div>
+
+      {notifEventTypeId && (
+        <NotificationConfigPanel
+          eventTypeId={notifEventTypeId}
+          isOpen={!!notifEventTypeId}
+          onClose={() => setNotifEventTypeId(null)}
+        />
+      )}
     </div>
   );
 }

@@ -26,6 +26,7 @@ const sidebars: SidebarsConfig = {
         'features/google-calendar',
         'features/analytics',
         'features/api-keys',
+        'features/notifications',
       ],
     },
   ],

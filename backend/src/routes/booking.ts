@@ -4,6 +4,7 @@ import { z } from 'zod/v4';
 import { randomBytes } from 'node:crypto';
 import { addMinutes } from 'date-fns';
 import { prisma } from '../db.js';
+import { Prisma } from '@prisma/client';
 import { config } from '../config.js';
 import { getAvailableSlots } from '../services/availability.js';
 import { assignUser } from '../services/round-robin.js';
@@ -330,28 +331,54 @@ export async function bookingRoutes(app: FastifyInstance) {
     // Generate secure booking token
     const bookingToken = randomBytes(32).toString('hex');
 
-    // Create booking in DB
-    const booking = await prisma.booking.create({
-      data: {
-        eventTypeId: eventType.id,
-        assignedUserId,
-        startTime,
-        endTime,
-        customerTimezone,
-        bookingToken,
-        tokenExpiresAt: startTime, // Cancel/reschedule links expire at meeting time
-        formData: {
-          create: {
-            name: body.name,
-            email: body.email,
-            data: { ...body.formData, ...(body.comment ? { _comment: body.comment } : {}) },
+    // Create booking in DB with conflict check (prevents double-booking)
+    let booking;
+    try {
+      booking = await prisma.$transaction(async (tx) => {
+        // Re-check for conflicting bookings inside the transaction
+        const conflicting = await tx.booking.count({
+          where: {
+            assignedUserId,
+            status: { in: ['CONFIRMED', 'PENDING_CALENDAR_SYNC'] },
+            startTime: { lt: endTime },
+            endTime: { gt: startTime },
           },
-        },
-      },
-      include: {
-        assignedUser: { select: { name: true, email: true } },
-      },
-    });
+        });
+        if (conflicting > 0) {
+          throw new Error('SLOT_TAKEN');
+        }
+
+        return tx.booking.create({
+          data: {
+            eventTypeId: eventType.id,
+            assignedUserId,
+            startTime,
+            endTime,
+            customerTimezone,
+            bookingToken,
+            tokenExpiresAt: startTime, // Cancel/reschedule links expire at meeting time
+            formData: {
+              create: {
+                name: body.name,
+                email: body.email,
+                data: { ...body.formData, ...(body.comment ? { _comment: body.comment } : {}) },
+              },
+            },
+          },
+          include: {
+            assignedUser: { select: { name: true, email: true } },
+          },
+        });
+      }, {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+        timeout: 5000,
+      });
+    } catch (err: any) {
+      if (err.message === 'SLOT_TAKEN' || err.code === 'P2034') {
+        return reply.status(409).send({ error: 'Slot is no longer available' });
+      }
+      throw err;
+    }
 
     // Create Google Calendar event (non-blocking on failure)
     let meetLink: string | null = null;

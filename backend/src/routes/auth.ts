@@ -77,7 +77,10 @@ export async function authRoutes(app: FastifyInstance) {
       });
 
       return reply.redirect(`${config.FRONTEND_URL}/dashboard`);
-    } catch (err) {
+    } catch (err: any) {
+      if (err.message === 'REGISTRATION_NOT_ALLOWED') {
+        return reply.redirect(`${config.FRONTEND_URL}/login?error=registration_not_allowed`);
+      }
       app.log.error(err, 'OAuth callback failed');
       return reply.redirect(`${config.FRONTEND_URL}/login?error=oauth_failed`);
     }

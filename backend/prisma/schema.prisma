@@ -68,11 +68,12 @@ enum UserStatus {
 // ──────────────────────────────────────────────
 
 model Organization {
-  id        String   @id @default(uuid())
-  name      String
-  slug      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String   @id @default(uuid())
+  name           String
+  slug           String   @unique
+  allowedDomains String[] @default([])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   companies Company[]
   users     User[]

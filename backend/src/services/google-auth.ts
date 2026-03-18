@@ -54,6 +54,14 @@ export async function handleCallback(code: string) {
       throw new Error('No organization exists. Please run the seed script first.');
     }
 
+    // Check email domain restriction (skip if no domains configured = allow all)
+    if (org.allowedDomains.length > 0) {
+      const emailDomain = email.split('@')[1]?.toLowerCase();
+      if (!emailDomain || !org.allowedDomains.includes(emailDomain)) {
+        throw new Error('REGISTRATION_NOT_ALLOWED');
+      }
+    }
+
     // Check if this is the first user in the org → make them ORG_ADMIN
     const existingUserCount = await prisma.user.count({ where: { organizationId: org.id } });
     const isFirstUser = existingUserCount === 0;

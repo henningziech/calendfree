@@ -77,7 +77,7 @@ const DEFAULT_NOTIF_CONFIG: NotificationConfigState = {
   followUpBody: null,
 };
 
-type Tab = 'general' | 'notifications' | 'settings';
+type Tab = 'general' | 'notifications';
 
 /**
  * Dedicated create/edit page for a single event type.
@@ -99,7 +99,6 @@ export function MyEventTypeDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [teams, setTeams] = useState<any[]>([]);
   const [companySlug, setCompanySlug] = useState<string>('');
-  const [eventTypeFields, setEventTypeFields] = useState<any[]>([]);
 
   // Form state
   const [form, setForm] = useState({
@@ -184,7 +183,6 @@ export function MyEventTypeDetailPage() {
           maxInvitees: et.maxInvitees ?? 2,
           showRemainingSpots: et.showRemainingSpots ?? false,
         });
-        setEventTypeFields(et.fields ?? []);
       })
       .catch((err: any) => setError(err.message))
       .finally(() => setIsLoading(false));
@@ -281,10 +279,9 @@ export function MyEventTypeDetailPage() {
 
   if (isLoading) return <LoadingSpinner />;
 
-  const tabs: { key: Tab; label: string; disabled: boolean }[] = [
-    { key: 'general', label: t('dashboard:eventTypeDetail.tabs.general'), disabled: false },
-    { key: 'notifications', label: t('dashboard:eventTypeDetail.tabs.notifications'), disabled: isCreateMode },
-    { key: 'settings', label: t('dashboard:eventTypeDetail.tabs.settings'), disabled: isCreateMode },
+  const tabs: { key: Tab; label: string }[] = [
+    { key: 'general', label: t('dashboard:eventTypeDetail.tabs.general') },
+    { key: 'notifications', label: t('dashboard:eventTypeDetail.tabs.notifications') },
   ];
 
   return (
@@ -308,14 +305,11 @@ export function MyEventTypeDetailPage() {
           {tabs.map((tab) => (
             <button
               key={tab.key}
-              onClick={() => !tab.disabled && setActiveTab(tab.key)}
-              disabled={tab.disabled}
+              onClick={() => setActiveTab(tab.key)}
               className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
                 activeTab === tab.key
                   ? 'border-[#0B8ECA] text-[#0B8ECA]'
-                  : tab.disabled
-                    ? 'border-transparent text-[#94A3B8] cursor-not-allowed'
-                    : 'border-transparent text-[#64748B] hover:text-[#1E293B]'
+                  : 'border-transparent text-[#64748B] hover:text-[#1E293B]'
               }`}
             >
               {tab.label}
@@ -324,15 +318,10 @@ export function MyEventTypeDetailPage() {
         </div>
       </div>
 
-      {/* Disabled tab messages */}
+      {/* Create mode hint for notifications */}
       {activeTab === 'notifications' && isCreateMode && (
         <div className="rounded-xl bg-[#F8FAFC] p-6 text-sm text-[#64748B]">
           {t('dashboard:eventTypeDetail.notificationsDisabled')}
-        </div>
-      )}
-      {activeTab === 'settings' && isCreateMode && (
-        <div className="rounded-xl bg-[#F8FAFC] p-6 text-sm text-[#64748B]">
-          {t('dashboard:eventTypeDetail.settingsDisabled')}
         </div>
       )}
 
@@ -666,40 +655,6 @@ export function MyEventTypeDetailPage() {
                 </button>
               </div>
             </>
-          )}
-        </div>
-      )}
-
-      {/* Tab: Settings */}
-      {activeTab === 'settings' && !isCreateMode && (
-        <div className="rounded-xl border border-[#E2E8F0] bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-[#1E293B] mb-4">{t('dashboard:eventTypeDetail.settings.title')}</h3>
-          {eventTypeFields.length > 0 ? (
-            <div className="overflow-hidden rounded-lg border border-[#E2E8F0]">
-              <table className="min-w-full divide-y divide-[#E2E8F0]">
-                <thead className="bg-[#F8FAFC]">
-                  <tr>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-[#64748B]">{t('dashboard:eventTypeDetail.settings.label')}</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-[#64748B]">{t('dashboard:eventTypeDetail.settings.type')}</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-[#64748B]">{t('dashboard:eventTypeDetail.settings.required')}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#E2E8F0]">
-                  {eventTypeFields.map((field: any, idx: number) => (
-                    <tr key={idx}>
-                      <td className="px-4 py-2 text-sm text-[#1E293B]">{field.label}</td>
-                      <td className="px-4 py-2 text-sm text-[#64748B]">{field.type}</td>
-                      <td className="px-4 py-2 text-sm text-[#64748B]">{field.required ? t('common:yes') : t('common:no')}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="rounded-xl bg-[#F8FAFC] p-6 text-center">
-              <p className="text-sm text-[#64748B]">{t('dashboard:eventTypeDetail.settings.noFields')}</p>
-              <p className="mt-1 text-xs text-[#94A3B8]">{t('dashboard:eventTypeDetail.settings.comingSoon')}</p>
-            </div>
           )}
         </div>
       )}

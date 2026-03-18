@@ -181,6 +181,26 @@
     "bookingsCount": "Buchungen",
     "leadTime": "Vorlaufzeit"
   },
+  "eventTypeDetail": {
+    "newTitle": "Neuer Terminplaner",
+    "editTitle": "Terminplaner bearbeiten",
+    "back": "Meine Terminplaner",
+    "tabs": {
+      "general": "Allgemein",
+      "notifications": "Benachrichtigungen",
+      "settings": "Einstellungen"
+    },
+    "settings": {
+      "title": "Formularfelder",
+      "noFields": "Keine benutzerdefinierten Formularfelder.",
+      "comingSoon": "Formularfeld-Bearbeitung wird bald verf\u00fcgbar sein.",
+      "label": "Label",
+      "type": "Typ",
+      "required": "Pflichtfeld"
+    },
+    "notificationsDisabled": "Speichern Sie den Terminplaner zuerst, um Benachrichtigungen zu konfigurieren.",
+    "settingsDisabled": "Speichern Sie den Terminplaner zuerst, um Einstellungen zu konfigurieren."
+  },
   "availability": {
     "title": "Verf\u00fcgbarkeit",
     "saving": "Speichern...",

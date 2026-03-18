@@ -28,6 +28,7 @@ import { AvailabilityPage } from './pages/dashboard/AvailabilityPage';
 import { ApiKeysPage } from './pages/dashboard/ApiKeysPage';
 import { AccountSettingsPage } from './pages/dashboard/AccountSettingsPage';
 import { MyEventTypesPage } from './pages/dashboard/MyEventTypesPage';
+import { MyEventTypeDetailPage } from './pages/dashboard/MyEventTypeDetailPage';
 import { MyTeamsPage } from './pages/dashboard/MyTeamsPage';
 import { TeamDetailPage } from './pages/dashboard/TeamDetailPage';
 import { BookingDetailPage } from './pages/dashboard/BookingDetailPage';
@@ -65,6 +66,8 @@ export default function App() {
             <Route index element={<UserDashboard />} />
             <Route path="availability" element={<AvailabilityPage />} />
             <Route path="my-event-types" element={<MyEventTypesPage />} />
+            <Route path="my-event-types/new" element={<MyEventTypeDetailPage />} />
+            <Route path="my-event-types/:eventTypeId" element={<MyEventTypeDetailPage />} />
             <Route path="teams" element={<MyTeamsPage />} />
             <Route path="teams/:teamId" element={<TeamDetailPage />} />
             <Route path="bookings/:bookingId" element={<BookingDetailPage />} />

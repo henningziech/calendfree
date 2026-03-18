@@ -181,6 +181,26 @@
     "bookingsCount": "Bookings",
     "leadTime": "Lead time"
   },
+  "eventTypeDetail": {
+    "newTitle": "New Event Type",
+    "editTitle": "Edit Event Type",
+    "back": "My Event Types",
+    "tabs": {
+      "general": "General",
+      "notifications": "Notifications",
+      "settings": "Settings"
+    },
+    "settings": {
+      "title": "Form Fields",
+      "noFields": "No custom form fields configured.",
+      "comingSoon": "Form field editing coming soon.",
+      "label": "Label",
+      "type": "Type",
+      "required": "Required"
+    },
+    "notificationsDisabled": "Save the event type first to configure notifications.",
+    "settingsDisabled": "Save the event type first to configure settings."
+  },
   "availability": {
     "title": "Availability",
     "saving": "Saving...",

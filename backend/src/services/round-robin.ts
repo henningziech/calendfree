@@ -84,12 +84,12 @@ export async function assignUser(
 /** Sequential: rotate through members by index */
 async function assignSequential(
   tx: Prisma.TransactionClient,
-  rrConfig: { id: string; lastAssignedIndex: number; version: number },
+  rrConfig: { id: string; teamId: string; lastAssignedIndex: number; version: number },
   availableUserIds: string[],
 ): Promise<string> {
   // Get ordered team memberships
   const memberships = await tx.teamMembership.findMany({
-    where: { teamId: rrConfig.id, userId: { in: availableUserIds } },
+    where: { teamId: rrConfig.teamId, userId: { in: availableUserIds } },
     orderBy: { userId: 'asc' },
   });
 

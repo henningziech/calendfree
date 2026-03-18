@@ -91,9 +91,18 @@ export function RoutingPage() {
         case 'MESSAGE':
           setMessage(result.value);
           break;
-        case 'URL':
-          window.location.href = result.value;
+        case 'URL': {
+          // Safety check: only allow http/https redirects
+          try {
+            const url = new URL(result.value);
+            if (url.protocol === 'https:' || url.protocol === 'http:') {
+              window.location.href = result.value;
+            }
+          } catch {
+            // Invalid URL — do nothing
+          }
           break;
+        }
       }
     } catch (err: any) {
       setError(err.message || t('public.genericError'));

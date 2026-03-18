@@ -76,6 +76,18 @@ export async function routingRoutes(app: FastifyInstance) {
     if (body.name) prefill.name = body.name;
     if (body.email) prefill.email = body.email;
 
+    // Validate URL targets to prevent open redirect attacks
+    if (targetType === 'URL') {
+      try {
+        const url = new URL(targetValue);
+        if (!['https:', 'http:'].includes(url.protocol)) {
+          return reply.status(400).send({ error: 'Invalid redirect URL: only http/https allowed' });
+        }
+      } catch {
+        return reply.status(400).send({ error: 'Invalid redirect URL' });
+      }
+    }
+
     return {
       type: targetType,
       value: targetValue,

@@ -9,6 +9,7 @@ import type { SessionUser } from '@calendfree/shared';
 declare module '@fastify/session' {
   interface FastifySessionObject {
     user?: SessionUser;
+    oauthState?: string;
   }
 }
 

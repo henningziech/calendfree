@@ -39,7 +39,9 @@ export async function authRoutes(app: FastifyInstance) {
       security: [],
     },
   }, async (request, reply) => {
-    const url = getAuthUrl();
+    const state = crypto.randomUUID();
+    request.session.oauthState = state;
+    const url = getAuthUrl(state);
     return reply.redirect(url);
   });
 
@@ -53,6 +55,7 @@ export async function authRoutes(app: FastifyInstance) {
       querystring: z.object({
         code: z.string().optional().describe('Authorization code from Google'),
         error: z.string().optional().describe('Error code if OAuth was denied'),
+        state: z.string().optional().describe('OAuth state parameter for CSRF protection'),
       }),
     },
   }, async (request, reply) => {
@@ -62,6 +65,14 @@ export async function authRoutes(app: FastifyInstance) {
       app.log.warn({ error }, 'OAuth callback error');
       return reply.redirect(`${config.FRONTEND_URL}/login?error=oauth_failed`);
     }
+
+    // Validate OAuth state parameter to prevent CSRF
+    const { state } = request.query as { code?: string; error?: string; state?: string };
+    if (!state || state !== request.session.oauthState) {
+      app.log.warn('OAuth state mismatch — possible CSRF');
+      return reply.redirect(`${config.FRONTEND_URL}/login?error=invalid_state`);
+    }
+    delete request.session.oauthState;
 
     try {
       const sessionUser = await handleCallback(code);

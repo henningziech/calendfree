@@ -87,7 +87,7 @@ export function Sidebar() {
 
   const handleCreate = (key: string) => {
     setCreateOpen(false);
-    navigate(`/dashboard/my-event-types?create=${key}`);
+    navigate(`/dashboard/my-event-types/new?category=${key}`);
   };
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>

@@ -637,9 +637,9 @@ export async function userRoutes(app: FastifyInstance) {
   });
 
   /** Helper: Check if user has access to a booking (owner or team member) */
-  async function checkBookingAccess(userId: string, bookingId: string) {
-    const booking = await prisma.booking.findUnique({
-      where: { id: bookingId },
+  async function checkBookingAccess(userId: string, bookingId: string, organizationId: string) {
+    const booking = await prisma.booking.findFirst({
+      where: { id: bookingId, eventType: { company: { organizationId } } },
       include: { eventType: { select: { teamId: true } } },
     });
     if (!booking) return { booking: null as any, hasAccess: false };
@@ -670,7 +670,7 @@ export async function userRoutes(app: FastifyInstance) {
     const user = request.session.user!;
     const { bookingId } = request.params as { bookingId: string };
 
-    const { booking, hasAccess } = await checkBookingAccess(user.id, bookingId);
+    const { booking, hasAccess } = await checkBookingAccess(user.id, bookingId, user.organizationId);
     if (!booking) return reply.status(404).send({ error: 'Booking not found' });
     if (!hasAccess) return reply.status(403).send({ error: 'Access denied' });
 
@@ -710,7 +710,7 @@ export async function userRoutes(app: FastifyInstance) {
     const { bookingId } = request.params as { bookingId: string };
     const { status } = UpdateBookingStatusSchema.parse(request.body);
 
-    const { booking, hasAccess } = await checkBookingAccess(user.id, bookingId);
+    const { booking, hasAccess } = await checkBookingAccess(user.id, bookingId, user.organizationId);
     if (!booking) return reply.status(404).send({ error: 'Booking not found' });
     if (!hasAccess) return reply.status(403).send({ error: 'Access denied' });
 
@@ -742,7 +742,7 @@ export async function userRoutes(app: FastifyInstance) {
     const { bookingId } = request.params as { bookingId: string };
     const { content } = CreateBookingCommentSchema.parse(request.body);
 
-    const { booking, hasAccess } = await checkBookingAccess(user.id, bookingId);
+    const { booking, hasAccess } = await checkBookingAccess(user.id, bookingId, user.organizationId);
     if (!booking) return reply.status(404).send({ error: 'Booking not found' });
     if (!hasAccess) return reply.status(403).send({ error: 'Access denied' });
 

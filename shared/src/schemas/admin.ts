@@ -212,3 +212,45 @@ export const ResolveRoutingFormSchema = z.object({
   email: z.string().email().optional(),
 });
 export type ResolveRoutingForm = z.infer<typeof ResolveRoutingFormSchema>;
+
+// Notification config
+export const Reminder1TimingSchema = z.enum(['48h', '24h', '12h', '6h', '2h']);
+export type Reminder1Timing = z.infer<typeof Reminder1TimingSchema>;
+
+export const Reminder2TimingSchema = z.enum(['4h', '2h', '1h', '30min', '15min']);
+export type Reminder2Timing = z.infer<typeof Reminder2TimingSchema>;
+
+export const FollowUpTimingSchema = z.enum(['30min', '1h', '2h', '6h', '24h']);
+export type FollowUpTiming = z.infer<typeof FollowUpTimingSchema>;
+
+export const NotificationTypeSchema = z.enum(['confirmation', 'cancellation', 'reminder1', 'reminder2', 'followUp']);
+export type NotificationType = z.infer<typeof NotificationTypeSchema>;
+
+export const UpdateNotificationConfigSchema = z.object({
+  confirmationEnabled: z.boolean(),
+  confirmationSubject: z.string().max(200).nullable(),
+  confirmationBody: z.string().max(5000).nullable(),
+  cancellationEnabled: z.boolean(),
+  cancellationSubject: z.string().max(200).nullable(),
+  cancellationBody: z.string().max(5000).nullable(),
+  reminder1Enabled: z.boolean(),
+  reminder1Timing: Reminder1TimingSchema,
+  reminder1Subject: z.string().max(200).nullable(),
+  reminder1Body: z.string().max(5000).nullable(),
+  reminder2Enabled: z.boolean(),
+  reminder2Timing: Reminder2TimingSchema,
+  reminder2Subject: z.string().max(200).nullable(),
+  reminder2Body: z.string().max(5000).nullable(),
+  followUpEnabled: z.boolean(),
+  followUpTiming: FollowUpTimingSchema,
+  followUpSubject: z.string().max(200).nullable(),
+  followUpBody: z.string().max(5000).nullable(),
+});
+export type UpdateNotificationConfig = z.infer<typeof UpdateNotificationConfigSchema>;
+
+export const PreviewNotificationSchema = z.object({
+  type: NotificationTypeSchema,
+  subject: z.string().max(200).nullable().optional(),
+  body: z.string().max(5000).nullable().optional(),
+});
+export type PreviewNotification = z.infer<typeof PreviewNotificationSchema>;

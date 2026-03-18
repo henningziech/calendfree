@@ -1,5 +1,6 @@
 // backend/src/jobs/notification-jobs.ts
 import { getQueue } from './queue.js';
+import { prisma } from '../db.js';
 import {
   sendBookingConfirmation,
   sendBookingReminder,
@@ -15,6 +16,18 @@ export const JOB_NAMES = {
   BOOKING_FOLLOWUP: 'booking-followup',
 } as const;
 
+const TIMING_MS: Record<string, number> = {
+  '15min': 15 * 60 * 1000,
+  '30min': 30 * 60 * 1000,
+  '1h': 60 * 60 * 1000,
+  '2h': 2 * 60 * 60 * 1000,
+  '4h': 4 * 60 * 60 * 1000,
+  '6h': 6 * 60 * 60 * 1000,
+  '12h': 12 * 60 * 60 * 1000,
+  '24h': 24 * 60 * 60 * 1000,
+  '48h': 48 * 60 * 60 * 1000,
+};
+
 /** Register all notification job handlers with pg-boss. */
 export async function registerNotificationHandlers(): Promise<void> {
   const queue = getQueue();
@@ -24,11 +37,11 @@ export async function registerNotificationHandlers(): Promise<void> {
   });
 
   await queue.work(JOB_NAMES.BOOKING_REMINDER_24H, async (job) => {
-    await sendBookingReminder(job.data.bookingId, '24 Stunden');
+    await sendBookingReminder(job.data.bookingId, job.data.reminderText ?? '24h');
   });
 
   await queue.work(JOB_NAMES.BOOKING_REMINDER_1H, async (job) => {
-    await sendBookingReminder(job.data.bookingId, '1 Stunde');
+    await sendBookingReminder(job.data.bookingId, job.data.reminderText ?? '1h');
   });
 
   await queue.work(JOB_NAMES.BOOKING_CANCELLATION, async (job) => {
@@ -40,47 +53,70 @@ export async function registerNotificationHandlers(): Promise<void> {
   });
 }
 
-/** Schedule all notification jobs for a new booking. */
+/** Schedule all notification jobs for a new booking, based on NotificationConfig. */
 export async function scheduleBookingNotifications(params: {
   bookingId: string;
+  eventTypeId: string;
   startTime: Date;
   endTime: Date;
 }): Promise<void> {
   const queue = getQueue();
-  const { bookingId, startTime, endTime } = params;
+  const { bookingId, eventTypeId, startTime, endTime } = params;
 
-  // Immediate: confirmation email
-  await queue.send(JOB_NAMES.BOOKING_CONFIRMATION, { bookingId });
-
-  // 24h before: reminder (only if booking is >24h away)
-  const reminder24h = new Date(startTime.getTime() - 24 * 60 * 60 * 1000);
-  if (reminder24h > new Date()) {
-    await queue.send(JOB_NAMES.BOOKING_REMINDER_24H, { bookingId }, {
-      startAfter: reminder24h,
-    });
-  }
-
-  // 1h before: reminder (only if booking is >1h away)
-  const reminder1h = new Date(startTime.getTime() - 60 * 60 * 1000);
-  if (reminder1h > new Date()) {
-    await queue.send(JOB_NAMES.BOOKING_REMINDER_1H, { bookingId }, {
-      startAfter: reminder1h,
-    });
-  }
-
-  // After meeting: follow-up (30 min after end)
-  const followUp = new Date(endTime.getTime() + 30 * 60 * 1000);
-  await queue.send(JOB_NAMES.BOOKING_FOLLOWUP, { bookingId }, {
-    startAfter: followUp,
+  const config = await prisma.notificationConfig.findUnique({
+    where: { eventTypeId },
   });
+
+  // No config = all notifications off (default)
+  if (!config) return;
+
+  if (config.confirmationEnabled) {
+    await queue.send(JOB_NAMES.BOOKING_CONFIRMATION, { bookingId });
+  }
+
+  if (config.reminder1Enabled) {
+    const ms = TIMING_MS[config.reminder1Timing] ?? TIMING_MS['24h'];
+    const reminderTime = new Date(startTime.getTime() - ms);
+    if (reminderTime > new Date()) {
+      await queue.send(JOB_NAMES.BOOKING_REMINDER_24H, {
+        bookingId, reminderText: config.reminder1Timing,
+      }, { startAfter: reminderTime });
+    }
+  }
+
+  if (config.reminder2Enabled) {
+    const ms = TIMING_MS[config.reminder2Timing] ?? TIMING_MS['1h'];
+    const reminderTime = new Date(startTime.getTime() - ms);
+    if (reminderTime > new Date()) {
+      await queue.send(JOB_NAMES.BOOKING_REMINDER_1H, {
+        bookingId, reminderText: config.reminder2Timing,
+      }, { startAfter: reminderTime });
+    }
+  }
+
+  if (config.followUpEnabled) {
+    const ms = TIMING_MS[config.followUpTiming] ?? TIMING_MS['30min'];
+    const followUpTime = new Date(endTime.getTime() + ms);
+    await queue.send(JOB_NAMES.BOOKING_FOLLOWUP, { bookingId }, {
+      startAfter: followUpTime,
+    });
+  }
 }
 
 /** Cancel pending notification jobs for a booking (e.g., when cancelled). */
 export async function cancelBookingNotifications(bookingId: string): Promise<void> {
   const queue = getQueue();
-  // pg-boss doesn't have a direct "cancel by data" API,
-  // but reminders/follow-ups check booking status before sending
-  // So cancelled bookings will be skipped automatically.
-  // For the cancellation notification, send it now:
-  await queue.send(JOB_NAMES.BOOKING_CANCELLATION, { bookingId });
+
+  const booking = await prisma.booking.findUniqueOrThrow({
+    where: { id: bookingId },
+    select: { eventTypeId: true },
+  });
+
+  const config = await prisma.notificationConfig.findUnique({
+    where: { eventTypeId: booking.eventTypeId },
+  });
+
+  if (config?.cancellationEnabled) {
+    await queue.send(JOB_NAMES.BOOKING_CANCELLATION, { bookingId });
+  }
 }

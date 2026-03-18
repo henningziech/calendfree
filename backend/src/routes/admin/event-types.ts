@@ -25,6 +25,12 @@ export async function eventTypeRoutes(app: FastifyInstance) {
     },
   }, async (request, reply) => {
     const { companyId } = request.params as { companyId: string };
+    const user = request.session.user!;
+    const company = await prisma.company.findFirst({
+      where: { id: companyId, organizationId: user.organizationId },
+    });
+    if (!company) return reply.status(404).send({ error: 'Company not found' });
+
     const body = CreateEventTypeSchema.parse(request.body);
 
     const { formFields, ...eventTypeData } = body;
@@ -57,8 +63,14 @@ export async function eventTypeRoutes(app: FastifyInstance) {
         companyId: z.string().describe('Company ID'),
       }),
     },
-  }, async (request) => {
+  }, async (request, reply) => {
     const { companyId } = request.params as { companyId: string };
+    const user = request.session.user!;
+    const company = await prisma.company.findFirst({
+      where: { id: companyId, organizationId: user.organizationId },
+    });
+    if (!company) return reply.status(404).send({ error: 'Company not found' });
+
     return prisma.eventType.findMany({
       where: { companyId },
       include: {
@@ -83,8 +95,9 @@ export async function eventTypeRoutes(app: FastifyInstance) {
     },
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
-    const eventType = await prisma.eventType.findUnique({
-      where: { id },
+    const user = request.session.user!;
+    const eventType = await prisma.eventType.findFirst({
+      where: { id, company: { organizationId: user.organizationId } },
       include: {
         team: { select: { id: true, name: true } },
         user: { select: { id: true, name: true } },
@@ -107,8 +120,14 @@ export async function eventTypeRoutes(app: FastifyInstance) {
       }),
       body: UpdateEventTypeSchema,
     },
-  }, async (request) => {
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
+    const user = request.session.user!;
+    const eventType = await prisma.eventType.findFirst({
+      where: { id, company: { organizationId: user.organizationId } },
+    });
+    if (!eventType) return reply.status(404).send({ error: 'Event type not found' });
+
     const body = UpdateEventTypeSchema.parse(request.body);
     return prisma.eventType.update({ where: { id }, data: body });
   });
@@ -124,8 +143,14 @@ export async function eventTypeRoutes(app: FastifyInstance) {
         id: z.string().describe('Event type ID'),
       }),
     },
-  }, async (request) => {
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
+    const user = request.session.user!;
+    const eventType = await prisma.eventType.findFirst({
+      where: { id, company: { organizationId: user.organizationId } },
+    });
+    if (!eventType) return reply.status(404).send({ error: 'Event type not found' });
+
     await prisma.eventType.delete({ where: { id } });
     return { success: true };
   });
@@ -141,9 +166,14 @@ export async function eventTypeRoutes(app: FastifyInstance) {
         id: z.string().describe('Event type ID'),
       }),
     },
-  }, async (request) => {
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
-    const current = await prisma.eventType.findUniqueOrThrow({ where: { id } });
+    const user = request.session.user!;
+    const current = await prisma.eventType.findFirst({
+      where: { id, company: { organizationId: user.organizationId } },
+    });
+    if (!current) return reply.status(404).send({ error: 'Event type not found' });
+
     return prisma.eventType.update({ where: { id }, data: { active: !current.active } });
   });
 }

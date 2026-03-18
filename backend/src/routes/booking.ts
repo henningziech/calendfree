@@ -243,7 +243,7 @@ export async function bookingRoutes(app: FastifyInstance) {
         meetLink = calEvent.meetLink;
         await prisma.booking.update({
           where: { id: booking.id },
-          data: { calendarEventId: calEvent.eventId },
+          data: { calendarEventId: calEvent.eventId, meetLink: calEvent.meetLink },
         });
       } catch (err) {
         app.log.error(err, 'Failed to create calendar event for GROUP booking, marking as pending');
@@ -264,6 +264,7 @@ export async function bookingRoutes(app: FastifyInstance) {
         try {
           await scheduleBookingNotifications({
             bookingId: booking.id,
+            eventTypeId: eventType.id,
             startTime,
             endTime,
           });
@@ -397,7 +398,7 @@ export async function bookingRoutes(app: FastifyInstance) {
       meetLink = calEvent.meetLink;
       await prisma.booking.update({
         where: { id: booking.id },
-        data: { calendarEventId: calEvent.eventId },
+        data: { calendarEventId: calEvent.eventId, meetLink: calEvent.meetLink },
       });
     } catch (err) {
       app.log.error(err, 'Failed to create calendar event, marking as pending');
@@ -418,6 +419,7 @@ export async function bookingRoutes(app: FastifyInstance) {
       try {
         await scheduleBookingNotifications({
           bookingId: booking.id,
+          eventTypeId: eventType.id,
           startTime,
           endTime,
         });

@@ -24,8 +24,16 @@ export async function userRoutes(app: FastifyInstance) {
       }),
     },
     preHandler: [requireRole('USER', 'COMPANY_ADMIN', 'ORG_ADMIN')],
-  }, async (request) => {
+  }, async (request, reply) => {
     const { companyId } = request.params as { companyId: string };
+    const user = request.session.user!;
+
+    // Verify company belongs to the requesting user's organization
+    const company = await prisma.company.findFirst({
+      where: { id: companyId, organizationId: user.organizationId },
+    });
+    if (!company) return reply.status(404).send({ error: 'Company not found' });
+
     const memberships = await prisma.companyMembership.findMany({
       where: { companyId },
       include: {
@@ -70,6 +78,12 @@ export async function userRoutes(app: FastifyInstance) {
     const { companyId } = request.params as { companyId: string };
     const user = request.session.user!;
     const body = InviteUserSchema.parse(request.body);
+
+    // Verify company belongs to the requesting user's organization
+    const company = await prisma.company.findFirst({
+      where: { id: companyId, organizationId: user.organizationId },
+    });
+    if (!company) return reply.status(404).send({ error: 'Company not found' });
 
     // Find or create user
     let targetUser = await prisma.user.findUnique({ where: { email: body.email } });

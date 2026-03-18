@@ -160,8 +160,9 @@ export async function userRoutes(app: FastifyInstance) {
     preHandler: [requireRole('COMPANY_ADMIN', 'ORG_ADMIN')],
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
-    const user = await prisma.user.findUnique({
-      where: { id },
+    const requestingUser = request.session.user!;
+    const user = await prisma.user.findFirst({
+      where: { id, organizationId: requestingUser.organizationId },
       include: {
         googleTokens: { select: { connected: true } },
         companyMemberships: { include: { company: { select: { id: true, name: true, slug: true } } } },

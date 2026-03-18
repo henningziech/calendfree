@@ -216,6 +216,8 @@ export function MyEventTypeDetailPage() {
             showRemainingSpots: updateData.showRemainingSpots,
           } : {}),
         });
+        // Also save notification config if any type is enabled
+        await updateNotificationConfig(eventTypeId, notifConfig);
         navigate('/dashboard/my-event-types');
       } else {
         const created: any = await createEventType(companyId, {
@@ -227,7 +229,9 @@ export function MyEventTypeDetailPage() {
             showRemainingSpots: form.showRemainingSpots,
           } : {}),
         });
-        navigate(`/dashboard/my-event-types/${created.id}`);
+        // Save notification config for the newly created event type
+        await updateNotificationConfig(created.id, notifConfig);
+        navigate('/dashboard/my-event-types');
       }
     } catch (err: any) {
       setError(err.message);
@@ -317,13 +321,6 @@ export function MyEventTypeDetailPage() {
           ))}
         </div>
       </div>
-
-      {/* Create mode hint for notifications */}
-      {activeTab === 'notifications' && isCreateMode && (
-        <div className="rounded-xl bg-[#F8FAFC] p-6 text-sm text-[#64748B]">
-          {t('dashboard:eventTypeDetail.notificationsDisabled')}
-        </div>
-      )}
 
       {/* Tab: General */}
       {activeTab === 'general' && (
@@ -599,7 +596,7 @@ export function MyEventTypeDetailPage() {
       )}
 
       {/* Tab: Notifications */}
-      {activeTab === 'notifications' && !isCreateMode && (
+      {activeTab === 'notifications' && (
         <div className="space-y-4">
           {notifLoading ? (
             <div className="flex items-center justify-center py-12">

@@ -18,10 +18,11 @@ Notification-Einstellungen leben auf dem **EventType** (Terminplaner). Pro Event
 
 ## Template System
 
-- Jeder Typ hat Subject + Body (Plaintext mit Handlebars-Variablen)
+- Jeder Typ hat Subject + Body (Plaintext mit Handlebars-Variablen, kein HTML)
 - Wenn Subject/Body leer (null): Standard-Templates in Company-Sprache (`de`/`en`)
-- HTML-Layout mit Company-Branding (Logo, Farben) wird automatisch als Wrapper generiert
+- Custom-Body-Text wird mit Newlines → `<br>` konvertiert und in HTML-Branding-Wrapper eingebettet
 - Admin editiert nur den Textinhalt, nicht das Layout
+- "Auf Standard zurücksetzen"-Button setzt Subject/Body auf `null` zurück
 
 ### Verfügbare Template-Variablen
 
@@ -30,7 +31,9 @@ Notification-Einstellungen leben auf dem **EventType** (Terminplaner). Pro Event
 | `{{customerName}}` | Name des Kunden | Max Mustermann |
 | `{{customerEmail}}` | E-Mail des Kunden | max@example.com |
 | `{{eventTypeTitle}}` | Titel des Terminplaners | Erstgespräch |
-| `{{assignedUserName}}` | Name des Consultants | Anna Schmidt |
+| `{{consultantName}}` | Name des Consultants | Anna Schmidt |
+| `{{consultantEmail}}` | E-Mail des Consultants | anna@seibert.group |
+| `{{reminderText}}` | Erinnerungszeitraum (nur Reminder) | 24 Stunden / 1 Stunde |
 | `{{dateTime}}` | Formatierter Termin | 20. März 2026, 14:00 Uhr |
 | `{{duration}}` | Dauer in Minuten | 30 |
 | `{{meetLink}}` | Google Meet Link (wenn vorhanden) | https://meet.google.com/... |
@@ -83,6 +86,47 @@ model NotificationConfig {
 
 Timing-Werte als String gespeichert, im Backend in Millisekunden konvertiert.
 
+Auf dem `EventType`-Model muss die Rück-Relation ergänzt werden:
+```prisma
+// In model EventType:
+notificationConfig NotificationConfig?
+```
+
+### Migration bestehender EventTypes
+
+Da Notifications bisher hardcoded immer feuern (ohne Config), ist das Deployment ein **bewusster Breaking Change**: Nach dem Deploy sind alle Notifications aus, bis ein Admin sie pro EventType aktiviert. Das ist gewollt — der aktuelle Zustand (alle Notifications immer an, ohne Opt-in) ist nicht der gewünschte Endzustand. Bestehende EventTypes bekommen **keine** auto-generierten Config-Rows.
+
+## Shared Zod Schema
+
+In `shared/src/schemas/admin.ts` ein neues Schema `NotificationConfigSchema` definieren:
+
+```typescript
+export const Reminder1TimingSchema = z.enum(['48h', '24h', '12h', '6h', '2h']);
+export const Reminder2TimingSchema = z.enum(['4h', '2h', '1h', '30min', '15min']);
+export const FollowUpTimingSchema = z.enum(['30min', '1h', '2h', '6h', '24h']);
+
+export const UpdateNotificationConfigSchema = z.object({
+  confirmationEnabled: z.boolean(),
+  confirmationSubject: z.string().max(200).nullable(),
+  confirmationBody: z.string().max(5000).nullable(),
+  cancellationEnabled: z.boolean(),
+  cancellationSubject: z.string().max(200).nullable(),
+  cancellationBody: z.string().max(5000).nullable(),
+  reminder1Enabled: z.boolean(),
+  reminder1Timing: Reminder1TimingSchema,
+  reminder1Subject: z.string().max(200).nullable(),
+  reminder1Body: z.string().max(5000).nullable(),
+  reminder2Enabled: z.boolean(),
+  reminder2Timing: Reminder2TimingSchema,
+  reminder2Subject: z.string().max(200).nullable(),
+  reminder2Body: z.string().max(5000).nullable(),
+  followUpEnabled: z.boolean(),
+  followUpTiming: FollowUpTimingSchema,
+  followUpSubject: z.string().max(200).nullable(),
+  followUpBody: z.string().max(5000).nullable(),
+});
+```
+
 ## API Endpoints
 
 ### GET /api/admin/event-types/:id/notifications
@@ -98,16 +142,26 @@ Erstellt oder aktualisiert die `NotificationConfig` (upsert). Validierung:
 
 ### POST /api/admin/event-types/:id/notifications/preview
 
-Rendert ein Preview einer Mail mit Beispieldaten. Request-Body: `{ type: "confirmation" | "cancellation" | "reminder1" | "reminder2" | "followUp" }`. Gibt gerenderten HTML-String zurück.
+Rendert ein Preview einer Mail mit Beispieldaten. Request-Body:
+```json
+{
+  "type": "confirmation" | "cancellation" | "reminder1" | "reminder2" | "followUp",
+  "subject": "optionaler Draft-Subject (wenn null: gespeicherter/Standard-Wert)",
+  "body": "optionaler Draft-Body (wenn null: gespeicherter/Standard-Wert)"
+}
+```
+Gibt gerenderten HTML-String zurück. Ermöglicht Live-Vorschau während der Bearbeitung.
 
 ## Backend-Änderungen
 
 ### notification-jobs.ts
 
-`scheduleBookingNotifications()` muss die `NotificationConfig` des EventTypes laden:
+`scheduleBookingNotifications()` bekommt `eventTypeId` als zusätzlichen Parameter und lädt die `NotificationConfig`:
 - Nur Jobs für aktivierte Typen erstellen
 - Timing aus Config statt hardcoded (24h/1h/30min)
 - Wenn keine Config existiert oder Typ disabled: Job nicht schedulen
+
+`cancelBookingNotifications()` muss ebenfalls die Config prüfen: nur Absage-Mail senden wenn `cancellationEnabled === true`.
 
 ### templates.ts
 
@@ -158,8 +212,9 @@ Aufklappbare Karten pro Notification-Typ:
 - Timing-Dropdown nur bei Erinnerungen und Follow-Up
 - "Bearbeiten" klappt Subject+Body auf
 - Variablen-Leiste unter dem Body: Klick kopiert `{{variable}}` an Cursor-Position
-- "Vorschau" öffnet Modal mit gerendertem HTML
+- "Vorschau" sendet Draft-Subject/Body an Preview-API und zeigt gerendertes HTML im Modal
 - Wenn Subject/Body leer: Platzhalter zeigt Standard-Template-Text an
+- "Auf Standard zurücksetzen"-Link unter den Feldern setzt Subject/Body auf null
 
 ### i18n
 
@@ -177,7 +232,12 @@ Neue Translation-Keys in `en/admin.json` und `de/admin.json` für:
 - Retry-Logik (3 Retries, exponential backoff) bleibt
 - Company-Branding-System bleibt
 
+## Rescheduling
+
+Wenn ein Termin umgebucht wird (neues Booking erstellt), greift die gleiche Logik: `scheduleBookingNotifications()` prüft die `NotificationConfig` des EventTypes. Alte Jobs des stornierten Bookings werden durch Status-Check (`RESCHEDULED`) übersprungen — das bestehende Verhalten bleibt.
+
 ## Abhängigkeiten / Vorbedingungen
 
-- Meet-Link muss auf Booking-Model gespeichert werden (aktuell nicht persistiert)
+- Meet-Link muss auf Booking-Model gespeichert werden (neues Feld `meetLink String?`, aktuell nicht persistiert)
 - Standard-Templates müssen in `en` übersetzt werden (aktuell nur `de`)
+- `EventType`-Model braucht die Rück-Relation `notificationConfig NotificationConfig?`
